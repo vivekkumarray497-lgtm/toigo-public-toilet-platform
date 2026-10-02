@@ -23,13 +23,16 @@ class UserFlowController {
         this.requestUserLocation();
     }
 
-    // Geolocation Request & Handling
-    requestUserLocation() {
+    // Geolocation Request & Handling (Real Device Location)
+    requestUserLocation(showToastOnSuccess = false) {
         if (!navigator.geolocation) {
-            this.renderLocationNotice(false, 'Geolocation is not supported by your browser.');
+            this.renderLocationNotice(true, 'Geolocation is not supported by your browser.');
             this.loadAndRenderApprovedToilets();
             return;
         }
+
+        const locateBtn = document.getElementById('locate-me-btn');
+        if (locateBtn) locateBtn.classList.add('animate-pulse');
 
         navigator.geolocation.getCurrentPosition(
             (pos) => {
@@ -38,20 +41,51 @@ class UserFlowController {
                     lng: pos.coords.longitude
                 };
                 this.locationPermissionGranted = true;
+                if (locateBtn) locateBtn.classList.remove('animate-pulse');
+
                 if (window.toigoMap) {
                     window.toigoMap.userCoords = this.userLocation;
-                    window.toigoMap.locateUser(false);
+                    window.toigoMap.updateUserMarker();
+                    if (showToastOnSuccess && window.toigoMap.map) {
+                        window.toigoMap.map.flyTo([this.userLocation.lat, this.userLocation.lng], 16, { animate: true });
+                    }
                 }
                 this.hideLocationNotice();
                 this.loadAndRenderApprovedToilets();
+                if (showToastOnSuccess) {
+                    window.app.showToast('Live GPS Location synchronized! 📍', 'success');
+                }
+
+                // Continuous location tracking
+                if (!this.watchId) {
+                    this.watchId = navigator.geolocation.watchPosition(
+                        (watchPos) => {
+                            this.userLocation = {
+                                lat: watchPos.coords.latitude,
+                                lng: watchPos.coords.longitude
+                            };
+                            if (window.toigoMap) {
+                                window.toigoMap.userCoords = this.userLocation;
+                                window.toigoMap.updateUserMarker();
+                            }
+                            this.loadAndRenderApprovedToilets();
+                        },
+                        (err) => console.warn('Location watch update error:', err),
+                        { enableHighAccuracy: true, maximumAge: 5000, timeout: 15000 }
+                    );
+                }
             },
             (err) => {
-                console.warn('Geolocation denied or failed:', err);
+                console.warn('Geolocation error:', err);
+                if (locateBtn) locateBtn.classList.remove('animate-pulse');
                 this.locationPermissionGranted = false;
                 this.renderLocationNotice(true, 'Location permission is required to find nearby public toilets.');
                 this.loadAndRenderApprovedToilets();
+                if (showToastOnSuccess) {
+                    window.app.showToast('Location permission denied. Please allow GPS access in browser settings.', 'error');
+                }
             },
-            { enableHighAccuracy: true, timeout: 8000 }
+            { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
         );
     }
 
@@ -319,11 +353,23 @@ class UserFlowController {
                         </div>
                     </div>
 
-                    <!-- Navigation Action Button -->
-                    <div class="pt-2 flex gap-2">
+                    <!-- Navigation & Online Payment Action Buttons -->
+                    <div class="pt-2 flex flex-col sm:flex-row gap-2">
+                        ${!toilet.isFree && toilet.price > 0 ? `
+                            <button onclick="window.userFlow.openPaymentModal('${toilet.toiletId}')" 
+                                    class="flex-1 py-3 px-4 bg-gradient-to-r from-indigo-600 to-indigo-700 hover:from-indigo-700 hover:to-indigo-800 text-white font-black rounded-2xl text-xs sm:text-sm shadow-lg shadow-indigo-600/25 flex items-center justify-center gap-2 transition active:scale-98">
+                                <span>💳 Pay Online (₹${toilet.price})</span>
+                                <span>→</span>
+                            </button>
+                        ` : `
+                            <div class="flex-1 py-2 px-3 bg-emerald-50 border border-emerald-200 rounded-2xl text-center text-xs font-bold text-emerald-800 flex items-center justify-center gap-1.5">
+                                <span>💧</span>
+                                <span>Free Public Toilet • No Payment Needed</span>
+                            </div>
+                        `}
                         <button onclick="window.userFlow.startNavigationTo(${toilet.latitude}, ${toilet.longitude})" 
-                                class="flex-1 py-3 px-4 bg-emerald-600 hover:bg-emerald-700 text-white font-black rounded-2xl text-sm shadow-lg shadow-emerald-600/25 flex items-center justify-center gap-2 transition">
-                            <span>🧭 Start Navigation (Google Maps)</span>
+                                class="flex-1 py-3 px-4 bg-emerald-600 hover:bg-emerald-700 text-white font-black rounded-2xl text-xs sm:text-sm shadow-lg shadow-emerald-600/25 flex items-center justify-center gap-2 transition active:scale-98">
+                            <span>🧭 Start Navigation</span>
                             <span>→</span>
                         </button>
                     </div>
@@ -341,6 +387,108 @@ class UserFlowController {
 
     startNavigationTo(lat, lng) {
         window.open(`https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}`, '_blank');
+    }
+
+    // ================= ONLINE PAYMENT MODAL & EXECUTION =================
+    openPaymentModal(toiletId) {
+        const user = window.auth.getCurrentUser();
+        if (!user) {
+            window.app.showToast('Please sign in to proceed with payment.', 'info');
+            window.app.openUserLoginModal();
+            return;
+        }
+
+        const toilet = window.db.getToiletById(toiletId);
+        if (!toilet) return;
+
+        this.selectedToiletForPayment = toilet;
+        this.selectedPaymentMethod = 'UPI (Google Pay / PhonePe)';
+
+        const modal = document.getElementById('payment-checkout-modal');
+        if (!modal) return;
+
+        document.getElementById('pay-toilet-name-label').innerText = toilet.name;
+        document.getElementById('pay-toilet-address-label').innerText = toilet.address;
+        document.getElementById('pay-amount-label').innerText = `₹${toilet.price}.00`;
+        document.getElementById('pay-total-amount-label').innerText = `₹${toilet.price}.00`;
+        document.getElementById('pay-host-upi-label').innerText = `Host UPI: ${toilet.upiId || 'host@toigo.upi'}`;
+
+        modal.classList.remove('hidden');
+    }
+
+    closePaymentModal() {
+        document.getElementById('payment-checkout-modal')?.classList.add('hidden');
+    }
+
+    selectPaymentMethod(method) {
+        this.selectedPaymentMethod = method;
+        document.querySelectorAll('.pay-method-btn').forEach(btn => {
+            if (btn.dataset.method === method) {
+                btn.className = 'pay-method-btn w-full p-3 rounded-2xl border-2 border-indigo-600 bg-indigo-50/70 text-indigo-950 font-bold text-xs flex items-center justify-between transition shadow-xs';
+            } else {
+                btn.className = 'pay-method-btn w-full p-3 rounded-2xl border border-slate-200 bg-slate-50 hover:bg-slate-100 text-slate-700 font-semibold text-xs flex items-center justify-between transition';
+            }
+        });
+    }
+
+    executeOnlinePayment() {
+        const user = window.auth.getCurrentUser();
+        if (!user || !this.selectedToiletForPayment) return;
+
+        const toilet = this.selectedToiletForPayment;
+        const payBtn = document.getElementById('btn-confirm-payment');
+        if (payBtn) {
+            payBtn.innerHTML = '<span>⏳</span> Processing Payment Securely...';
+            payBtn.disabled = true;
+        }
+
+        setTimeout(() => {
+            const paymentRecord = window.db.addPaymentTransaction({
+                userId: user.userId,
+                userName: user.name,
+                toiletId: toilet.toiletId,
+                toiletName: toilet.name,
+                providerId: toilet.providerId,
+                amount: toilet.price,
+                method: this.selectedPaymentMethod,
+                status: 'SUCCESS',
+                upiId: toilet.upiId
+            });
+
+            if (payBtn) {
+                payBtn.innerHTML = '<span>✓</span> Pay Securely';
+                payBtn.disabled = false;
+            }
+
+            this.closePaymentModal();
+            this.showPaymentSuccessResult(paymentRecord, toilet);
+
+            // Confetti animation
+            if (window.confetti) {
+                window.confetti({
+                    particleCount: 80,
+                    spread: 70,
+                    origin: { y: 0.6 }
+                });
+            }
+        }, 1200);
+    }
+
+    showPaymentSuccessResult(payment, toilet) {
+        const modal = document.getElementById('payment-result-modal');
+        if (!modal) return;
+
+        document.getElementById('res-txn-id').innerText = payment.paymentId;
+        document.getElementById('res-toilet-name').innerText = toilet.name;
+        document.getElementById('res-amount-paid').innerText = `₹${payment.amount}.00`;
+        document.getElementById('res-unlock-code').innerText = payment.unlockToken;
+        document.getElementById('res-payment-method').innerText = payment.method;
+
+        modal.classList.remove('hidden');
+    }
+
+    closePaymentResultModal() {
+        document.getElementById('payment-result-modal')?.classList.add('hidden');
     }
 
     // ================= REPORT ISSUE MODAL =================

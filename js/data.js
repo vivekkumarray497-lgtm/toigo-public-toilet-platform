@@ -574,6 +574,37 @@ class ToigoDataStore {
         return (this.data.reviews || []).filter(r => r.toiletId === toiletId);
     }
 
+    // ================= PAYMENTS & TRANSACTIONS =================
+    addPaymentTransaction({ userId, userName, toiletId, toiletName, providerId, amount, method, status = 'SUCCESS', upiId }) {
+        const newPayment = {
+            paymentId: 'PAY-' + Date.now() + '-' + Math.floor(100 + Math.random() * 900),
+            userId: userId,
+            userName: userName || 'Citizen',
+            toiletId: toiletId,
+            toiletName: toiletName || 'Public Restroom',
+            providerId: providerId || 'prov-1',
+            amount: Number(amount),
+            method: method || 'UPI',
+            status: status, // 'SUCCESS' | 'FAILED' | 'CANCELLED'
+            unlockToken: 'TG-' + Math.floor(1000 + Math.random() * 9000),
+            upiId: upiId || 'host@upi',
+            timestamp: new Date().toISOString()
+        };
+
+        if (!this.data.payments) this.data.payments = [];
+        this.data.payments.unshift(newPayment);
+        this.save();
+        return newPayment;
+    }
+
+    getUserPayments(userId) {
+        return (this.data.payments || []).filter(p => p.userId === userId);
+    }
+
+    getAllPaymentsAdmin() {
+        return this.data.payments || [];
+    }
+
     // ================= UTILITIES =================
     calculateDistance(lat1, lon1, lat2, lon2) {
         if (!lat1 || !lon1 || !lat2 || !lon2) return 0.5;

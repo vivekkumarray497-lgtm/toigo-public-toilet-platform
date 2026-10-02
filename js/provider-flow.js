@@ -169,7 +169,11 @@ class ProviderFlowController {
         if (!modal) return;
 
         this.uploadedPhotos = [];
+        this.paymentType = 'paid'; // 'free' | 'paid'
         modal.classList.remove('hidden');
+
+        // Reset payment mode
+        this.setPaymentType('paid');
 
         setTimeout(() => {
             this.initMapPicker();
@@ -178,6 +182,40 @@ class ProviderFlowController {
 
     closeAddToiletModal() {
         document.getElementById('add-toilet-modal')?.classList.add('hidden');
+    }
+
+    setPaymentType(type) {
+        this.paymentType = type;
+        const btnFree = document.getElementById('pay-type-free-btn');
+        const btnPaid = document.getElementById('pay-type-paid-btn');
+        const feeContainer = document.getElementById('paid-fee-container');
+        const priceInput = document.getElementById('new-toilet-price-input');
+
+        if (type === 'free') {
+            if (btnFree) btnFree.className = 'flex-1 py-2.5 rounded-xl text-xs font-bold bg-emerald-600 text-white shadow-sm transition';
+            if (btnPaid) btnPaid.className = 'flex-1 py-2.5 rounded-xl text-xs font-semibold bg-slate-100 text-slate-600 hover:bg-slate-200 transition';
+            if (feeContainer) feeContainer.classList.add('hidden');
+            if (priceInput) priceInput.value = '0';
+        } else {
+            if (btnFree) btnFree.className = 'flex-1 py-2.5 rounded-xl text-xs font-semibold bg-slate-100 text-slate-600 hover:bg-slate-200 transition';
+            if (btnPaid) btnPaid.className = 'flex-1 py-2.5 rounded-xl text-xs font-bold bg-indigo-600 text-white shadow-sm transition';
+            if (feeContainer) feeContainer.classList.remove('hidden');
+            if (priceInput && (priceInput.value === '0' || !priceInput.value)) priceInput.value = '10';
+        }
+    }
+
+    setQuickPrice(amt) {
+        const priceInput = document.getElementById('new-toilet-price-input');
+        if (priceInput) {
+            priceInput.value = amt;
+        }
+        document.querySelectorAll('.quick-price-chip').forEach(chip => {
+            if (Number(chip.dataset.price) === amt) {
+                chip.className = 'quick-price-chip px-3 py-1 bg-indigo-600 text-white rounded-lg text-xs font-bold shadow-xs transition';
+            } else {
+                chip.className = 'quick-price-chip px-3 py-1 bg-slate-100 text-slate-700 hover:bg-slate-200 rounded-lg text-xs font-bold transition';
+            }
+        });
     }
 
     initMapPicker() {
@@ -204,18 +242,74 @@ class ProviderFlowController {
         this.pickerMarker.on('dragend', (e) => {
             const pos = e.target.getLatLng();
             this.newToiletCoords = { lat: pos.lat, lng: pos.lng };
+            this.reverseGeocodeCoords(pos.lat, pos.lng);
         });
     }
 
     useGpsForNewToilet() {
-        if (!navigator.geolocation) return;
-        navigator.geolocation.getCurrentPosition(pos => {
-            this.newToiletCoords = { lat: pos.coords.latitude, lng: pos.coords.longitude };
-            if (this.pickerMapInstance && this.pickerMarker) {
-                this.pickerMapInstance.setView([pos.coords.latitude, pos.coords.longitude], 17);
-                this.pickerMarker.setLatLng([pos.coords.latitude, pos.coords.longitude]);
+        if (!navigator.geolocation) {
+            window.app.showToast('Geolocation not supported by device.', 'error');
+            return;
+        }
+
+        const gpsBtn = document.getElementById('add-toilet-gps-btn');
+        if (gpsBtn) {
+            gpsBtn.innerHTML = '<span>⏳</span> Locating GPS...';
+            gpsBtn.disabled = true;
+        }
+
+        navigator.geolocation.getCurrentPosition(
+            (pos) => {
+                const lat = pos.coords.latitude;
+                const lng = pos.coords.longitude;
+                this.newToiletCoords = { lat, lng };
+
+                if (this.pickerMapInstance && this.pickerMarker) {
+                    this.pickerMapInstance.setView([lat, lng], 17);
+                    this.pickerMarker.setLatLng([lat, lng]);
+                }
+
+                if (gpsBtn) {
+                    gpsBtn.innerHTML = '<span>📍</span> GPS Captured ✓';
+                    gpsBtn.disabled = false;
+                }
+
+                window.app.showToast(`Current GPS captured: ${lat.toFixed(4)}, ${lng.toFixed(4)}`, 'success');
+                this.reverseGeocodeCoords(lat, lng);
+            },
+            (err) => {
+                console.warn('GPS location error:', err);
+                if (gpsBtn) {
+                    gpsBtn.innerHTML = '<span>📍</span> Use Current GPS';
+                    gpsBtn.disabled = false;
+                }
+                window.app.showToast('Location permission denied or GPS unavailable. Please enable device location.', 'error');
+            },
+            { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+        );
+    }
+
+    reverseGeocodeCoords(lat, lng) {
+        const addressInput = document.querySelector('input[name="address"]');
+        if (!addressInput) return;
+
+        fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&zoom=18&addressdetails=1`, {
+            headers: { 'User-Agent': 'TOIGO-Public-Sanitation-App/2.0' }
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (data && data.display_name) {
+                // Shorten formatted address
+                const parts = data.display_name.split(', ');
+                const cleanAddress = parts.slice(0, 4).join(', ');
+                addressInput.value = cleanAddress;
+                window.app.showToast('Address autofilled from GPS!', 'info');
             }
-            window.app.showToast('GPS Location updated!', 'success');
+        })
+        .catch(() => {
+            if (!addressInput.value) {
+                addressInput.value = `Near GPS (${lat.toFixed(4)}, ${lng.toFixed(4)})`;
+            }
         });
     }
 
@@ -247,6 +341,9 @@ class ProviderFlowController {
             return;
         }
 
+        const isFree = this.paymentType === 'free' || Number(formData.price || 0) === 0;
+        const price = isFree ? 0 : Number(formData.price || 10);
+
         const facilities = [];
         if (document.getElementById('fac-soap')?.checked) facilities.push('Hand Soap');
         if (document.getElementById('fac-water')?.checked) facilities.push('Running Water');
@@ -266,12 +363,13 @@ class ProviderFlowController {
             genderType: formData.genderType || 'Unisex',
             facilities: facilities.length > 0 ? facilities : ['Hand Soap', 'Running Water', 'Jet Spray'],
             accessibility: formData.accessibility || 'Ground Floor Accessible',
-            price: Number(formData.price || 0),
+            price: price,
+            isFree: isFree,
             photos: this.uploadedPhotos
         });
 
         this.closeAddToiletModal();
-        window.app.showToast('Toilet submitted for Admin verification (Status: PENDING) ⏳', 'info');
+        window.app.showToast(`Toilet submitted with fee ₹${price} for Admin verification (Status: PENDING) ⏳`, 'info');
         this.renderProviderDashboard();
     }
 }

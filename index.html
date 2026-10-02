@@ -996,28 +996,51 @@
                     </div>
                 </div>
 
-                <div class="grid grid-cols-2 gap-3">
-                    <div>
-                        <label class="block font-bold text-slate-700 mb-1">Price per Use (₹) *</label>
-                        <input name="price" required type="number" min="0" max="100" value="10"
-                            class="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl font-bold" />
+                <!-- Payment Option: Free vs Paid -->
+                <div class="space-y-2">
+                    <label class="block font-bold text-slate-700 mb-1">Restroom Pricing Type *</label>
+                    <div class="flex gap-2">
+                        <button type="button" id="pay-type-paid-btn" onclick="window.providerFlow.setPaymentType('paid')"
+                            class="flex-1 py-2.5 rounded-xl text-xs font-bold bg-indigo-600 text-white shadow-sm transition">
+                            💳 Paid Washroom
+                        </button>
+                        <button type="button" id="pay-type-free-btn" onclick="window.providerFlow.setPaymentType('free')"
+                            class="flex-1 py-2.5 rounded-xl text-xs font-semibold bg-slate-100 text-slate-600 hover:bg-slate-200 transition">
+                            💧 Free Public Toilet
+                        </button>
                     </div>
-                    <div>
-                        <label class="block font-bold text-slate-700 mb-1">Accessibility</label>
-                        <input name="accessibility" type="text" value="Ground Floor, Wheelchair Friendly"
-                            class="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl font-semibold" />
+                </div>
+
+                <!-- Payment Kitna Lagega? (Usage Fee Container) -->
+                <div id="paid-fee-container" class="space-y-2 p-3 bg-indigo-50/70 border border-indigo-200 rounded-2xl">
+                    <div class="flex justify-between items-center">
+                        <label class="block font-bold text-indigo-950">Payment Kitna Lagega? (₹ / Entry) *</label>
+                        <span class="text-[10px] text-indigo-700 font-bold">Direct Host Payout</span>
+                    </div>
+                    <div class="flex gap-2">
+                        <span class="px-3.5 py-2 bg-white border border-slate-200 rounded-xl font-black text-slate-700 text-sm flex items-center">₹</span>
+                        <input id="new-toilet-price-input" name="price" type="number" min="1" max="100" value="10" placeholder="10"
+                            class="flex-1 px-3.5 py-2 bg-white border border-slate-200 rounded-xl font-bold text-slate-900 focus:outline-hidden focus:border-indigo-500" />
+                    </div>
+                    <!-- Quick Presets -->
+                    <div class="flex items-center gap-1.5 pt-1">
+                        <span class="text-[10px] text-slate-500 font-bold">Quick Presets:</span>
+                        <button type="button" onclick="window.providerFlow.setQuickPrice(5)" data-price="5" class="quick-price-chip px-3 py-1 bg-slate-100 text-slate-700 hover:bg-slate-200 rounded-lg text-xs font-bold transition">₹5</button>
+                        <button type="button" onclick="window.providerFlow.setQuickPrice(10)" data-price="10" class="quick-price-chip px-3 py-1 bg-indigo-600 text-white rounded-lg text-xs font-bold shadow-xs transition">₹10</button>
+                        <button type="button" onclick="window.providerFlow.setQuickPrice(20)" data-price="20" class="quick-price-chip px-3 py-1 bg-slate-100 text-slate-700 hover:bg-slate-200 rounded-lg text-xs font-bold transition">₹20</button>
+                        <button type="button" onclick="window.providerFlow.setQuickPrice(30)" data-price="30" class="quick-price-chip px-3 py-1 bg-slate-100 text-slate-700 hover:bg-slate-200 rounded-lg text-xs font-bold transition">₹30</button>
                     </div>
                 </div>
 
                 <div class="grid grid-cols-2 gap-3">
                     <div>
-                        <label class="block font-bold text-slate-700 mb-1">Opening Time</label>
-                        <input name="openingTime" type="text" value="06:00 AM"
+                        <label class="block font-bold text-slate-700 mb-1">Accessibility</label>
+                        <input name="accessibility" type="text" value="Ground Floor, Wheelchair Friendly"
                             class="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl font-semibold" />
                     </div>
                     <div>
-                        <label class="block font-bold text-slate-700 mb-1">Closing Time</label>
-                        <input name="closingTime" type="text" value="11:00 PM"
+                        <label class="block font-bold text-slate-700 mb-1">Timings (Open - Close)</label>
+                        <input name="openingTime" type="text" value="06:00 AM - 11:00 PM"
                             class="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl font-semibold" />
                     </div>
                 </div>
@@ -1057,9 +1080,9 @@
                 <div>
                     <div class="flex items-center justify-between mb-1">
                         <label class="font-bold text-slate-700">Address & Landmark *</label>
-                        <button type="button" onclick="window.providerFlow.useGpsForNewToilet()"
-                            class="text-[10px] font-bold text-emerald-700 bg-emerald-50 px-2 py-1 rounded-lg border border-emerald-200 flex items-center gap-1">
-                            <span>📍</span> Use Current GPS
+                        <button type="button" id="add-toilet-gps-btn" onclick="window.providerFlow.useGpsForNewToilet()"
+                            class="text-[10px] font-bold text-emerald-700 bg-emerald-50 px-2.5 py-1.5 rounded-lg border border-emerald-200 hover:bg-emerald-100 flex items-center gap-1 transition">
+                            <span>📍</span> Use Current GPS Location
                         </button>
                     </div>
                     <input name="address" required type="text" placeholder="e.g. Shop 12, Main Market, Connaught Place"
@@ -1072,6 +1095,145 @@
                     Submit Toilet for Admin Verification (PENDING) 🚀
                 </button>
             </form>
+        </div>
+    </div>
+
+    <!-- ================= 10. ONLINE PAYMENT CHECKOUT MODAL ================= -->
+    <div id="payment-checkout-modal"
+        class="app-modal hidden fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
+        <div class="bg-white rounded-3xl p-6 max-w-md w-full shadow-2xl border border-slate-100 space-y-4 animate-scale">
+            <div class="flex items-center justify-between pb-3 border-b border-slate-100">
+                <div class="flex items-center gap-2">
+                    <div class="w-9 h-9 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center text-lg font-bold">
+                        💳
+                    </div>
+                    <div>
+                        <h3 class="text-base font-black text-slate-900 font-heading">Online Restroom Payment</h3>
+                        <p class="text-xs text-slate-500">Secure Direct Payout to Host</p>
+                    </div>
+                </div>
+                <button onclick="window.userFlow.closePaymentModal()"
+                    class="w-8 h-8 rounded-full bg-slate-100 text-slate-600 flex items-center justify-center text-xs font-bold hover:bg-slate-200 transition">✕</button>
+            </div>
+
+            <!-- Toilet Info & Fee Summary -->
+            <div class="p-3.5 bg-slate-50 rounded-2xl border border-slate-200/80 space-y-2">
+                <div class="flex justify-between items-start">
+                    <div>
+                        <h4 id="pay-toilet-name-label" class="font-bold text-sm text-slate-900">Restroom Name</h4>
+                        <p id="pay-toilet-address-label" class="text-[11px] text-slate-500 truncate max-w-[240px]">Address</p>
+                    </div>
+                    <span id="pay-amount-label" class="text-lg font-black text-indigo-700">₹10.00</span>
+                </div>
+                <div class="pt-2 border-t border-slate-200 flex justify-between text-xs text-slate-600">
+                    <span id="pay-host-upi-label" class="font-mono text-[10px] text-slate-500 font-semibold">Host UPI: host@okaxis</span>
+                    <span class="font-bold text-emerald-600">✓ 100% Direct Payout</span>
+                </div>
+            </div>
+
+            <!-- Payment Methods List -->
+            <div class="space-y-2 text-xs">
+                <label class="block font-bold text-slate-700">Select Payment Method</label>
+
+                <!-- Method 1: UPI (Google Pay, PhonePe, Paytm) -->
+                <button type="button" onclick="window.userFlow.selectPaymentMethod('UPI (Google Pay / PhonePe / Paytm)')"
+                    data-method="UPI (Google Pay / PhonePe / Paytm)"
+                    class="pay-method-btn w-full p-3 rounded-2xl border-2 border-indigo-600 bg-indigo-50/70 text-indigo-950 font-bold flex items-center justify-between transition shadow-xs">
+                    <div class="flex items-center gap-2.5">
+                        <span class="text-base">⚡</span>
+                        <div class="text-left">
+                            <p class="font-bold">UPI Apps (GPay, PhonePe, Paytm)</p>
+                            <p class="text-[10px] text-slate-500 font-normal">Fastest 1-click payment</p>
+                        </div>
+                    </div>
+                    <span class="text-indigo-600 font-bold">●</span>
+                </button>
+
+                <!-- Method 2: TOIGO Direct Wallet -->
+                <button type="button" onclick="window.userFlow.selectPaymentMethod('TOIGO Wallet')"
+                    data-method="TOIGO Wallet"
+                    class="pay-method-btn w-full p-3 rounded-2xl border border-slate-200 bg-slate-50 hover:bg-slate-100 text-slate-700 font-semibold flex items-center justify-between transition">
+                    <div class="flex items-center gap-2.5">
+                        <span class="text-base">👛</span>
+                        <div class="text-left">
+                            <p class="font-bold text-slate-900">TOIGO Fast Wallet</p>
+                            <p class="text-[10px] text-slate-500 font-normal">Balance: ₹150.00</p>
+                        </div>
+                    </div>
+                    <span class="text-slate-400">○</span>
+                </button>
+
+                <!-- Method 3: Scan QR & Cash at Door -->
+                <button type="button" onclick="window.userFlow.selectPaymentMethod('Direct Cash to Host')"
+                    data-method="Direct Cash to Host"
+                    class="pay-method-btn w-full p-3 rounded-2xl border border-slate-200 bg-slate-50 hover:bg-slate-100 text-slate-700 font-semibold flex items-center justify-between transition">
+                    <div class="flex items-center gap-2.5">
+                        <span class="text-base">💵</span>
+                        <div class="text-left">
+                            <p class="font-bold text-slate-900">Cash Directly at Entry</p>
+                            <p class="text-[10px] text-slate-500 font-normal">Pay directly to host in cash</p>
+                        </div>
+                    </div>
+                    <span class="text-slate-400">○</span>
+                </button>
+            </div>
+
+            <!-- Confirm Payment Button -->
+            <button id="btn-confirm-payment" onclick="window.userFlow.executeOnlinePayment()"
+                class="w-full py-3.5 bg-gradient-to-r from-indigo-600 to-indigo-700 hover:from-indigo-700 text-white rounded-2xl text-xs font-black shadow-lg shadow-indigo-600/30 flex items-center justify-center gap-2 transition active:scale-98">
+                <span>Pay <span id="pay-total-amount-label">₹10.00</span> Securely →</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- ================= 11. PAYMENT RESULT & RECEIPT MODAL ================= -->
+    <div id="payment-result-modal"
+        class="app-modal hidden fixed inset-0 z-50 bg-black/70 backdrop-blur-md flex items-center justify-center p-4">
+        <div class="bg-white rounded-3xl p-6 max-w-sm w-full shadow-2xl border border-slate-100 text-center space-y-4 animate-scale">
+            <div
+                class="w-16 h-16 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mx-auto text-3xl shadow-lg shadow-emerald-500/20">
+                ✓
+            </div>
+
+            <div>
+                <span class="px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase bg-emerald-100 text-emerald-800">
+                    Payment Successful
+                </span>
+                <h3 class="text-lg font-black text-slate-900 mt-1.5 font-heading">Access Granted!</h3>
+                <p class="text-xs text-slate-500">Your direct host transaction is confirmed.</p>
+            </div>
+
+            <!-- Receipt Breakdown -->
+            <div class="p-4 bg-slate-50 rounded-2xl border border-slate-200 text-xs space-y-2 text-left">
+                <div class="flex justify-between">
+                    <span class="text-slate-500">Transaction ID:</span>
+                    <span id="res-txn-id" class="font-mono font-bold text-slate-800 text-[11px]">PAY-123456</span>
+                </div>
+                <div class="flex justify-between">
+                    <span class="text-slate-500">Washroom:</span>
+                    <span id="res-toilet-name" class="font-bold text-slate-900 truncate max-w-[170px]">SmartRest</span>
+                </div>
+                <div class="flex justify-between">
+                    <span class="text-slate-500">Amount Paid:</span>
+                    <span id="res-amount-paid" class="font-black text-emerald-600">₹10.00</span>
+                </div>
+                <div class="flex justify-between">
+                    <span class="text-slate-500">Method:</span>
+                    <span id="res-payment-method" class="font-semibold text-slate-700">UPI</span>
+                </div>
+                <div class="pt-2 border-t border-slate-200 flex justify-between items-center">
+                    <span class="text-slate-600 font-bold">Door Entry Token:</span>
+                    <span id="res-unlock-code" class="px-2 py-0.5 bg-emerald-600 text-white font-mono font-black rounded-lg text-xs tracking-wider">TG-9821</span>
+                </div>
+            </div>
+
+            <!-- Actions -->
+            <div class="space-y-2">
+                <button onclick="window.userFlow.closePaymentResultModal(); window.userFlow.closeToiletDetailModal();"
+                    class="w-full py-3 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold shadow-md transition">
+                    Done & Return to Map 🗺️
+                </button>
+            </div>
         </div>
     </div>
 
