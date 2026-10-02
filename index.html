@@ -308,7 +308,11 @@
                         + Add ₹100
                     </button>
                 </div>
-                <div class="pt-2">
+                
+                <!-- Role Switcher Gateway -->
+                <div id="profile-switch-role-btn" class="pt-2"></div>
+
+                <div class="pt-1">
                     <button onclick="window.app.logout()" class="w-full py-3 bg-red-50 hover:bg-red-100 text-red-600 font-bold rounded-2xl text-xs transition">
                         🚪 Sign Out of TOIGO
                     </button>
@@ -316,32 +320,94 @@
             </div>
         </section>
 
-        <!-- ================= FIXED BOTTOM APP NAVIGATION BAR ================= -->
-        <nav class="fixed bottom-0 left-0 right-0 z-40 bg-white/95 backdrop-blur-lg border-t border-slate-200 shadow-xl max-w-xl lg:max-w-7xl mx-auto">
-            <div class="grid grid-cols-5 h-16 items-center text-center">
-                <button onclick="window.app.switchView('landing')" id="nav-btn-landing" class="nav-tab-item active flex flex-col items-center justify-center text-slate-500 hover:text-emerald-600 transition">
-                    <span class="text-lg">🏠</span>
-                    <span class="text-[10px] font-bold mt-0.5">Home</span>
+        <!-- ================= VIEW 6: CITIZEN USAGE HISTORY ================= -->
+        <section id="view-history" class="app-view hidden p-4 sm:p-6 space-y-4 animate-scale">
+            <div class="flex items-center justify-between">
+                <div>
+                    <h2 class="text-xl font-black text-slate-900 font-heading">My Washroom Visits</h2>
+                    <p class="text-xs text-slate-500">History of completed visits & receipts</p>
+                </div>
+                <button onclick="window.app.switchView('user')" class="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold">
+                    ← Back to Map
                 </button>
+            </div>
+            <div id="user-history-list" class="space-y-3"></div>
+        </section>
 
-                <button onclick="window.app.switchView('user')" id="nav-btn-user" class="nav-tab-item flex flex-col items-center justify-center text-slate-500 hover:text-emerald-600 transition">
+        <!-- ================= DEDICATED ROLE BOTTOM NAVIGATIONS ================= -->
+        
+        <!-- 1. CITIZEN USER NAVIGATION (User CANNOT see Host controls) -->
+        <nav id="bottom-nav-user" class="fixed bottom-0 left-0 right-0 z-40 bg-white/95 backdrop-blur-lg border-t border-slate-200 shadow-xl max-w-xl lg:max-w-7xl mx-auto hidden">
+            <div class="grid grid-cols-4 h-16 items-center text-center">
+                <button onclick="window.app.switchView('user')" class="nav-tab-item active flex flex-col items-center justify-center text-slate-500 hover:text-emerald-600 transition" data-view="user">
                     <span class="text-lg">🗺️</span>
-                    <span class="text-[10px] font-bold mt-0.5">Find</span>
+                    <span class="text-[10px] font-bold mt-0.5">Find Toilets</span>
                 </button>
-
-                <button onclick="window.app.switchView('provider')" id="nav-btn-provider" class="nav-tab-item flex flex-col items-center justify-center text-slate-500 hover:text-indigo-600 transition">
-                    <span class="text-lg">🏢</span>
-                    <span class="text-[10px] font-bold mt-0.5">Host</span>
+                <button onclick="window.app.switchView('history')" class="nav-tab-item flex flex-col items-center justify-center text-slate-500 hover:text-emerald-600 transition" data-view="history">
+                    <span class="text-lg">📋</span>
+                    <span class="text-[10px] font-bold mt-0.5">My Visits</span>
                 </button>
-
-                <button onclick="window.app.switchView('admin')" id="nav-btn-admin" class="nav-tab-item flex flex-col items-center justify-center text-slate-500 hover:text-amber-600 transition">
-                    <span class="text-lg">👑</span>
-                    <span class="text-[10px] font-bold mt-0.5">Founder</span>
+                <button onclick="window.app.triggerEmergencySOS()" class="nav-tab-item flex flex-col items-center justify-center text-red-500 hover:text-red-600 transition" data-view="sos">
+                    <span class="text-lg">🚨</span>
+                    <span class="text-[10px] font-bold mt-0.5">SOS</span>
                 </button>
-
-                <button onclick="window.app.openProfileView()" id="nav-btn-profile" class="nav-tab-item flex flex-col items-center justify-center text-slate-500 hover:text-emerald-600 transition">
+                <button onclick="window.app.openProfileView()" class="nav-tab-item flex flex-col items-center justify-center text-slate-500 hover:text-emerald-600 transition" data-view="profile">
                     <span class="text-lg">👤</span>
                     <span class="text-[10px] font-bold mt-0.5">Profile</span>
+                </button>
+            </div>
+        </nav>
+
+        <!-- 2. HOST / PROVIDER NAVIGATION (Provider dedicated controls) -->
+        <nav id="bottom-nav-provider" class="fixed bottom-0 left-0 right-0 z-40 bg-white/95 backdrop-blur-lg border-t border-slate-200 shadow-xl max-w-xl lg:max-w-7xl mx-auto hidden">
+            <div class="grid grid-cols-4 h-16 items-center text-center">
+                <button onclick="window.app.switchView('provider')" class="nav-tab-item active flex flex-col items-center justify-center text-slate-500 hover:text-indigo-600 transition" data-view="provider">
+                    <span class="text-lg">🏢</span>
+                    <span class="text-[10px] font-bold mt-0.5">Restrooms</span>
+                </button>
+                <button onclick="window.providerFlow.openAddListingModal()" class="nav-tab-item flex flex-col items-center justify-center text-slate-500 hover:text-indigo-600 transition">
+                    <span class="text-lg">➕</span>
+                    <span class="text-[10px] font-bold mt-0.5">Add Toilet</span>
+                </button>
+                <button onclick="window.providerFlow.openAddListingModal()" class="nav-tab-item flex flex-col items-center justify-center text-slate-500 hover:text-indigo-600 transition">
+                    <span class="text-lg">💳</span>
+                    <span class="text-[10px] font-bold mt-0.5">Direct UPI</span>
+                </button>
+                <button onclick="window.app.openProfileView()" class="nav-tab-item flex flex-col items-center justify-center text-slate-500 hover:text-indigo-600 transition" data-view="profile">
+                    <span class="text-lg">👤</span>
+                    <span class="text-[10px] font-bold mt-0.5">Account</span>
+                </button>
+            </div>
+        </nav>
+
+        <!-- 3. FOUNDER / ADMIN NAVIGATION -->
+        <nav id="bottom-nav-admin" class="fixed bottom-0 left-0 right-0 z-40 bg-slate-900 text-white border-t border-slate-800 shadow-xl max-w-xl lg:max-w-7xl mx-auto hidden">
+            <div class="grid grid-cols-2 h-16 items-center text-center">
+                <button onclick="window.app.switchView('admin')" class="nav-tab-item active flex flex-col items-center justify-center text-amber-400 font-bold" data-view="admin">
+                    <span class="text-lg">👑</span>
+                    <span class="text-[10px] mt-0.5">Master Terminal</span>
+                </button>
+                <button onclick="window.app.openProfileView()" class="nav-tab-item flex flex-col items-center justify-center text-slate-300 hover:text-white" data-view="profile">
+                    <span class="text-lg">👤</span>
+                    <span class="text-[10px] font-bold mt-0.5">Founder Profile</span>
+                </button>
+            </div>
+        </nav>
+
+        <!-- 4. GUEST LANDING NAVIGATION -->
+        <nav id="bottom-nav-guest" class="fixed bottom-0 left-0 right-0 z-40 bg-white/95 backdrop-blur-lg border-t border-slate-200 shadow-xl max-w-xl lg:max-w-7xl mx-auto">
+            <div class="grid grid-cols-3 h-16 items-center text-center">
+                <button onclick="window.app.switchView('landing')" class="nav-tab-item active flex flex-col items-center justify-center text-slate-500 hover:text-emerald-600 transition" data-view="landing">
+                    <span class="text-lg">🏠</span>
+                    <span class="text-[10px] font-bold mt-0.5">Welcome</span>
+                </button>
+                <button onclick="window.app.selectLandingRole('user')" class="nav-tab-item flex flex-col items-center justify-center text-emerald-600 font-bold transition">
+                    <span class="text-lg">🚻</span>
+                    <span class="text-[10px] mt-0.5">Citizen User</span>
+                </button>
+                <button onclick="window.app.selectLandingRole('provider')" class="nav-tab-item flex flex-col items-center justify-center text-indigo-600 font-bold transition">
+                    <span class="text-lg">🏢</span>
+                    <span class="text-[10px] mt-0.5">Toilet Host</span>
                 </button>
             </div>
         </nav>
