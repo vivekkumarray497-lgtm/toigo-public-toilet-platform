@@ -298,20 +298,20 @@ class UserFlowController {
                         </div>
                     </div>
 
-                    <!-- Host Payment Details Preview -->
+                    <!-- Facility Status -->
                     <div class="p-3 bg-emerald-50/70 border border-emerald-100 rounded-2xl flex items-center justify-between">
                         <div class="flex items-center gap-2.5">
                             <div class="w-9 h-9 rounded-xl bg-emerald-600 text-white font-bold flex items-center justify-center text-xs shadow-xs">
-                                🏢
+                                🚻
                             </div>
                             <div>
-                                <p class="text-xs font-bold text-slate-900">Hosted by ${toilet.providerName || 'Certified Host'}</p>
-                                <p class="text-[10px] text-emerald-800 font-mono">Direct UPI: ${toilet.upiId || 'host@okaxis'}</p>
+                                <p class="text-xs font-bold text-slate-900">Verified Public Sanitation Facility</p>
+                                <p class="text-[10px] text-emerald-800">🕒 Timings: ${toilet.timings || '06:00 AM - 11:00 PM'}</p>
                             </div>
                         </div>
-                        <a href="tel:${toilet.phone || '112'}" class="p-2 bg-white rounded-xl text-emerald-700 shadow-2xs">
-                            📞
-                        </a>
+                        <span class="px-2.5 py-1 bg-white text-emerald-700 font-bold text-[10px] rounded-xl border border-emerald-200">
+                            ● OPEN NOW
+                        </span>
                     </div>
 
                     <!-- Amenities -->
