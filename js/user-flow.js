@@ -1,132 +1,170 @@
 /**
- * TOIGO: User Flow Controller (Find, Use, Direct Host Pay, Report Issues & Hygiene Photo Reviews)
- * Strictly enforces login on protected actions while allowing guests to browse the public directory.
+ * TOIGO: User Flow Controller
+ * User Home: Approved Public Toilets Only (status === 'APPROVED' && active === true)
+ * Real GPS Geolocation, Distance Sorting, Live Route, Ratings & My Reports Screen.
  */
 
 class UserFlowController {
     constructor() {
         this.selectedToiletId = null;
-        this.activeBooking = null;
-        this.usageTimerInterval = null;
-        this.usageSeconds = 0;
-        this.uploadedReviewPhotos = [];
-        this.uploadedReportPhoto = null;
-        this.selectedRatingStars = 5;
-        this.selectedHygieneTag = '✨ Spotless Clean';
-        this.selectedReportCategory = 'Poor Hygiene';
         this.activeFilters = {
             query: '',
             type: 'all',
-            maxPrice: 50,
-            onlyOpen: false,
-            minRating: 0,
-            amenities: []
+            maxPrice: 50
         };
+        this.userLocation = { lat: 28.6315, lng: 77.2167 };
+        this.locationPermissionGranted = false;
+        this.uploadedReportPhoto = null;
+        this.selectedReportCategory = 'Dirty Toilet';
     }
 
     init() {
-        this.bindFilterEvents();
-        this.renderToiletList();
+        this.bindSearchAndFilters();
+        this.requestUserLocation();
     }
 
-    bindFilterEvents() {
+    // Geolocation Request & Handling
+    requestUserLocation() {
+        if (!navigator.geolocation) {
+            this.renderLocationNotice(false, 'Geolocation is not supported by your browser.');
+            this.loadAndRenderApprovedToilets();
+            return;
+        }
+
+        navigator.geolocation.getCurrentPosition(
+            (pos) => {
+                this.userLocation = {
+                    lat: pos.coords.latitude,
+                    lng: pos.coords.longitude
+                };
+                this.locationPermissionGranted = true;
+                if (window.toigoMap) {
+                    window.toigoMap.userCoords = this.userLocation;
+                    window.toigoMap.locateUser(false);
+                }
+                this.hideLocationNotice();
+                this.loadAndRenderApprovedToilets();
+            },
+            (err) => {
+                console.warn('Geolocation denied or failed:', err);
+                this.locationPermissionGranted = false;
+                this.renderLocationNotice(true, 'Location permission is required to find nearby public toilets.');
+                this.loadAndRenderApprovedToilets();
+            },
+            { enableHighAccuracy: true, timeout: 8000 }
+        );
+    }
+
+    renderLocationNotice(show, message) {
+        const noticeEl = document.getElementById('user-location-denied-banner');
+        if (!noticeEl) return;
+        if (show) {
+            noticeEl.classList.remove('hidden');
+            noticeEl.querySelector('#loc-denied-msg').innerText = message;
+        } else {
+            noticeEl.classList.add('hidden');
+        }
+    }
+
+    hideLocationNotice() {
+        document.getElementById('user-location-denied-banner')?.classList.add('hidden');
+    }
+
+    bindSearchAndFilters() {
         const searchInput = document.getElementById('search-toilet-input');
         if (searchInput) {
             searchInput.addEventListener('input', (e) => {
                 this.activeFilters.query = e.target.value.toLowerCase().trim();
-                this.applyFilters();
+                this.loadAndRenderApprovedToilets();
             });
         }
 
         document.querySelectorAll('.filter-type-pill').forEach(btn => {
-            btn.addEventListener('click', (e) => {
+            btn.addEventListener('click', () => {
                 document.querySelectorAll('.filter-type-pill').forEach(b => b.classList.remove('active-filter'));
                 btn.classList.add('active-filter');
                 this.activeFilters.type = btn.dataset.type;
-                this.applyFilters();
+                this.loadAndRenderApprovedToilets();
             });
         });
     }
 
-    applyFilters() {
-        const allToilets = window.db.getAllToilets();
-        const userLat = window.toigoMap.userCoords.lat;
-        const userLng = window.toigoMap.userCoords.lng;
+    /**
+     * CRITICAL FILTER RULE:
+     * Only toilets where status === 'APPROVED' and active === true must appear to users!
+     */
+    loadAndRenderApprovedToilets() {
+        const approvedToilets = window.db.getPublicApprovedToilets();
+        const userLat = this.userLocation.lat;
+        const userLng = this.userLocation.lng;
 
-        const filtered = allToilets.filter(t => {
+        // Apply Search & Category filters
+        const filtered = approvedToilets.filter(t => {
             if (this.activeFilters.query) {
                 const q = this.activeFilters.query;
                 const matchName = t.name.toLowerCase().includes(q);
                 const matchAddress = t.address.toLowerCase().includes(q);
-                const matchType = t.type.toLowerCase().includes(q);
+                const matchType = t.commodeType.toLowerCase().includes(q);
                 if (!matchName && !matchAddress && !matchType) return false;
             }
 
             if (this.activeFilters.type !== 'all') {
-                if (this.activeFilters.type === 'indian' && !t.type.includes('Indian')) return false;
-                if (this.activeFilters.type === 'western' && !t.type.includes('Western') && !t.type.includes('English')) return false;
+                if (this.activeFilters.type === 'indian' && !t.commodeType.includes('Indian')) return false;
+                if (this.activeFilters.type === 'western' && !t.commodeType.includes('Western') && !t.commodeType.includes('English')) return false;
                 if (this.activeFilters.type === 'free' && t.price > 0) return false;
-                if (this.activeFilters.type === 'accessible' && !t.amenities.some(a => a.toLowerCase().includes('wheelchair'))) return false;
-            }
-
-            if (this.activeFilters.maxPrice && t.price > this.activeFilters.maxPrice) {
-                return false;
+                if (this.activeFilters.type === 'accessible' && !t.accessibility.toLowerCase().includes('wheelchair')) return false;
             }
 
             return true;
         });
 
+        // Sort by nearest distance
         filtered.sort((a, b) => {
-            const distA = window.db.calculateDistance(userLat, userLng, a.lat, a.lng);
-            const distB = window.db.calculateDistance(userLat, userLng, b.lat, b.lng);
+            const distA = window.db.calculateDistance(userLat, userLng, a.latitude, a.longitude);
+            const distB = window.db.calculateDistance(userLat, userLng, b.latitude, b.longitude);
             return distA - distB;
         });
 
-        this.renderToiletList(filtered);
-        window.toigoMap.renderToiletMarkers(filtered);
+        this.renderToiletCards(filtered);
+        if (window.toigoMap) {
+            window.toigoMap.renderApprovedMarkers(filtered);
+        }
     }
 
-    renderToiletList(toilets = null) {
+    renderToiletCards(toilets) {
         const container = document.getElementById('toilet-cards-container');
         if (!container) return;
 
-        const list = toilets || window.db.getAllToilets();
-        const userLat = window.toigoMap.userCoords.lat;
-        const userLng = window.toigoMap.userCoords.lng;
-
-        if (list.length === 0) {
+        if (toilets.length === 0) {
             container.innerHTML = `
                 <div class="p-6 text-center bg-white rounded-2xl border border-slate-100 col-span-full">
                     <div class="w-12 h-12 bg-emerald-50 text-emerald-600 rounded-full flex items-center justify-center mx-auto mb-2 text-xl">
                         🔍
                     </div>
-                    <h3 class="font-bold text-slate-800 text-xs mb-1">No Toilets Found Nearby</h3>
-                    <p class="text-[11px] text-slate-400 mb-3">Try adjusting your filters or location search.</p>
-                    <button onclick="window.userFlow.resetFilters()" class="px-3 py-1.5 bg-slate-900 text-white text-xs font-bold rounded-xl">
-                        Reset Filters
-                    </button>
+                    <h3 class="font-bold text-slate-800 text-xs mb-1">No Approved Toilets Nearby</h3>
+                    <p class="text-[11px] text-slate-400">Try adjusting your search criteria or enabling GPS location.</p>
                 </div>
             `;
             return;
         }
 
-        const cardsHtml = list.map(t => {
-            const dist = window.db.calculateDistance(userLat, userLng, t.lat, t.lng);
+        const cardsHtml = toilets.map(t => {
+            const distKm = window.db.calculateDistance(this.userLocation.lat, this.userLocation.lng, t.latitude, t.longitude);
+            const distDisplay = distKm < 1 ? `${Math.round(distKm * 1000)} m` : `${distKm} km`;
             const isFree = t.price === 0 || t.isFree;
             const priceTag = isFree ? '<span class="font-bold text-emerald-700 bg-emerald-100 px-2 py-0.5 rounded-md text-[10px]">FREE</span>' : `<span class="font-black text-slate-900">₹${t.price}</span>`;
-            const walkingMinutes = Math.max(1, Math.round(dist * 12));
 
             return `
-                <div onclick="window.userFlow.selectToilet('${t.id}')" 
-                     class="bg-white/95 hover:bg-white rounded-2xl p-3 border border-slate-200/90 shadow-2xs hover:shadow-md transition cursor-pointer flex flex-col justify-between">
+                <div onclick="window.userFlow.selectToilet('${t.toiletId}')" 
+                     class="bg-white/95 hover:bg-white rounded-2xl p-3.5 border border-slate-200/90 shadow-2xs hover:shadow-md transition cursor-pointer flex flex-col justify-between">
                     
                     <div class="flex items-start justify-between gap-2">
                         <div class="flex-1 min-w-0">
                             <div class="flex items-center gap-1.5 mb-1">
-                                <span class="px-2 py-0.5 rounded-md text-[9px] font-extrabold ${t.type === 'Indian' ? 'bg-amber-100 text-amber-900' : 'bg-emerald-100 text-emerald-900'}">
-                                    ${t.type}
+                                <span class="px-2 py-0.5 rounded-md text-[9px] font-extrabold ${t.commodeType.includes('Indian') ? 'bg-amber-100 text-amber-900' : 'bg-emerald-100 text-emerald-900'}">
+                                    ${t.commodeType}
                                 </span>
-                                <span class="text-[10px] text-slate-400 font-medium">● Open</span>
+                                <span class="text-[10px] text-emerald-600 font-bold">● Open</span>
                             </div>
                             <h4 class="font-bold text-xs text-slate-900 truncate leading-tight">${t.name}</h4>
                             <p class="text-[10px] text-slate-500 truncate mt-0.5">${t.address}</p>
@@ -139,14 +177,14 @@ class UserFlowController {
                     </div>
 
                     <div class="mt-2.5 pt-2 border-t border-slate-100 flex items-center justify-between">
-                        <span class="text-[11px] font-bold text-slate-600 flex items-center gap-1">
-                            🚶 ${dist} km <span class="text-slate-400 font-normal">(${walkingMinutes}m)</span>
+                        <span class="text-[11px] font-bold text-slate-700 flex items-center gap-1">
+                            📍 ${distDisplay}
                         </span>
 
                         <div class="flex items-center gap-2">
                             <span class="text-xs">${priceTag}</span>
                             <button class="px-2.5 py-1 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-bold shadow-xs transition">
-                                View →
+                                Details →
                             </button>
                         </div>
                     </div>
@@ -157,30 +195,14 @@ class UserFlowController {
         container.innerHTML = cardsHtml;
     }
 
-    resetFilters() {
-        this.activeFilters = {
-            query: '',
-            type: 'all',
-            maxPrice: 50,
-            onlyOpen: false,
-            minRating: 0,
-            amenities: []
-        };
-        const searchInput = document.getElementById('search-toilet-input');
-        if (searchInput) searchInput.value = '';
-        document.querySelectorAll('.filter-type-pill').forEach((b, i) => {
-            if (i === 0) b.classList.add('active-filter');
-            else b.classList.remove('active-filter');
-        });
-        this.applyFilters();
-    }
-
     selectToilet(toiletId) {
         this.selectedToiletId = toiletId;
         const toilet = window.db.getToiletById(toiletId);
         if (!toilet) return;
 
-        window.toigoMap.drawRouteToToilet(toilet);
+        if (window.toigoMap) {
+            window.toigoMap.drawRoute(toilet.latitude, toilet.longitude);
+        }
         this.openToiletDetailModal(toilet);
     }
 
@@ -188,54 +210,35 @@ class UserFlowController {
         const modal = document.getElementById('toilet-detail-modal');
         if (!modal) return;
 
-        const userLat = window.toigoMap.userCoords.lat;
-        const userLng = window.toigoMap.userCoords.lng;
-        const dist = window.db.calculateDistance(userLat, userLng, toilet.lat, toilet.lng);
-        const walkingMinutes = Math.max(1, Math.round(dist * 12));
+        const distKm = window.db.calculateDistance(this.userLocation.lat, this.userLocation.lng, toilet.latitude, toilet.longitude);
+        const distDisplay = distKm < 1 ? `${Math.round(distKm * 1000)} m` : `${distKm} km`;
+        const walkingMinutes = Math.max(1, Math.round(distKm * 12));
 
-        const amenitiesListHtml = (toilet.amenities || []).map(a => `
+        const facilitiesHtml = (toilet.facilities || []).map(f => `
             <span class="inline-flex items-center gap-1 px-2.5 py-1 bg-slate-50 border border-slate-200 text-slate-700 text-xs rounded-xl font-medium">
-                <span class="text-emerald-600">✓</span> ${a}
+                <span class="text-emerald-600 font-bold">✓</span> ${f}
             </span>
         `).join('');
 
-        const imagesHtml = (toilet.images || []).map(img => `
+        const imagesHtml = (toilet.photos || []).map(img => `
             <div class="w-full h-48 rounded-2xl overflow-hidden bg-slate-100 flex-shrink-0 shadow-inner">
                 <img src="${img}" class="w-full h-full object-cover" />
             </div>
         `).join('');
 
-        // Fetch citizen reviews with uploaded photos
-        const reviews = window.db.getReviewsForToilet(toilet.id);
+        const reviews = window.db.getReviewsForToilet(toilet.toiletId);
         const reviewsHtml = reviews.length === 0 ? `
-            <p class="text-xs text-slate-400 p-3 bg-slate-50 rounded-xl text-center">No citizen photo reviews yet. Be the first to review!</p>
+            <p class="text-xs text-slate-400 p-3 bg-slate-50 rounded-xl text-center">No reviews yet. Be the first citizen to rate!</p>
         ` : reviews.map(r => `
-            <div class="p-3 bg-slate-50 border border-slate-200/80 rounded-2xl space-y-2">
+            <div class="p-3 bg-slate-50 border border-slate-200/80 rounded-2xl space-y-1.5">
                 <div class="flex items-center justify-between">
-                    <div class="flex items-center gap-2">
-                        <img src="${r.userAvatar}" class="w-6 h-6 rounded-full object-cover" />
-                        <div>
-                            <span class="font-bold text-xs text-slate-900">${r.userName}</span>
-                            <span class="text-[10px] text-slate-400 ml-1.5">${r.date}</span>
-                        </div>
-                    </div>
+                    <span class="font-bold text-xs text-slate-900">${r.userName}</span>
                     <span class="text-xs text-amber-500 font-bold">★ ${r.rating}</span>
                 </div>
-                <div class="flex items-center gap-1.5">
-                    <span class="px-2 py-0.5 rounded-md text-[10px] font-bold bg-emerald-100 text-emerald-800">${r.hygieneTag || 'Clean'}</span>
-                </div>
+                <span class="px-2 py-0.5 rounded-md text-[10px] font-bold bg-emerald-100 text-emerald-800">${r.hygieneTag}</span>
                 <p class="text-xs text-slate-600">${r.comment}</p>
-                ${r.photos && r.photos.length > 0 ? `
-                    <div class="flex gap-2 mt-1 overflow-x-auto">
-                        ${r.photos.map(p => `
-                            <img src="${p}" class="w-16 h-16 rounded-xl object-cover border border-slate-200 shadow-2xs cursor-pointer" onclick="window.open('${p}', '_blank')" />
-                        `).join('')}
-                    </div>
-                ` : ''}
             </div>
         `).join('');
-
-        const isFree = toilet.price === 0 || toilet.isFree;
 
         const content = `
             <div class="relative max-h-[88vh] overflow-y-auto">
@@ -249,7 +252,7 @@ class UserFlowController {
                     </div>
                     <div class="absolute bottom-4 left-4 bg-black/60 backdrop-blur-md text-white px-3 py-1 rounded-full text-xs font-bold flex items-center gap-1.5">
                         <span class="text-amber-400">★ ${toilet.rating}</span>
-                        <span class="text-slate-300">(${toilet.totalReviews || 0} citizen reviews)</span>
+                        <span class="text-slate-300">(${toilet.totalReviews} reviews)</span>
                     </div>
                 </div>
 
@@ -257,15 +260,14 @@ class UserFlowController {
                     <div>
                         <div class="flex items-center justify-between mb-1">
                             <div class="flex items-center gap-2">
-                                <span class="px-2.5 py-0.5 rounded-full text-[11px] font-bold ${toilet.type === 'Indian' ? 'bg-amber-100 text-amber-800' : 'bg-emerald-100 text-emerald-800'}">
-                                    ${toilet.type}
+                                <span class="px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-emerald-100 text-emerald-800">
+                                    ${toilet.commodeType}
                                 </span>
-                                <span class="px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-blue-100 text-blue-800">🛡️ Verified Host</span>
+                                <span class="px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-blue-100 text-blue-800">🛡️ Verified Approved</span>
                             </div>
 
-                            <!-- Report issue button (Protected Action) -->
-                            <button onclick="window.userFlow.openReportModal('${toilet.id}')" class="text-xs text-red-500 hover:text-red-700 font-bold flex items-center gap-1">
-                                🚩 Report Problem
+                            <button onclick="window.userFlow.openReportModal('${toilet.toiletId}')" class="text-xs text-red-500 hover:text-red-700 font-bold flex items-center gap-1">
+                                🚩 Report Issue
                             </button>
                         </div>
                         <h2 class="text-xl font-black text-slate-900 font-heading">${toilet.name}</h2>
@@ -278,66 +280,51 @@ class UserFlowController {
                     <div class="grid grid-cols-3 gap-2 p-3 bg-slate-50 rounded-2xl border border-slate-100 text-center text-xs">
                         <div>
                             <p class="text-[10px] text-slate-400 uppercase font-bold">Distance</p>
-                            <p class="font-extrabold text-slate-900 mt-0.5">${dist} km</p>
-                            <span class="text-[10px] text-emerald-600 font-semibold">~${walkingMinutes} min walk</span>
+                            <p class="font-extrabold text-slate-900 mt-0.5">${distDisplay}</p>
+                            <span class="text-[10px] text-emerald-600 font-semibold">~${walkingMinutes}m walk</span>
                         </div>
                         <div class="border-x border-slate-200">
-                            <p class="text-[10px] text-slate-400 uppercase font-bold">Hygiene Score</p>
-                            <p class="font-extrabold text-emerald-600 mt-0.5">${toilet.cleanlinessScore || '98%'}</p>
-                            <span class="text-[10px] text-slate-500">Live verified</span>
+                            <p class="text-[10px] text-slate-400 uppercase font-bold">Hygiene</p>
+                            <p class="font-extrabold text-emerald-600 mt-0.5">${toilet.cleanlinessScore}</p>
+                            <span class="text-[10px] text-slate-500">${toilet.hygieneStatus}</span>
                         </div>
                         <div>
-                            <p class="text-[10px] text-slate-400 uppercase font-bold">Direct Entry Fee</p>
-                            <p class="font-black text-slate-900 mt-0.5">${isFree ? 'FREE' : '₹' + toilet.price}</p>
-                            <span class="text-[10px] text-emerald-700 font-semibold">Pay direct to Host</span>
+                            <p class="text-[10px] text-slate-400 uppercase font-bold">Fee</p>
+                            <p class="font-black text-slate-900 mt-0.5">${toilet.price === 0 ? 'FREE' : '₹' + toilet.price}</p>
+                            <span class="text-[10px] text-emerald-700 font-semibold">Pay per use</span>
                         </div>
                     </div>
 
-                    <!-- Facility Status -->
-                    <div class="p-3 bg-emerald-50/70 border border-emerald-100 rounded-2xl flex items-center justify-between">
-                        <div class="flex items-center gap-2.5">
-                            <div class="w-9 h-9 rounded-xl bg-emerald-600 text-white font-bold flex items-center justify-center text-xs shadow-xs">
-                                🚻
-                            </div>
-                            <div>
-                                <p class="text-xs font-bold text-slate-900">Verified Public Sanitation Facility</p>
-                                <p class="text-[10px] text-emerald-800">🕒 Timings: ${toilet.timings || '06:00 AM - 11:00 PM'}</p>
-                            </div>
-                        </div>
-                        <span class="px-2.5 py-1 bg-white text-emerald-700 font-bold text-[10px] rounded-xl border border-emerald-200">
-                            ● OPEN NOW
-                        </span>
-                    </div>
-
-                    <!-- Amenities -->
+                    <!-- Facilities & Accessibility -->
                     <div>
-                        <h4 class="text-xs font-extrabold text-slate-800 uppercase tracking-wider mb-2">Facility Amenities</h4>
-                        <div class="flex flex-wrap gap-1.5">
-                            ${amenitiesListHtml}
+                        <h4 class="text-xs font-extrabold text-slate-800 uppercase tracking-wider mb-2">Facilities Available</h4>
+                        <div class="flex flex-wrap gap-1.5 mb-2">
+                            ${facilitiesHtml}
                         </div>
+                        <p class="text-xs text-slate-600 bg-slate-50 p-2.5 rounded-xl border border-slate-200">
+                            ♿ <b>Accessibility:</b> ${toilet.accessibility}
+                        </p>
                     </div>
 
-                    <!-- Citizen Hygiene Reviews & Uploaded Photos -->
+                    <!-- Reviews -->
                     <div>
                         <div class="flex items-center justify-between mb-2">
-                            <h4 class="text-xs font-extrabold text-slate-800 uppercase tracking-wider">Citizen Hygiene Reviews & Photos (${reviews.length})</h4>
+                            <h4 class="text-xs font-extrabold text-slate-800 uppercase tracking-wider">Citizen Reviews (${reviews.length})</h4>
+                            <button onclick="window.userFlow.openReviewSubmitModal('${toilet.toiletId}')" class="text-xs text-emerald-600 font-bold hover:underline">
+                                + Write Review
+                            </button>
                         </div>
-                        <div class="space-y-2.5">
+                        <div class="space-y-2">
                             ${reviewsHtml}
                         </div>
                     </div>
 
-                    <!-- Action Buttons (Protected Actions) -->
+                    <!-- Navigation Action Button -->
                     <div class="pt-2 flex gap-2">
-                        <button onclick="window.userFlow.openGoogleMapsRoute(${toilet.lat}, ${toilet.lng})" 
-                                class="py-3 px-4 bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold rounded-2xl text-xs flex items-center justify-center gap-1 transition">
-                            🧭 Google Maps
-                        </button>
-
-                        <button onclick="window.userFlow.startToiletSession('${toilet.id}')" 
-                                class="flex-1 py-3 px-6 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 text-white font-black rounded-2xl text-xs sm:text-sm shadow-lg shadow-emerald-600/25 flex items-center justify-center gap-2 transition">
-                            <span>Use & Pay (${isFree ? 'Free' : '₹' + toilet.price})</span>
-                            <span>⚡</span>
+                        <button onclick="window.userFlow.startNavigationTo(${toilet.latitude}, ${toilet.longitude})" 
+                                class="flex-1 py-3 px-4 bg-emerald-600 hover:bg-emerald-700 text-white font-black rounded-2xl text-sm shadow-lg shadow-emerald-600/25 flex items-center justify-center gap-2 transition">
+                            <span>🧭 Start Navigation (Google Maps)</span>
+                            <span>→</span>
                         </button>
                     </div>
                 </div>
@@ -349,283 +336,18 @@ class UserFlowController {
     }
 
     closeToiletDetailModal() {
-        const modal = document.getElementById('toilet-detail-modal');
-        if (modal) modal.classList.add('hidden');
-        window.toigoMap.clearRoute();
+        document.getElementById('toilet-detail-modal')?.classList.add('hidden');
     }
 
-    // Google Maps Navigation - Protected Action (Requires verified login)
-    openGoogleMapsRoute(lat, lng) {
-        if (!window.auth.isLoggedIn()) {
-            this.closeToiletDetailModal();
-            window.auth.requireLogin('user', () => {
-                window.open(`https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}`, '_blank');
-            });
-            return;
-        }
+    startNavigationTo(lat, lng) {
         window.open(`https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}`, '_blank');
     }
 
-    // Start Toilet Session (Strict Login Enforced!)
-    startToiletSession(toiletId) {
-        const toilet = window.db.getToiletById(toiletId);
-        if (!toilet) return;
-
-        if (!window.auth.isLoggedIn()) {
-            this.closeToiletDetailModal();
-            window.auth.requireLogin('user', () => {
-                this.openQrScannerModal(toilet);
-            });
-            return;
-        }
-
-        this.closeToiletDetailModal();
-        this.openQrScannerModal(toilet);
-    }
-
-    openQrScannerModal(toilet) {
-        const qrModal = document.getElementById('qr-scanner-modal');
-        if (!qrModal) return;
-
-        qrModal.querySelector('#qr-target-toilet-name').innerText = toilet.name;
-        qrModal.querySelector('#qr-target-price').innerText = toilet.price === 0 ? 'FREE ENTRY' : `Direct Host Entry Fee: ₹${toilet.price}`;
-        qrModal.classList.remove('hidden');
-
-        this.activeBooking = {
-            toiletId: toilet.id,
-            price: toilet.price,
-            name: toilet.name,
-            providerId: toilet.providerId,
-            upiId: toilet.upiId,
-            qrCodeImage: toilet.qrCodeImage
-        };
-    }
-
-    closeQrScannerModal() {
-        const qrModal = document.getElementById('qr-scanner-modal');
-        if (qrModal) qrModal.classList.add('hidden');
-    }
-
-    simulateDoorQrScanned() {
-        this.closeQrScannerModal();
-        window.app.showToast('Door QR Verified! Restroom latch unlocked.', 'success');
-        this.startUsageTimer();
-    }
-
-    startUsageTimer() {
-        const timerModal = document.getElementById('usage-timer-modal');
-        if (!timerModal) return;
-
-        this.usageSeconds = 0;
-        clearInterval(this.usageTimerInterval);
-
-        const toilet = window.db.getToiletById(this.activeBooking.toiletId);
-        timerModal.querySelector('#usage-toilet-title').innerText = toilet ? toilet.name : 'Restroom Active';
-        timerModal.classList.remove('hidden');
-
-        this.usageTimerInterval = setInterval(() => {
-            this.usageSeconds++;
-            const mins = String(Math.floor(this.usageSeconds / 60)).padStart(2, '0');
-            const secs = String(this.usageSeconds % 60).padStart(2, '0');
-            const displayEl = document.getElementById('usage-timer-display');
-            if (displayEl) displayEl.innerText = `${mins}:${secs}`;
-        }, 1000);
-    }
-
-    finishToiletSession() {
-        clearInterval(this.usageTimerInterval);
-        const timerModal = document.getElementById('usage-timer-modal');
-        if (timerModal) timerModal.classList.add('hidden');
-
-        const toilet = window.db.getToiletById(this.activeBooking.toiletId);
-        if (!toilet) return;
-
-        if (toilet.price === 0 || toilet.isFree) {
-            window.db.createBooking({
-                toiletId: toilet.id,
-                userId: window.auth.getCurrentUser()?.id,
-                amount: 0,
-                paymentMethod: 'Free Community Access'
-            });
-            this.openRatingModal(toilet.id);
-            return;
-        }
-
-        this.openPaymentCheckoutModal(toilet);
-    }
-
-    // Direct Host Payment Checkout Modal
-    openPaymentCheckoutModal(toilet) {
-        const payModal = document.getElementById('payment-checkout-modal');
-        if (!payModal) return;
-
-        const user = window.auth.getCurrentUser() || { walletBalance: 100 };
-        const totalToPay = toilet.price;
-
-        payModal.querySelector('#pay-toilet-name').innerText = toilet.name;
-        payModal.querySelector('#pay-base-price').innerText = `₹${totalToPay.toFixed(2)}`;
-        payModal.querySelector('#pay-total-amount').innerText = `₹${totalToPay.toFixed(2)}`;
-        payModal.querySelector('#pay-wallet-balance').innerText = `₹${user.walletBalance || 0}`;
-
-        // Direct Host QR Code Image & UPI ID
-        const hostUpi = toilet.upiId || 'host@okaxis';
-        const upiLink = `upi://pay?pa=${encodeURIComponent(hostUpi)}&pn=${encodeURIComponent(toilet.name)}&am=${totalToPay}&cu=INR`;
-        const qrSrc = toilet.qrCodeImage || `https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent(upiLink)}`;
-
-        const qrImg = payModal.querySelector('#pay-upi-qr-img');
-        if (qrImg) qrImg.src = qrSrc;
-
-        const hostUpiLabel = payModal.querySelector('#pay-host-upi-label');
-        if (hostUpiLabel) hostUpiLabel.innerText = `Host UPI: ${hostUpi}`;
-
-        payModal.classList.remove('hidden');
-    }
-
-    closePaymentCheckoutModal() {
-        const payModal = document.getElementById('payment-checkout-modal');
-        if (payModal) payModal.classList.add('hidden');
-    }
-
-    executePayment(method) {
-        const toilet = window.db.getToiletById(this.activeBooking.toiletId);
-        const user = window.auth.getCurrentUser();
-
-        if (method === 'TOIGO Wallet') {
-            if ((user?.walletBalance || 0) < toilet.price) {
-                window.app.showToast('Insufficient wallet balance. Please use direct UPI or Cash.', 'error');
-                return;
-            }
-        }
-
-        const booking = window.db.createBooking({
-            toiletId: toilet.id,
-            userId: user?.id,
-            amount: toilet.price,
-            paymentMethod: method
-        });
-
-        this.closePaymentCheckoutModal();
-
-        if (window.confetti) {
-            window.confetti({ particleCount: 90, spread: 80, origin: { y: 0.6 } });
-        }
-
-        window.app.showToast(`Direct payment of ₹${toilet.price} sent to Host via ${method}!`, 'success');
-
-        // Open Rating & Hygiene Photo Review Modal
-        this.openRatingModal(toilet.id, booking.id);
-    }
-
-    // Rating & Hygiene Photo Feedback Modal
-    openRatingModal(toiletId, bookingId = null) {
-        // Enforce user login for submitting reviews
-        if (!window.auth.isLoggedIn()) {
-            window.auth.requireLogin('user', () => this.openRatingModal(toiletId, bookingId));
-            return;
-        }
-
-        const ratingModal = document.getElementById('rating-feedback-modal');
-        if (!ratingModal) return;
-
-        ratingModal.dataset.toiletId = toiletId;
-        ratingModal.dataset.bookingId = bookingId || '';
-        this.uploadedReviewPhotos = [];
-        this.selectedRatingStars = 5;
-        this.selectedHygieneTag = '✨ Spotless Clean';
-
-        const previewContainer = document.getElementById('review-photo-preview');
-        if (previewContainer) previewContainer.innerHTML = '';
-
-        this.updateStarUI(5);
-        ratingModal.classList.remove('hidden');
-    }
-
-    setReviewRating(stars) {
-        this.selectedRatingStars = stars;
-        this.updateStarUI(stars);
-    }
-
-    updateStarUI(stars) {
-        document.querySelectorAll('.feedback-star-btn').forEach((el, index) => {
-            if (index < stars) {
-                el.classList.add('text-amber-400');
-                el.classList.remove('text-slate-300');
-            } else {
-                el.classList.remove('text-amber-400');
-                el.classList.add('text-slate-300');
-            }
-        });
-    }
-
-    setHygieneTag(tag) {
-        this.selectedHygieneTag = tag;
-        document.querySelectorAll('.hygiene-tag-pill').forEach(el => {
-            if (el.dataset.tag === tag) {
-                el.className = 'hygiene-tag-pill px-2.5 py-1 rounded-xl text-xs font-bold bg-emerald-600 text-white shadow-2xs transition';
-            } else {
-                el.className = 'hygiene-tag-pill px-2.5 py-1 rounded-xl text-xs font-bold bg-slate-100 text-slate-600 hover:bg-slate-200 transition';
-            }
-        });
-    }
-
-    handleReviewPhotoUpload(event) {
-        const files = event.target.files;
-        if (!files || files.length === 0) return;
-
-        const previewContainer = document.getElementById('review-photo-preview');
-
-        Array.from(files).forEach(file => {
-            const reader = new FileReader();
-            reader.onload = (e) => {
-                const base64 = e.target.result;
-                this.uploadedReviewPhotos.push(base64);
-
-                if (previewContainer) {
-                    const thumb = document.createElement('div');
-                    thumb.className = 'relative w-16 h-16 rounded-xl overflow-hidden border border-slate-200 shadow-2xs flex-shrink-0';
-                    thumb.innerHTML = `
-                        <img src="${base64}" class="w-full h-full object-cover" />
-                        <button type="button" onclick="this.parentElement.remove()" class="absolute top-0.5 right-0.5 w-4 h-4 rounded-full bg-red-600 text-white text-[9px] flex items-center justify-center">✕</button>
-                    `;
-                    previewContainer.appendChild(thumb);
-                }
-            };
-            reader.readAsDataURL(file);
-        });
-
-        window.app.showToast('Hygiene condition photo attached!', 'info');
-    }
-
-    submitRatingFeedback() {
-        const ratingModal = document.getElementById('rating-feedback-modal');
-        if (!ratingModal) return;
-
-        const toiletId = ratingModal.dataset.toiletId;
-        const comment = document.getElementById('review-comment-input')?.value.trim() || 'Hygienic and maintained restroom.';
-        const user = window.auth.getCurrentUser() || { name: 'Verified Citizen' };
-
-        window.db.addReview({
-            toiletId,
-            userId: user.id || 'usr-guest',
-            userName: user.name || 'Citizen User',
-            userAvatar: user.avatar,
-            rating: this.selectedRatingStars,
-            hygieneTag: this.selectedHygieneTag,
-            comment,
-            photos: this.uploadedReviewPhotos
-        });
-
-        ratingModal.classList.add('hidden');
-        window.app.showToast('Hygiene review & photo published! Thank you 🌟', 'success');
-
-        this.applyFilters();
-    }
-
-    // ================= REPORT TOILET ISSUE SYSTEM =================
+    // ================= REPORT ISSUE MODAL =================
     openReportModal(toiletId) {
-        if (!window.auth.isLoggedIn()) {
-            this.closeToiletDetailModal();
-            window.auth.requireLogin('user', () => this.openReportModal(toiletId));
+        const user = window.auth.getCurrentUser();
+        if (!user) {
+            window.app.openUserLoginModal();
             return;
         }
 
@@ -636,72 +358,153 @@ class UserFlowController {
         if (!modal) return;
 
         modal.dataset.toiletId = toiletId;
-        document.getElementById('report-toilet-name-label').innerText = toilet.name;
-        document.getElementById('report-toilet-address-label').innerText = toilet.address;
-        document.getElementById('report-desc-input').value = '';
+        modal.querySelector('#report-target-toilet-name').innerText = toilet.name;
+        modal.querySelector('#report-desc-input').value = '';
         this.uploadedReportPhoto = null;
-        document.getElementById('report-photo-preview-img').classList.add('hidden');
+        document.getElementById('report-photo-preview')?.classList.add('hidden');
 
         modal.classList.remove('hidden');
     }
 
     closeReportModal() {
-        const modal = document.getElementById('report-toilet-modal');
-        if (modal) modal.classList.add('hidden');
+        document.getElementById('report-toilet-modal')?.classList.add('hidden');
     }
 
-    setReportCategory(category) {
-        this.selectedReportCategory = category;
-        document.querySelectorAll('.report-category-pill').forEach(btn => {
-            if (btn.dataset.category === category) {
-                btn.className = 'report-category-pill px-3 py-1.5 rounded-xl text-xs font-bold bg-red-600 text-white shadow-xs transition';
+    setReportCategory(cat) {
+        this.selectedReportCategory = cat;
+        document.querySelectorAll('.report-cat-btn').forEach(btn => {
+            if (btn.dataset.cat === cat) {
+                btn.className = 'report-cat-btn px-3 py-1.5 rounded-xl text-xs font-bold bg-red-600 text-white shadow-xs';
             } else {
-                btn.className = 'report-category-pill px-3 py-1.5 rounded-xl text-xs font-bold bg-slate-100 text-slate-700 hover:bg-slate-200 transition';
+                btn.className = 'report-cat-btn px-3 py-1.5 rounded-xl text-xs font-semibold bg-slate-100 text-slate-700';
             }
         });
     }
 
-    handleReportPhotoUpload(event) {
+    handleReportPhoto(event) {
         const file = event.target.files[0];
         if (!file) return;
 
         const reader = new FileReader();
         reader.onload = (e) => {
             this.uploadedReportPhoto = e.target.result;
-            const imgEl = document.getElementById('report-photo-preview-img');
-            if (imgEl) {
-                imgEl.src = e.target.result;
-                imgEl.classList.remove('hidden');
+            const preview = document.getElementById('report-photo-preview');
+            if (preview) {
+                preview.src = e.target.result;
+                preview.classList.remove('hidden');
             }
-            window.app.showToast('Report photo attached!', 'info');
         };
         reader.readAsDataURL(file);
     }
 
     submitToiletReport() {
-        const modal = document.getElementById('report-toilet-modal');
-        if (!modal) return;
-
-        const toiletId = modal.dataset.toiletId;
-        const description = document.getElementById('report-desc-input').value.trim();
         const user = window.auth.getCurrentUser();
+        if (!user) return;
 
-        if (!description) {
-            window.app.showToast('Please describe the issue or problem.', 'error');
+        const modal = document.getElementById('report-toilet-modal');
+        const toiletId = modal.dataset.toiletId;
+        const desc = document.getElementById('report-desc-input').value.trim();
+
+        if (!desc) {
+            window.app.showToast('Please describe the problem.', 'error');
             return;
         }
 
         window.db.addReport({
-            toiletId,
-            userId: user?.id,
-            userName: user?.name,
+            userId: user.userId,
+            userName: user.name,
+            toiletId: toiletId,
             category: this.selectedReportCategory,
-            description,
+            description: desc,
             photo: this.uploadedReportPhoto
         });
 
         this.closeReportModal();
-        window.app.showToast('Issue reported successfully. Admin & Host will inspect immediately.', 'success');
+        window.app.showToast('Report submitted! You can track status in My Reports.', 'success');
+    }
+
+    // ================= MY REPORTS SCREEN =================
+    renderMyReports() {
+        const user = window.auth.getCurrentUser();
+        const container = document.getElementById('user-my-reports-list');
+        if (!container) return;
+
+        if (!user) {
+            container.innerHTML = `<p class="text-xs text-slate-400 text-center p-6">Please sign in to view your reports.</p>`;
+            return;
+        }
+
+        const myReports = window.db.getUserReports(user.userId);
+        if (myReports.length === 0) {
+            container.innerHTML = `
+                <div class="p-8 text-center bg-white rounded-3xl border border-slate-200">
+                    <span class="text-3xl block mb-2">🚩</span>
+                    <h3 class="font-bold text-slate-800 text-sm">No Reports Submitted</h3>
+                    <p class="text-xs text-slate-500 mt-1">When you report a dirty or damaged washroom, your ticket will appear here.</p>
+                </div>
+            `;
+            return;
+        }
+
+        container.innerHTML = myReports.map(r => {
+            let statusBadge = 'bg-amber-100 text-amber-800';
+            if (r.status === 'RESOLVED') statusBadge = 'bg-emerald-100 text-emerald-800';
+            if (r.status === 'REJECTED') statusBadge = 'bg-red-100 text-red-800';
+            if (r.status === 'UNDER REVIEW') statusBadge = 'bg-blue-100 text-blue-800';
+
+            return `
+                <div class="bg-white rounded-2xl p-4 border border-slate-200 shadow-2xs space-y-2">
+                    <div class="flex items-start justify-between">
+                        <div>
+                            <span class="px-2 py-0.5 rounded-full text-[10px] font-bold ${statusBadge}">
+                                ● ${r.status}
+                            </span>
+                            <h4 class="font-bold text-sm text-slate-900 mt-1">${r.category}: ${r.toiletName}</h4>
+                            <p class="text-[10px] text-slate-400">${new Date(r.createdAt).toLocaleString()}</p>
+                        </div>
+                    </div>
+
+                    <p class="text-xs text-slate-600 bg-slate-50 p-2.5 rounded-xl border border-slate-100">${r.description}</p>
+
+                    ${r.photo ? `
+                        <div class="flex gap-2">
+                            <img src="${r.photo}" class="w-14 h-14 rounded-lg object-cover border border-slate-200 cursor-pointer" onclick="window.open('${r.photo}', '_blank')" />
+                        </div>
+                    ` : ''}
+
+                    ${r.adminResponse ? `
+                        <div class="p-2.5 bg-emerald-50 rounded-xl border border-emerald-100 text-xs">
+                            <span class="font-bold text-emerald-900">Admin Response:</span>
+                            <p class="text-emerald-800 mt-0.5">${r.adminResponse}</p>
+                        </div>
+                    ` : ''}
+                </div>
+            `;
+        }).join('');
+    }
+
+    // Write Review Modal
+    openReviewSubmitModal(toiletId) {
+        const user = window.auth.getCurrentUser();
+        if (!user) {
+            window.app.openUserLoginModal();
+            return;
+        }
+        const comment = prompt('Enter your hygiene feedback / review:');
+        if (comment) {
+            window.db.addReview({
+                toiletId,
+                userId: user.userId,
+                userName: user.name,
+                rating: 5,
+                hygieneTag: '✨ Spotless Clean',
+                comment: comment
+            });
+            window.app.showToast('Review submitted! Thank you.', 'success');
+            const toilet = window.db.getToiletById(toiletId);
+            if (toilet) this.openToiletDetailModal(toilet);
+            this.loadAndRenderApprovedToilets();
+        }
     }
 }
 

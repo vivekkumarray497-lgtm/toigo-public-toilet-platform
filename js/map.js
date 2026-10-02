@@ -10,9 +10,8 @@ class MapController {
         this.routeLayer = null;
         this.currentTileLayer = null;
         this.mapType = 'google_streets'; // 'google_streets' | 'google_satellite' | 'osm'
-        this.userCoords = { lat: 28.6315, lng: 77.2167 }; // Default Central Delhi
+        this.userCoords = { lat: 28.6315, lng: 77.2167 };
         this.isLocating = false;
-        this.hasSeededLive = false;
     }
 
     init(containerId = 'map-view') {
@@ -24,38 +23,29 @@ class MapController {
         const mapEl = document.getElementById(containerId);
         if (!mapEl) return;
 
-        // Create Leaflet map container
         this.map = L.map(containerId, {
             zoomControl: false,
             attributionControl: false
         }).setView([this.userCoords.lat, this.userCoords.lng], 16);
 
-        // Add Google Maps HD Street Layer (No watermarks, clean authentic Google Maps UI!)
         this.setMapType('google_streets');
 
-        // Markers and Route groups
         this.markersLayer = L.layerGroup().addTo(this.map);
         this.routeLayer = L.layerGroup().addTo(this.map);
 
-        // Add User Location indicator
         this.updateUserMarker();
-
-        // Auto-detect GPS location
-        this.locateUser(false);
+        this.renderApprovedMarkers();
     }
 
-    // Switch between Google Street and Google Satellite
     setMapType(type) {
         this.mapType = type;
         if (this.currentTileLayer && this.map) {
             this.map.removeLayer(this.currentTileLayer);
         }
 
-        let tileUrl = 'https://{s}.google.com/vt/lyrs=m&x={x}&y={y}&z={z}'; // Google Street Maps
+        let tileUrl = 'https://{s}.google.com/vt/lyrs=m&x={x}&y={y}&z={z}';
         if (type === 'google_satellite') {
-            tileUrl = 'https://{s}.google.com/vt/lyrs=s,h&x={x}&y={y}&z={z}'; // Google Hybrid Satellite
-        } else if (type === 'osm') {
-            tileUrl = 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png';
+            tileUrl = 'https://{s}.google.com/vt/lyrs=s,h&x={x}&y={y}&z={z}';
         }
 
         this.currentTileLayer = L.tileLayer(tileUrl, {
@@ -84,8 +74,6 @@ class MapController {
 
     locateUser(panToUser = true) {
         if (!navigator.geolocation) {
-            console.log('Geolocation not supported, using default coordinates.');
-            this.renderToiletMarkers();
             return;
         }
 
@@ -102,26 +90,18 @@ class MapController {
                 this.isLocating = false;
                 if (locateBtn) locateBtn.classList.remove('animate-spin');
 
-                if (!this.hasSeededLive) {
-                    window.db.seedAroundUserLocation(this.userCoords.lat, this.userCoords.lng);
-                    this.hasSeededLive = true;
-                }
-
                 this.updateUserMarker();
-                this.renderToiletMarkers();
+                this.renderApprovedMarkers();
 
                 if (panToUser && this.map) {
                     this.map.flyTo([this.userCoords.lat, this.userCoords.lng], 16, { animate: true, duration: 1.2 });
                 }
 
-                window.app?.showToast('GPS Location updated! Showing nearest washrooms.', 'success');
-                window.userFlow?.renderToiletList();
+                window.app?.showToast('GPS Location synchronized!', 'success');
             },
             (err) => {
-                console.warn('Geolocation failed or denied:', err.message);
                 this.isLocating = false;
                 if (locateBtn) locateBtn.classList.remove('animate-spin');
-                this.renderToiletMarkers();
             },
             { enableHighAccuracy: true, timeout: 8000 }
         );
@@ -133,7 +113,6 @@ class MapController {
         if (this.userMarker) {
             this.userMarker.setLatLng([this.userCoords.lat, this.userCoords.lng]);
         } else {
-            // Google Maps authentic blue pulsing GPS location dot
             const userIcon = L.divIcon({
                 className: 'custom-user-pin',
                 html: `
@@ -152,110 +131,66 @@ class MapController {
         }
     }
 
-    renderToiletMarkers(filteredToilets = null) {
+    // STRICT: Only renders approved active toilets on map for users
+    renderApprovedMarkers(toilets = null) {
         if (!this.map || !this.markersLayer) return;
-
         this.markersLayer.clearLayers();
-        const toilets = filteredToilets || window.db.getAllToilets();
 
-        toilets.forEach((toilet) => {
-            if (!toilet.lat || !toilet.lng) return;
+        const list = toilets || window.db.getPublicApprovedToilets();
 
-            const isFree = toilet.price === 0 || toilet.isFree;
-            const priceBadge = isFree ? 'FREE' : `₹${toilet.price}`;
-            
-            // Clean Google Maps style color badges
-            let badgeBg = 'bg-emerald-600';
-            let glyph = '🚻';
-            if (toilet.type === 'Indian') {
-                badgeBg = 'bg-amber-600';
-                glyph = '🇮🇳';
-            } else if (toilet.type.includes('Both')) {
-                badgeBg = 'bg-indigo-600';
-                glyph = '✨';
-            }
+        list.forEach(toilet => {
+            const isIndian = toilet.commodeType.includes('Indian');
+            const pinColor = isIndian ? 'bg-amber-500' : 'bg-emerald-600';
+            const pinIcon = isIndian ? '🇮🇳' : '🚽';
 
-            const customMarkerHtml = `
-                <div class="toilet-marker-pill cursor-pointer flex flex-col items-center group">
-                    <div class="flex items-center gap-1.5 px-2.5 py-1 rounded-full ${badgeBg} text-white text-xs font-black shadow-xl border-2 border-white">
-                        <span>${glyph}</span>
-                        <span>${priceBadge}</span>
-                        <span class="text-[9px] bg-black/20 px-1 py-0.2 rounded font-bold">★${toilet.rating}</span>
+            const customIcon = L.divIcon({
+                className: 'custom-toilet-marker',
+                html: `
+                    <div class="cursor-pointer transform hover:scale-110 transition duration-200">
+                        <div class="relative flex items-center justify-center">
+                            <div class="w-10 h-10 rounded-2xl ${pinColor} text-white flex items-center justify-center text-lg shadow-xl shadow-slate-900/30 border-2 border-white">
+                                ${pinIcon}
+                            </div>
+                            <div class="absolute -bottom-1.5 w-3 h-3 ${pinColor} rotate-45 border-r-2 border-b-2 border-white"></div>
+                        </div>
                     </div>
-                    <div class="w-2.5 h-2.5 ${badgeBg} rotate-45 -mt-1.5 border-r border-b border-white shadow-sm"></div>
-                </div>
-            `;
-
-            const icon = L.divIcon({
-                className: 'custom-toilet-icon',
-                html: customMarkerHtml,
-                iconSize: [95, 38],
-                iconAnchor: [47, 36]
+                `,
+                iconSize: [40, 44],
+                iconAnchor: [20, 44]
             });
 
-            const marker = L.marker([toilet.lat, toilet.lng], { icon: icon });
+            const marker = L.marker([toilet.latitude, toilet.longitude], { icon: customIcon });
 
             marker.on('click', () => {
-                window.userFlow?.selectToilet(toilet.id);
+                window.userFlow?.selectToilet(toilet.toiletId);
             });
 
             this.markersLayer.addLayer(marker);
         });
     }
 
-    drawRouteToToilet(toilet) {
+    drawRoute(targetLat, targetLng) {
         if (!this.map || !this.routeLayer) return;
-
         this.routeLayer.clearLayers();
 
-        const start = [this.userCoords.lat, this.userCoords.lng];
-        const end = [toilet.lat, toilet.lng];
+        const latlngs = [
+            [this.userCoords.lat, this.userCoords.lng],
+            [targetLat, targetLng]
+        ];
 
-        // Google Maps style walking route polyline (Royal Blue)
-        const polyline = L.polyline([start, end], {
-            color: '#2563eb', // Google Blue
-            weight: 6,
-            opacity: 0.9,
+        const polyline = L.polyline(latlngs, {
+            color: '#10b981',
+            weight: 5,
+            opacity: 0.85,
             dashArray: '8, 8',
             lineCap: 'round'
         }).addTo(this.routeLayer);
 
-        this.map.fitBounds([start, end], { padding: [80, 80] });
+        this.map.fitBounds(polyline.getBounds(), { padding: [50, 50] });
     }
 
     clearRoute() {
-        if (this.routeLayer) {
-            this.routeLayer.clearLayers();
-        }
-    }
-
-    // Google Maps picker for Host washroom registration
-    initPickerMap(containerId = 'picker-map', initialCoords = null, onSelect = null) {
-        const coords = initialCoords || this.userCoords;
-        const pickerMap = L.map(containerId, {
-            zoomControl: true,
-            attributionControl: false
-        }).setView([coords.lat, coords.lng], 16);
-
-        L.tileLayer('https://{s}.google.com/vt/lyrs=m&x={x}&y={y}&z={z}', {
-            maxZoom: 20,
-            subdomains: ['mt0', 'mt1', 'mt2', 'mt3']
-        }).addTo(pickerMap);
-
-        const marker = L.marker([coords.lat, coords.lng], { draggable: true }).addTo(pickerMap);
-
-        marker.on('dragend', (e) => {
-            const pos = e.target.getLatLng();
-            if (onSelect) onSelect(pos.lat, pos.lng);
-        });
-
-        pickerMap.on('click', (e) => {
-            marker.setLatLng(e.latlng);
-            if (onSelect) onSelect(e.latlng.lat, e.latlng.lng);
-        });
-
-        setTimeout(() => pickerMap.invalidateSize(), 300);
-        return pickerMap;
+        if (this.routeLayer) this.routeLayer.clearLayers();
     }
 }
 

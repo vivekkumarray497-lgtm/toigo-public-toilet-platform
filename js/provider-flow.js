@@ -1,5 +1,6 @@
 /**
- * TOIGO: Provider Flow Controller (Host Onboarding, GPS Location Picker, Direct QR, Banking & Listings)
+ * TOIGO: Provider Flow Controller
+ * Provider Home: My Toilets, Add Toilet (Starts as 'PENDING'), Verification status, Reports on own toilets.
  */
 
 class ProviderFlowController {
@@ -7,9 +8,7 @@ class ProviderFlowController {
         this.pickerMapInstance = null;
         this.pickerMarker = null;
         this.newToiletCoords = { lat: 28.6315, lng: 77.2167 };
-        this.selectedAmenities = new Set(['Hand Soap', 'Jet Spray', 'Mirror', 'Running Water']);
-        this.selectedPhotoUrl = 'https://images.unsplash.com/photo-1584622650111-993a426fbf0a?auto=format&fit=crop&w=600&q=80';
-        this.uploadedListingQr = null;
+        this.uploadedPhotos = [];
     }
 
     init() {
@@ -18,18 +17,18 @@ class ProviderFlowController {
 
     renderProviderDashboard() {
         const prov = window.auth.getCurrentUser();
-        const dashContainer = document.getElementById('provider-dashboard-view');
-        if (!dashContainer) return;
+        const container = document.getElementById('provider-dashboard-view');
+        if (!container) return;
 
-        if (!prov || prov.role !== 'provider') {
-            dashContainer.innerHTML = `
+        if (!prov || prov.role !== 'PROVIDER') {
+            container.innerHTML = `
                 <div class="p-8 text-center bg-white rounded-3xl border border-slate-200 shadow-sm max-w-md mx-auto my-8 space-y-4">
                     <div class="w-16 h-16 bg-indigo-50 text-indigo-600 rounded-2xl flex items-center justify-center mx-auto text-3xl shadow-sm">
                         🏢
                     </div>
-                    <h2 class="text-xl font-black text-slate-900">Sign In as Toilet Host</h2>
-                    <p class="text-xs text-slate-500">Provide your washroom details, direct payment QR code, and bank account to start earning money.</p>
-                    <button onclick="window.auth.requireLogin('provider', () => window.providerFlow.renderProviderDashboard())" class="w-full py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold shadow-md transition">
+                    <h2 class="text-xl font-black text-slate-900">Provider Sign In</h2>
+                    <p class="text-xs text-slate-500">Sign in to manage your public washrooms, upload facilities and track admin approval.</p>
+                    <button onclick="window.app.openProviderAuthModal('login')" class="w-full py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold shadow-md transition">
                         Host Login / Register Now →
                     </button>
                 </div>
@@ -37,107 +36,65 @@ class ProviderFlowController {
             return;
         }
 
-        const toilets = window.db.getToiletsByProvider(prov.id);
-        const myBookings = window.db.data.bookings.filter(b => b.providerId === prov.id);
-        const totalVisits = myBookings.length;
-        const totalEarnings = (prov.totalEarned || 0) + myBookings.reduce((sum, b) => sum + (b.amount || 0), 0);
-        const walletBal = prov.walletBalance || totalEarnings;
+        const myToilets = window.db.getToiletsByProvider(prov.userId);
+        const myReports = window.db.getProviderReports(prov.userId);
 
-        const isVerified = prov.status === 'verified';
+        const pendingCount = myToilets.filter(t => t.status === 'PENDING').length;
+        const approvedCount = myToilets.filter(t => t.status === 'APPROVED').length;
+        const rejectedCount = myToilets.filter(t => t.status === 'REJECTED').length;
 
-        const metricsHtml = `
-            <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-6">
-                <div class="bg-gradient-to-br from-emerald-600 to-teal-700 rounded-2xl p-4 text-white shadow-lg shadow-emerald-600/20 flex flex-col justify-between">
-                    <div class="flex items-center justify-between">
-                        <span class="text-[10px] uppercase font-bold tracking-wider text-emerald-100">Direct Earnings</span>
-                        <span class="p-1.5 bg-white/20 rounded-lg text-xs">💰</span>
-                    </div>
-                    <div class="my-2">
-                        <h2 class="text-2xl font-black">₹${walletBal.toFixed(2)}</h2>
-                        <p class="text-[10px] text-emerald-100">Directly deposited via UPI / Cash</p>
-                    </div>
-                    <div class="text-[10px] text-emerald-200 font-semibold truncate">
-                        UPI: ${prov.upiId || 'host@okaxis'}
-                    </div>
-                </div>
-
-                <div class="bg-white rounded-2xl p-4 border border-slate-200/80 shadow-2xs flex flex-col justify-between">
-                    <div class="flex items-center justify-between">
-                        <span class="text-[10px] uppercase font-bold tracking-wider text-slate-400">Restroom Footfall</span>
-                        <span class="p-1.5 bg-blue-50 text-blue-600 rounded-lg text-xs">👥</span>
-                    </div>
-                    <div class="my-2">
-                        <h2 class="text-2xl font-black text-slate-900">${totalVisits} <span class="text-xs font-normal text-slate-500">Visits</span></h2>
-                        <p class="text-[10px] text-slate-500">Across ${toilets.length} registered locations</p>
-                    </div>
-                    <div class="text-[10px] text-emerald-600 font-bold">
-                        ✓ Direct Payouts Active
-                    </div>
-                </div>
-
-                <div class="bg-white rounded-2xl p-4 border border-slate-200/80 shadow-2xs flex flex-col justify-between">
-                    <div class="flex items-center justify-between">
-                        <span class="text-[10px] uppercase font-bold tracking-wider text-slate-400">Host Bank Account</span>
-                        <span class="p-1.5 bg-indigo-50 text-indigo-600 rounded-lg text-xs">🏦</span>
-                    </div>
-                    <div class="my-2">
-                        <p class="text-xs font-bold text-slate-900">${prov.bankHolderName || prov.name}</p>
-                        <p class="text-[10px] text-slate-500 font-mono mt-0.5">A/C: •••• ${prov.bankAccountNo ? prov.bankAccountNo.slice(-4) : '5012'}</p>
-                        <p class="text-[10px] text-emerald-700 font-bold">${prov.bankName || 'Verified Bank'} (${prov.bankIfsc || 'UTIB0000123'})</p>
-                    </div>
-                    <button onclick="window.providerFlow.openAddListingModal()" class="w-full py-1.5 bg-indigo-50 text-indigo-700 hover:bg-indigo-100 rounded-xl text-xs font-bold transition">
-                        + Add Another Washroom
-                    </button>
-                </div>
-            </div>
-        `;
-
-        const toiletsListHtml = toilets.length === 0 ? `
+        const toiletsListHtml = myToilets.length === 0 ? `
             <div class="p-8 text-center bg-white rounded-2xl border border-dashed border-slate-200">
-                <div class="w-12 h-12 bg-emerald-50 text-emerald-600 rounded-full flex items-center justify-center mx-auto mb-2 text-2xl">
+                <div class="w-12 h-12 bg-indigo-50 text-indigo-600 rounded-full flex items-center justify-center mx-auto mb-2 text-2xl">
                     🚽
                 </div>
-                <h3 class="font-bold text-slate-800 text-sm mb-1">No Washrooms Registered Yet</h3>
-                <p class="text-xs text-slate-500 mb-3 max-w-sm mx-auto">Upload your washroom details & direct UPI QR code to start earning money.</p>
-                <button onclick="window.providerFlow.openAddListingModal()" class="px-4 py-2 bg-emerald-600 text-white rounded-xl text-xs font-bold shadow-sm hover:bg-emerald-700 transition">
-                    + Register First Toilet
+                <h3 class="font-bold text-slate-800 text-sm mb-1">No Washrooms Added Yet</h3>
+                <p class="text-xs text-slate-500 mb-3 max-w-sm mx-auto">Submit your toilet facility for Admin inspection and start earning money.</p>
+                <button onclick="window.providerFlow.openAddToiletModal()" class="px-4 py-2 bg-indigo-600 text-white rounded-xl text-xs font-bold shadow-sm hover:bg-indigo-700 transition">
+                    + Add New Public Toilet
                 </button>
             </div>
         ` : `
             <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
-                ${toilets.map(t => {
-                    const isOpen = t.status === 'open';
+                ${myToilets.map(t => {
+                    let badgeClass = 'bg-amber-100 text-amber-900 border-amber-300';
+                    let statusLabel = '⏳ PENDING APPROVAL';
+                    let notice = 'Submitted to Admin for safety & sanitation verification.';
+
+                    if (t.status === 'APPROVED') {
+                        badgeClass = 'bg-emerald-100 text-emerald-900 border-emerald-300';
+                        statusLabel = '✓ APPROVED & PUBLIC';
+                        notice = 'Live and discoverable by citizens on TOIGO Map.';
+                    } else if (t.status === 'REJECTED') {
+                        badgeClass = 'bg-red-100 text-red-900 border-red-300';
+                        statusLabel = '✕ REJECTED';
+                        notice = `Rejection Reason: ${t.rejectionReason || 'Sanitation criteria not met'}`;
+                    }
+
                     return `
-                        <div class="bg-white rounded-2xl p-4 border border-slate-200/80 shadow-2xs hover:shadow-md transition">
+                        <div class="bg-white rounded-2xl p-4 border border-slate-200 shadow-2xs space-y-3">
                             <div class="flex gap-3">
-                                <img src="${t.images[0] || 'https://images.unsplash.com/photo-1584622650111-993a426fbf0a?auto=format&fit=crop&w=300&q=80'}" class="w-16 h-16 rounded-xl object-cover" />
+                                <img src="${(t.photos && t.photos[0]) || 'https://images.unsplash.com/photo-1584622650111-993a426fbf0a?auto=format&fit=crop&w=300&q=80'}" class="w-20 h-20 rounded-xl object-cover border border-slate-100" />
                                 <div class="flex-1 min-w-0">
                                     <div class="flex items-center justify-between">
-                                        <h4 class="font-bold text-slate-900 text-xs truncate">${t.name}</h4>
-                                        <span class="text-[10px] font-bold ${isOpen ? 'text-emerald-600' : 'text-amber-600'}">
-                                            ● ${t.status.toUpperCase()}
-                                        </span>
+                                        <h4 class="font-bold text-slate-900 text-sm truncate">${t.name}</h4>
                                     </div>
                                     <p class="text-[11px] text-slate-500 truncate mt-0.5">📍 ${t.address}</p>
-                                    <div class="flex items-center gap-2 mt-1.5">
-                                        <span class="text-[10px] font-bold px-2 py-0.5 bg-emerald-50 text-emerald-800 rounded">
-                                            ₹${t.price} / use
-                                        </span>
-                                        <span class="text-[10px] font-medium px-2 py-0.5 bg-slate-100 text-slate-700 rounded">
-                                            ${t.type}
+                                    <div class="flex items-center gap-1.5 mt-2">
+                                        <span class="px-2 py-0.5 rounded-full text-[10px] font-black border ${badgeClass}">
+                                            ${statusLabel}
                                         </span>
                                     </div>
                                 </div>
                             </div>
 
-                            <div class="mt-3 pt-2.5 border-t border-slate-100 flex items-center justify-between gap-2">
-                                <button onclick="window.providerFlow.toggleToiletStatus('${t.id}')" class="px-2.5 py-1 rounded-xl text-xs font-semibold ${isOpen ? 'bg-amber-50 text-amber-700' : 'bg-emerald-50 text-emerald-700'}">
-                                    ${isOpen ? 'Mark Cleaning' : 'Mark Open'}
-                                </button>
+                            <p class="text-xs ${t.status === 'REJECTED' ? 'text-red-600 bg-red-50' : 'text-slate-600 bg-slate-50'} p-2 rounded-xl border border-slate-100">
+                                ${notice}
+                            </p>
 
-                                <button onclick="window.providerFlow.openQrPosterModal('${t.id}')" class="px-3 py-1 bg-slate-900 hover:bg-black text-white rounded-xl text-xs font-bold flex items-center gap-1">
-                                    <span>🖨️ Door QR Poster</span>
-                                </button>
+                            <div class="flex items-center justify-between text-xs pt-1 border-t border-slate-100">
+                                <span class="font-bold text-slate-700">Fee: ${t.price === 0 ? 'FREE' : '₹' + t.price}</span>
+                                <span class="text-slate-400">Timings: ${t.openingTime} - ${t.closingTime}</span>
                             </div>
                         </div>
                     `;
@@ -145,150 +102,134 @@ class ProviderFlowController {
             </div>
         `;
 
-        dashContainer.innerHTML = `
+        container.innerHTML = `
             <div class="max-w-5xl mx-auto p-4 sm:p-6 space-y-5">
+                <!-- Host Header -->
                 <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-2 border-b border-slate-200">
                     <div>
                         <div class="flex items-center gap-2">
                             <h1 class="text-xl sm:text-2xl font-black text-slate-900 font-heading">${prov.businessName || prov.name}</h1>
-                            <span class="px-2 py-0.5 bg-emerald-100 text-emerald-800 rounded-full text-[10px] font-bold">
-                                ${isVerified ? '✓ Verified Host Partner' : '⏳ Verification Pending'}
-                            </span>
+                            <span class="px-2 py-0.5 bg-indigo-100 text-indigo-800 rounded-full text-[10px] font-bold">Host Partner</span>
                         </div>
-                        <p class="text-xs text-slate-500 mt-0.5">Direct UPI ID: <span class="font-mono font-semibold text-emerald-700">${prov.upiId || 'host@okaxis'}</span></p>
+                        <p class="text-xs text-slate-500 mt-0.5">Linked Email: <span class="font-mono text-slate-700">${prov.email}</span></p>
                     </div>
-                    <button onclick="window.providerFlow.openAddListingModal()" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold shadow-md transition">
-                        + Add New Restroom Listing
+                    <button onclick="window.providerFlow.openAddToiletModal()" class="px-4 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold shadow-md transition">
+                        + Add Public Toilet
                     </button>
                 </div>
 
-                ${metricsHtml}
+                <!-- Verification Metrics Grid -->
+                <div class="grid grid-cols-3 gap-3">
+                    <div class="bg-amber-50 border border-amber-200 rounded-2xl p-4 text-center">
+                        <span class="text-[10px] font-bold text-amber-800 uppercase">Pending Verification</span>
+                        <h3 class="text-2xl font-black text-amber-900 mt-0.5">${pendingCount}</h3>
+                        <p class="text-[10px] text-amber-700 mt-0.5">Awaiting Admin inspection</p>
+                    </div>
+                    <div class="bg-emerald-50 border border-emerald-200 rounded-2xl p-4 text-center">
+                        <span class="text-[10px] font-bold text-emerald-800 uppercase">Approved & Public</span>
+                        <h3 class="text-2xl font-black text-emerald-900 mt-0.5">${approvedCount}</h3>
+                        <p class="text-[10px] text-emerald-700 mt-0.5">Active on Map</p>
+                    </div>
+                    <div class="bg-red-50 border border-red-200 rounded-2xl p-4 text-center">
+                        <span class="text-[10px] font-bold text-red-800 uppercase">Rejected</span>
+                        <h3 class="text-2xl font-black text-red-900 mt-0.5">${rejectedCount}</h3>
+                        <p class="text-[10px] text-red-700 mt-0.5">Needs correction</p>
+                    </div>
+                </div>
 
+                <!-- My Toilets List -->
                 <div>
                     <div class="flex items-center justify-between mb-3">
-                        <h3 class="text-sm font-black text-slate-900 uppercase tracking-wider">Your Restroom Listings (${toilets.length})</h3>
-                        <span class="text-xs text-slate-500">Live on TOIGO Map</span>
+                        <h3 class="text-sm font-black text-slate-900 uppercase tracking-wider">My Registered Restrooms (${myToilets.length})</h3>
                     </div>
                     ${toiletsListHtml}
+                </div>
+
+                <!-- Reports on My Toilets -->
+                <div class="bg-white rounded-3xl p-5 border border-slate-200 space-y-3">
+                    <h3 class="text-sm font-black text-slate-900 uppercase tracking-wider">Citizen Complaints On My Restrooms (${myReports.length})</h3>
+                    ${myReports.length === 0 ? `
+                        <p class="text-xs text-slate-400">No issues reported for your restrooms. Great job maintaining hygiene!</p>
+                    ` : myReports.map(r => `
+                        <div class="p-3 bg-slate-50 rounded-2xl border border-slate-100 text-xs space-y-1">
+                            <div class="flex justify-between font-bold text-slate-900">
+                                <span>${r.category} (${r.toiletName})</span>
+                                <span class="text-amber-600">${r.status}</span>
+                            </div>
+                            <p class="text-slate-600">${r.description}</p>
+                        </div>
+                    `).join('')}
                 </div>
             </div>
         `;
     }
 
-    toggleToiletStatus(toiletId) {
-        const t = window.db.getToiletById(toiletId);
-        if (!t) return;
-        const newStatus = t.status === 'open' ? 'cleaning' : 'open';
-        window.db.updateToilet(toiletId, { status: newStatus });
-        window.app.showToast(`Restroom marked as "${newStatus.toUpperCase()}"`, 'info');
-        this.renderProviderDashboard();
-    }
-
-    // Open Add Toilet Listing Modal
-    openAddListingModal() {
+    openAddToiletModal() {
         const modal = document.getElementById('add-toilet-modal');
         if (!modal) return;
 
-        this.uploadedListingQr = null;
-        const qrPreview = document.getElementById('new-listing-qr-preview');
-        if (qrPreview) qrPreview.classList.add('hidden');
-
+        this.uploadedPhotos = [];
         modal.classList.remove('hidden');
 
         setTimeout(() => {
-            this.initPickerMap();
+            this.initMapPicker();
         }, 200);
     }
 
-    closeAddListingModal() {
-        const modal = document.getElementById('add-toilet-modal');
-        if (modal) modal.classList.add('hidden');
+    closeAddToiletModal() {
+        document.getElementById('add-toilet-modal')?.classList.add('hidden');
     }
 
-    // Interactive Leaflet Picker Map
-    initPickerMap() {
+    initMapPicker() {
         const container = document.getElementById('picker-map-container');
         if (!container) return;
 
         container.innerHTML = '<div id="picker-map" style="height: 180px; width: 100%; border-radius: 12px;"></div>';
 
-        const lat = window.toigoMap.userCoords.lat || 28.6315;
-        const lng = window.toigoMap.userCoords.lng || 77.2167;
-        this.newToiletCoords = { lat, lng };
+        const lat = this.newToiletCoords.lat;
+        const lng = this.newToiletCoords.lng;
 
         if (this.pickerMapInstance) {
             this.pickerMapInstance.remove();
             this.pickerMapInstance = null;
         }
 
-        this.pickerMapInstance = L.map('picker-map', { zoomControl: true }).setView([lat, lng], 16);
-
+        this.pickerMapInstance = L.map('picker-map').setView([lat, lng], 16);
         L.tileLayer('https://{s}.google.com/vt/lyrs=m&x={x}&y={y}&z={z}', {
             maxZoom: 20,
             subdomains: ['mt0', 'mt1', 'mt2', 'mt3']
         }).addTo(this.pickerMapInstance);
 
         this.pickerMarker = L.marker([lat, lng], { draggable: true }).addTo(this.pickerMapInstance);
-        this.pickerMarker.bindPopup('Drag pin to exact restroom door entrance').openPopup();
-
         this.pickerMarker.on('dragend', (e) => {
-            const position = e.target.getLatLng();
-            this.newToiletCoords = {
-                lat: Number(position.lat.toFixed(6)),
-                lng: Number(position.lng.toFixed(6))
-            };
-            window.app.showToast(`Restroom coordinates set: ${this.newToiletCoords.lat}, ${this.newToiletCoords.lng}`, 'info');
-        });
-
-        this.pickerMapInstance.on('click', (e) => {
-            this.pickerMarker.setLatLng(e.latlng);
-            this.newToiletCoords = {
-                lat: Number(e.latlng.lat.toFixed(6)),
-                lng: Number(e.latlng.lng.toFixed(6))
-            };
+            const pos = e.target.getLatLng();
+            this.newToiletCoords = { lat: pos.lat, lng: pos.lng };
         });
     }
 
-    // GPS Current Location for New Restroom
-    useCurrentGpsForRestroom() {
-        if (!navigator.geolocation) {
-            window.app.showToast('Geolocation is not supported by your browser.', 'error');
-            return;
-        }
-
-        window.app.showToast('Acquiring precise GPS location...', 'info');
-        navigator.geolocation.getCurrentPosition(
-            (pos) => {
-                const lat = Number(pos.coords.latitude.toFixed(6));
-                const lng = Number(pos.coords.longitude.toFixed(6));
-                this.newToiletCoords = { lat, lng };
-
-                if (this.pickerMapInstance && this.pickerMarker) {
-                    this.pickerMapInstance.setView([lat, lng], 17);
-                    this.pickerMarker.setLatLng([lat, lng]);
-                }
-                window.app.showToast('GPS Location acquired accurately!', 'success');
-            },
-            (err) => {
-                window.app.showToast('Could not fetch GPS. Please drag pin on the map.', 'error');
-            },
-            { enableHighAccuracy: true, timeout: 10000 }
-        );
+    useGpsForNewToilet() {
+        if (!navigator.geolocation) return;
+        navigator.geolocation.getCurrentPosition(pos => {
+            this.newToiletCoords = { lat: pos.coords.latitude, lng: pos.coords.longitude };
+            if (this.pickerMapInstance && this.pickerMarker) {
+                this.pickerMapInstance.setView([pos.coords.latitude, pos.coords.longitude], 17);
+                this.pickerMarker.setLatLng([pos.coords.latitude, pos.coords.longitude]);
+            }
+            window.app.showToast('GPS Location updated!', 'success');
+        });
     }
 
-    handleListingQrUpload(event) {
+    handlePhotoUpload(event) {
         const file = event.target.files[0];
         if (!file) return;
-
         const reader = new FileReader();
         reader.onload = (e) => {
-            this.uploadedListingQr = e.target.result;
-            const preview = document.getElementById('new-listing-qr-preview');
+            this.uploadedPhotos = [e.target.result];
+            const preview = document.getElementById('new-toilet-photo-preview');
             if (preview) {
                 preview.src = e.target.result;
                 preview.classList.remove('hidden');
             }
-            window.app.showToast('Washroom Payment QR code attached!', 'success');
         };
         reader.readAsDataURL(file);
     }
@@ -298,69 +239,40 @@ class ProviderFlowController {
         if (!prov) return;
 
         if (!formData.name || formData.name.trim().length < 3) {
-            window.app.showToast('Please enter a valid Restroom Name.', 'error');
+            window.app.showToast('Please enter a valid Toilet Name.', 'error');
             return;
         }
-
         if (!formData.address || formData.address.trim().length < 5) {
-            window.app.showToast('Please enter a complete address with landmark.', 'error');
+            window.app.showToast('Please enter a complete address.', 'error');
             return;
         }
 
-        const price = Number(formData.price || 10);
-        const upiId = formData.upiId || prov.upiId || 'host@okaxis';
-        const qrImage = this.uploadedListingQr || prov.qrCodeImage;
+        const facilities = [];
+        if (document.getElementById('fac-soap')?.checked) facilities.push('Hand Soap');
+        if (document.getElementById('fac-water')?.checked) facilities.push('Running Water');
+        if (document.getElementById('fac-spray')?.checked) facilities.push('Jet Spray');
+        if (document.getElementById('fac-mirror')?.checked) facilities.push('Mirror');
+        if (document.getElementById('fac-wheelchair')?.checked) facilities.push('Wheelchair Accessible');
 
-        const newToilet = window.db.addToilet({
-            name: formData.name.trim(),
-            providerId: prov.id,
-            providerName: prov.businessName || prov.name,
-            phone: prov.phone,
-            upiId: upiId,
-            qrCodeImage: qrImage,
-            address: formData.address.trim(),
-            city: 'New Delhi',
-            lat: this.newToiletCoords.lat,
-            lng: this.newToiletCoords.lng,
-            type: formData.type || 'English / Western',
-            genderType: formData.genderType || 'Unisex & Separate Men/Women',
-            price: price,
-            isFree: price === 0,
-            timings: formData.timings || '06:00 AM - 11:00 PM',
-            amenities: Array.from(this.selectedAmenities),
-            images: [this.selectedPhotoUrl],
-            description: formData.description || 'Clean, sanitized and verified restroom facility.'
+        window.db.addToiletByProvider(prov.userId, {
+            name: formData.name,
+            address: formData.address,
+            description: formData.description,
+            latitude: this.newToiletCoords.lat,
+            longitude: this.newToiletCoords.lng,
+            openingTime: formData.openingTime || '06:00 AM',
+            closingTime: formData.closingTime || '11:00 PM',
+            commodeType: formData.commodeType || 'English / Western',
+            genderType: formData.genderType || 'Unisex',
+            facilities: facilities.length > 0 ? facilities : ['Hand Soap', 'Running Water', 'Jet Spray'],
+            accessibility: formData.accessibility || 'Ground Floor Accessible',
+            price: Number(formData.price || 0),
+            photos: this.uploadedPhotos
         });
 
-        this.closeAddListingModal();
-        window.app.showToast(`"${newToilet.name}" published to TOIGO Map!`, 'success');
-
+        this.closeAddToiletModal();
+        window.app.showToast('Toilet submitted for Admin verification (Status: PENDING) ⏳', 'info');
         this.renderProviderDashboard();
-        window.toigoMap.renderToiletMarkers();
-    }
-
-    openQrPosterModal(toiletId) {
-        const toilet = window.db.getToiletById(toiletId);
-        if (!toilet) return;
-
-        const modal = document.getElementById('qr-poster-modal');
-        if (!modal) return;
-
-        modal.querySelector('#poster-toilet-name').innerText = toilet.name;
-        modal.querySelector('#poster-toilet-type').innerText = toilet.type;
-        modal.querySelector('#poster-toilet-price').innerText = toilet.price === 0 ? 'FREE COMMUNITY RESTROOM' : `₹${toilet.price} PER USE`;
-        modal.querySelector('#poster-toilet-address').innerText = `📍 ${toilet.address}`;
-
-        const qrImg = modal.querySelector('#poster-qr-img');
-        const upiLink = `upi://pay?pa=${encodeURIComponent(toilet.upiId || 'host@okaxis')}&pn=${encodeURIComponent(toilet.name)}&am=${toilet.price}&cu=INR`;
-        qrImg.src = toilet.qrCodeImage || `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(upiLink)}`;
-
-        modal.classList.remove('hidden');
-    }
-
-    closeQrPosterModal() {
-        const modal = document.getElementById('qr-poster-modal');
-        if (modal) modal.classList.add('hidden');
     }
 }
 
