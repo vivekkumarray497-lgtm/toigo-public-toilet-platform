@@ -1,5 +1,5 @@
 /**
- * TOIGO: App Orchestrator & View Router
+ * TOIGO: Strict Role Architecture & Dedicated Interface Orchestrator
  */
 
 class ToigoApp {
@@ -13,157 +13,321 @@ class ToigoApp {
 
         const user = window.auth.getCurrentUser();
         if (user) {
-            if (user.role === 'admin') this.switchView('admin');
-            else if (user.role === 'provider') this.switchView('provider');
-            else this.switchView('landing');
+            this.setAppRoleMode(user.role);
         } else {
-            this.switchView('landing');
+            this.setAppRoleMode('guest');
         }
 
-        this.updateHeaderAuthStatus();
         window.userFlow.init();
     }
 
-    switchView(viewName) {
-        this.currentView = viewName;
+    // Set complete app layout based on logged-in role
+    setAppRoleMode(role) {
+        const user = window.auth.getCurrentUser();
+        const appContainer = document.getElementById('app-main-content');
 
-        // Hide all views
+        // Hide all views first
         document.querySelectorAll('.app-view').forEach(el => el.classList.add('hidden'));
 
-        // Show active view
-        const targetView = document.getElementById(`view-${viewName}`);
-        if (targetView) targetView.classList.remove('hidden');
+        // Hide all role bottom navigations
+        document.querySelectorAll('.role-nav-bar').forEach(el => el.classList.add('hidden'));
 
-        // Update Nav Tabs
-        document.querySelectorAll('.nav-tab-item').forEach(btn => {
-            if (btn.dataset.view === viewName) {
-                btn.classList.add('active');
-            } else {
-                btn.classList.remove('active');
+        // Header elements
+        const headerRolePill = document.getElementById('header-role-pill');
+        const headerAuthActions = document.getElementById('header-auth-actions');
+        const headerSosBtn = document.getElementById('header-sos-btn');
+
+        if (role === 'user' && user) {
+            // ================= 1. USER DEDICATED MODE =================
+            document.body.classList.remove('provider-mode', 'admin-mode');
+            document.body.classList.add('user-mode');
+
+            if (headerRolePill) {
+                headerRolePill.className = 'px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200';
+                headerRolePill.innerText = '🚻 Citizen User';
             }
+            if (headerSosBtn) headerSosBtn.classList.remove('hidden');
+
+            if (headerAuthActions) {
+                headerAuthActions.innerHTML = `
+                    <button onclick="window.app.switchUserTab('profile')" class="flex items-center gap-1.5 p-1 pl-2 bg-slate-100 hover:bg-slate-200 rounded-full border border-slate-200 transition">
+                        <span class="text-xs font-bold text-slate-800 max-w-[80px] truncate">${user.name}</span>
+                        <div class="w-6 h-6 rounded-full bg-emerald-600 text-white text-[10px] font-bold flex items-center justify-center">
+                            ${user.name[0]}
+                        </div>
+                    </button>
+                `;
+            }
+
+            // Show User Navigation
+            document.getElementById('nav-bar-user')?.classList.remove('hidden');
+            this.switchUserTab('map');
+
+        } else if (role === 'provider' && user) {
+            // ================= 2. PROVIDER DEDICATED MODE =================
+            document.body.classList.remove('user-mode', 'admin-mode');
+            document.body.classList.add('provider-mode');
+
+            if (headerRolePill) {
+                headerRolePill.className = 'px-2 py-0.5 rounded-full text-[10px] font-bold bg-indigo-50 text-indigo-700 border border-indigo-200';
+                headerRolePill.innerText = '🏢 Host Partner';
+            }
+            if (headerSosBtn) headerSosBtn.classList.add('hidden'); // Host doesn't need consumer SOS
+
+            if (headerAuthActions) {
+                headerAuthActions.innerHTML = `
+                    <button onclick="window.app.switchProviderTab('account')" class="flex items-center gap-1.5 p-1 pl-2 bg-slate-100 hover:bg-slate-200 rounded-full border border-slate-200 transition">
+                        <span class="text-xs font-bold text-slate-800 max-w-[90px] truncate">${user.businessName || user.name}</span>
+                        <div class="w-6 h-6 rounded-full bg-indigo-600 text-white text-[10px] font-bold flex items-center justify-center">
+                            ${(user.businessName || user.name)[0]}
+                        </div>
+                    </button>
+                `;
+            }
+
+            // Show Provider Navigation
+            document.getElementById('nav-bar-provider')?.classList.remove('hidden');
+            this.switchProviderTab('dashboard');
+
+        } else if (role === 'admin' && user) {
+            // ================= 3. FOUNDER / ADMIN MODE =================
+            document.body.classList.remove('user-mode', 'provider-mode');
+            document.body.classList.add('admin-mode');
+
+            if (headerRolePill) {
+                headerRolePill.className = 'px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-50 text-amber-800 border border-amber-200';
+                headerRolePill.innerText = '👑 Founder & Owner';
+            }
+            if (headerSosBtn) headerSosBtn.classList.add('hidden');
+
+            if (headerAuthActions) {
+                headerAuthActions.innerHTML = `
+                    <button onclick="window.app.switchAdminTab('overview')" class="flex items-center gap-1.5 p-1 pl-2 bg-amber-50 hover:bg-amber-100 rounded-full border border-amber-200 transition">
+                        <span class="text-xs font-bold text-amber-900 truncate">Founder Vivek</span>
+                        <div class="w-6 h-6 rounded-full bg-amber-600 text-white text-[10px] font-bold flex items-center justify-center">
+                            👑
+                        </div>
+                    </button>
+                `;
+            }
+
+            document.getElementById('nav-bar-admin')?.classList.remove('hidden');
+            document.getElementById('view-admin')?.classList.remove('hidden');
+            window.adminFlow.renderAdminDashboard();
+
+        } else {
+            // ================= 4. GUEST / WELCOME LANDING =================
+            document.body.classList.remove('user-mode', 'provider-mode', 'admin-mode');
+
+            if (headerRolePill) {
+                headerRolePill.className = 'px-2 py-0.5 rounded-full text-[10px] font-bold bg-slate-100 text-slate-600 border border-slate-200';
+                headerRolePill.innerText = '📍 Live GPS';
+            }
+            if (headerSosBtn) headerSosBtn.classList.remove('hidden');
+
+            if (headerAuthActions) {
+                headerAuthActions.innerHTML = `
+                    <button onclick="window.app.openAuthModal('user')" class="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold shadow-xs transition">
+                        Sign In
+                    </button>
+                `;
+            }
+
+            document.getElementById('nav-bar-guest')?.classList.remove('hidden');
+            document.getElementById('view-landing')?.classList.remove('hidden');
+        }
+    }
+
+    // ================= USER NAVIGATION TABS =================
+    switchUserTab(tabName) {
+        document.querySelectorAll('.app-view').forEach(el => el.classList.add('hidden'));
+        document.querySelectorAll('#nav-bar-user .nav-tab-item').forEach(btn => {
+            if (btn.dataset.tab === tabName) btn.classList.add('active');
+            else btn.classList.remove('active');
         });
 
-        // View specific initializations
-        if (viewName === 'user') {
+        if (tabName === 'map') {
+            const userMapView = document.getElementById('view-user-map');
+            if (userMapView) userMapView.classList.remove('hidden');
             window.toigoMap.init('map-view');
             setTimeout(() => {
                 window.toigoMap.map?.invalidateSize();
                 window.toigoMap.renderToiletMarkers();
             }, 150);
             window.userFlow.applyFilters();
-        } else if (viewName === 'provider') {
-            window.providerFlow.renderProviderDashboard();
-        } else if (viewName === 'admin') {
-            window.adminFlow.renderAdminDashboard();
-        } else if (viewName === 'profile') {
-            this.renderProfileView();
+        } else if (tabName === 'history') {
+            document.getElementById('view-user-history')?.classList.remove('hidden');
+            this.renderUserHistory();
+        } else if (tabName === 'profile') {
+            document.getElementById('view-user-profile')?.classList.remove('hidden');
+            this.renderUserProfile();
         }
 
-        this.updateHeaderAuthStatus();
         window.scrollTo({ top: 0, behavior: 'smooth' });
     }
 
-    updateHeaderAuthStatus() {
+    renderUserHistory() {
+        const container = document.getElementById('user-history-list');
+        if (!container) return;
+
         const user = window.auth.getCurrentUser();
-        const authBtnContainer = document.getElementById('header-auth-actions');
-        const headerCityPill = document.getElementById('header-city-pill');
-        if (!authBtnContainer) return;
+        const myBookings = (window.db.data.bookings || []).filter(b => b.userId === user?.id);
 
-        if (user) {
-            let roleBadge = '🚻 Citizen';
-            let badgeClass = 'bg-emerald-50 text-emerald-700 border-emerald-200';
-            if (user.role === 'provider') {
-                roleBadge = '🏢 Host Partner';
-                badgeClass = 'bg-indigo-50 text-indigo-700 border-indigo-200';
-            } else if (user.role === 'admin') {
-                roleBadge = '👑 Founder Admin';
-                badgeClass = 'bg-amber-50 text-amber-800 border-amber-200';
-            }
-
-            if (headerCityPill) {
-                headerCityPill.className = `px-2 py-0.5 rounded-full text-[10px] font-bold border ${badgeClass}`;
-                headerCityPill.innerText = roleBadge;
-            }
-
-            authBtnContainer.innerHTML = `
-                <button onclick="window.app.openProfileView()" class="flex items-center gap-1.5 p-1 pl-2 bg-slate-100 hover:bg-slate-200 rounded-full border border-slate-200 transition">
-                    <span class="text-xs font-bold text-slate-800 max-w-[80px] truncate">${user.name}</span>
-                    <div class="w-6 h-6 rounded-full bg-emerald-600 text-white text-[10px] font-bold flex items-center justify-center">
-                        ${user.name[0]}
-                    </div>
-                </button>
+        if (myBookings.length === 0) {
+            container.innerHTML = `
+                <div class="p-8 text-center bg-white rounded-3xl border border-slate-100">
+                    <span class="text-3xl block mb-2">📋</span>
+                    <h3 class="font-bold text-slate-800 text-sm">No Usage History Yet</h3>
+                    <p class="text-xs text-slate-500 mt-1">Your completed washroom visits and receipts will appear here.</p>
+                </div>
             `;
-        } else {
-            if (headerCityPill) {
-                headerCityPill.className = 'px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200/80';
-                headerCityPill.innerText = '📍 Live GPS';
-            }
-
-            authBtnContainer.innerHTML = `
-                <button onclick="window.app.openAuthModal('user')" class="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold shadow-xs transition">
-                    Sign In
-                </button>
-            `;
-        }
-    }
-
-    openProfileView() {
-        if (!window.auth.isLoggedIn()) {
-            this.openAuthModal('user', () => {
-                this.switchView('profile');
-            });
             return;
         }
-        this.switchView('profile');
+
+        container.innerHTML = myBookings.map(b => `
+            <div class="bg-white rounded-2xl p-4 border border-slate-100 shadow-2xs space-y-2">
+                <div class="flex items-center justify-between">
+                    <h4 class="font-bold text-xs text-slate-900">${b.toiletName}</h4>
+                    <span class="text-xs font-black text-emerald-600">₹${b.amount}</span>
+                </div>
+                <div class="flex items-center justify-between text-[11px] text-slate-400">
+                    <span>${new Date(b.timestamp).toLocaleDateString()} at ${new Date(b.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                    <span class="text-emerald-700 font-semibold">${b.paymentStatus}</span>
+                </div>
+                <div class="pt-1 text-[11px] text-slate-500">
+                    Method: <span class="font-medium text-slate-700">${b.paymentMethod}</span>
+                </div>
+            </div>
+        `).join('');
     }
 
-    renderProfileView() {
-        const user = window.auth.getCurrentUser() || { name: 'Citizen', email: 'user@toigo.app', walletBalance: 100, role: 'user' };
-        
-        const avatarEl = document.getElementById('profile-avatar-large');
-        const nameEl = document.getElementById('profile-user-name');
-        const emailEl = document.getElementById('profile-user-email');
-        const roleEl = document.getElementById('profile-user-role-badge');
-        const walletEl = document.getElementById('profile-wallet-balance');
+    renderUserProfile() {
+        const user = window.auth.getCurrentUser() || { name: 'Citizen', email: 'user@toigo.app', walletBalance: 100 };
+        const avatarEl = document.getElementById('user-profile-avatar');
+        const nameEl = document.getElementById('user-profile-name');
+        const emailEl = document.getElementById('user-profile-email');
+        const walletEl = document.getElementById('user-profile-wallet');
 
-        if (avatarEl) avatarEl.innerText = user.name[0] || 'T';
+        if (avatarEl) avatarEl.innerText = user.name[0] || 'U';
         if (nameEl) nameEl.innerText = user.name;
-        if (emailEl) emailEl.innerText = user.email || user.phone || 'Verified User';
-        if (roleEl) {
-            roleEl.innerText = user.role === 'admin' ? '👑 Founder / Super Admin' : user.role === 'provider' ? '🏢 Restroom Host Partner' : '🚻 Citizen Account';
-        }
+        if (emailEl) emailEl.innerText = user.email || user.phone || 'Verified Citizen';
         if (walletEl) walletEl.innerText = `₹${(user.walletBalance || 0).toFixed(2)}`;
     }
 
-    quickFilterSearch(type) {
-        this.switchView('user');
-        const pill = document.querySelector(`.filter-type-pill[data-type="${type}"]`);
-        if (pill) {
-            document.querySelectorAll('.filter-type-pill').forEach(b => b.classList.remove('active-filter'));
-            pill.classList.add('active-filter');
-            window.userFlow.activeFilters.type = type;
-            window.userFlow.applyFilters();
+    // ================= PROVIDER NAVIGATION TABS =================
+    switchProviderTab(tabName) {
+        document.querySelectorAll('.app-view').forEach(el => el.classList.add('hidden'));
+        document.querySelectorAll('#nav-bar-provider .nav-tab-item').forEach(btn => {
+            if (btn.dataset.tab === tabName) btn.classList.add('active');
+            else btn.classList.remove('active');
+        });
+
+        if (tabName === 'dashboard') {
+            document.getElementById('view-provider-dashboard')?.classList.remove('hidden');
+            window.providerFlow.renderProviderDashboard();
+        } else if (tabName === 'add') {
+            document.getElementById('view-provider-dashboard')?.classList.remove('hidden');
+            window.providerFlow.openAddListingModal();
+        } else if (tabName === 'earnings') {
+            document.getElementById('view-provider-earnings')?.classList.remove('hidden');
+            this.renderProviderEarningsView();
+        } else if (tabName === 'account') {
+            document.getElementById('view-provider-account')?.classList.remove('hidden');
+            this.renderProviderAccount();
         }
+
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    renderProviderEarningsView() {
+        const prov = window.auth.getCurrentUser();
+        if (!prov) return;
+
+        const myBookings = window.db.data.bookings.filter(b => b.providerId === prov.id);
+        const totalEarnings = (prov.totalEarned || 0) + myBookings.reduce((sum, b) => sum + (b.amount || 0), 0);
+
+        const container = document.getElementById('provider-earnings-content');
+        if (!container) return;
+
+        container.innerHTML = `
+            <div class="space-y-4">
+                <div class="bg-gradient-to-br from-emerald-600 to-teal-700 rounded-3xl p-6 text-white shadow-lg">
+                    <span class="text-xs uppercase font-bold text-emerald-100">Total Direct Revenue</span>
+                    <h2 class="text-3xl font-black mt-1">₹${totalEarnings.toFixed(2)}</h2>
+                    <p class="text-xs text-emerald-100 mt-1">Directly received from customers via UPI / Cash</p>
+                </div>
+
+                <div class="bg-white rounded-3xl p-5 border border-slate-200 space-y-3">
+                    <h3 class="font-bold text-slate-900 text-sm">Linked Bank & UPI Payout Info</h3>
+                    <div class="p-3 bg-slate-50 rounded-2xl space-y-1.5 text-xs">
+                        <div class="flex justify-between"><span class="text-slate-500">Host UPI ID:</span><span class="font-bold font-mono text-emerald-700">${prov.upiId || 'host@okaxis'}</span></div>
+                        <div class="flex justify-between"><span class="text-slate-500">Bank Name:</span><span class="font-semibold text-slate-800">${prov.bankHolderName || prov.name}</span></div>
+                        <div class="flex justify-between"><span class="text-slate-500">Account No:</span><span class="font-mono text-slate-800">•••• ${prov.bankAccountNo ? prov.bankAccountNo.slice(-4) : '5012'}</span></div>
+                        <div class="flex justify-between"><span class="text-slate-500">IFSC Code:</span><span class="font-mono text-slate-800">${prov.bankIfsc || 'UTIB0000123'}</span></div>
+                    </div>
+                </div>
+
+                <div class="bg-white rounded-3xl p-5 border border-slate-200">
+                    <h3 class="font-bold text-slate-900 text-sm mb-3">Customer Visit Transactions (${myBookings.length})</h3>
+                    <div class="space-y-2">
+                        ${myBookings.length === 0 ? '<p class="text-xs text-slate-400">No visits recorded yet.</p>' : myBookings.map(b => `
+                            <div class="p-3 bg-slate-50 rounded-xl flex items-center justify-between text-xs">
+                                <div>
+                                    <p class="font-bold text-slate-900">${b.userName}</p>
+                                    <p class="text-[10px] text-slate-400">${new Date(b.timestamp).toLocaleTimeString()}</p>
+                                </div>
+                                <span class="font-black text-emerald-600">+₹${b.amount}</span>
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+            </div>
+        `;
+    }
+
+    renderProviderAccount() {
+        const prov = window.auth.getCurrentUser();
+        if (!prov) return;
+
+        const nameEl = document.getElementById('provider-account-name');
+        const bizEl = document.getElementById('provider-account-biz');
+        const upiEl = document.getElementById('provider-account-upi');
+
+        if (nameEl) nameEl.innerText = prov.name;
+        if (bizEl) bizEl.innerText = prov.businessName || 'Host Business';
+        if (upiEl) upiEl.innerText = prov.upiId || 'host@okaxis';
+    }
+
+    // ================= ADMIN NAVIGATION TABS =================
+    switchAdminTab(tabName) {
+        document.getElementById('view-admin')?.classList.remove('hidden');
+        window.adminFlow.switchTab(tabName);
     }
 
     // Role selection on Landing Screen
     selectLandingRole(role) {
         if (role === 'user') {
-            if (!window.auth.isLoggedIn()) {
-                window.auth.quickLoginAs('user');
-                this.showToast('Signed in as Citizen. Ready to find washrooms!', 'success');
+            const user = window.auth.getCurrentUser();
+            if (!user || user.role !== 'user') {
+                this.openAuthModal('user', (newUser) => {
+                    this.setAppRoleMode('user');
+                });
+                return;
             }
-            this.switchView('user');
+            this.setAppRoleMode('user');
         } else if (role === 'provider') {
-            if (!window.auth.isLoggedIn() || !window.auth.isProvider()) {
-                window.auth.quickLoginAs('provider');
-                this.showToast('Signed in as Host Partner. Welcome!', 'success');
+            const user = window.auth.getCurrentUser();
+            if (!user || user.role !== 'provider') {
+                this.openAuthModal('provider', (newProv) => {
+                    this.setAppRoleMode('provider');
+                });
+                return;
             }
-            this.switchView('provider');
+            this.setAppRoleMode('provider');
         } else if (role === 'admin') {
             window.auth.quickLoginAs('admin');
-            this.showToast('👑 Founder privileges enabled! Full master control.', 'success');
-            this.switchView('admin');
+            this.showToast('👑 Founder master privileges enabled!', 'success');
+            this.setAppRoleMode('admin');
         }
     }
 
@@ -230,7 +394,7 @@ class ToigoApp {
                 this.showToast('Please enter your Phone or Email', 'error');
                 return;
             }
-            if (!name) name = role === 'provider' ? 'Clean Rest Host' : 'Citizen';
+            if (!name) name = role === 'provider' ? 'Restroom Host' : 'Citizen User';
         }
 
         const authData = {
@@ -263,10 +427,7 @@ class ToigoApp {
             this.closeAuthModal();
             this.showToast(res.message, 'success');
 
-            const role = res.user.role;
-            if (role === 'admin') this.switchView('admin');
-            else if (role === 'provider') this.switchView('provider');
-            else this.switchView('user');
+            this.setAppRoleMode(res.user.role);
 
             if (this.authCallback) {
                 this.authCallback(res.user);
@@ -280,13 +441,13 @@ class ToigoApp {
     logout() {
         window.auth.logout();
         this.showToast('Logged out successfully.', 'info');
-        this.switchView('landing');
+        this.setAppRoleMode('guest');
     }
 
-    // Emergency SOS: Find nearest toilet in 1 click
     triggerEmergencySOS() {
         this.showToast('🚨 SOS Emergency Activated! Locating nearest washroom...', 'info');
-        this.switchView('user');
+        this.setAppRoleMode('user');
+        this.switchUserTab('map');
 
         const all = window.db.getAllToilets();
         const userLat = window.toigoMap.userCoords.lat;

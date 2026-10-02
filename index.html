@@ -28,7 +28,7 @@
     </script>
 
     <!-- Leaflet CSS & JS for Interactive Map -->
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
 
     <!-- Canvas Confetti -->
@@ -48,14 +48,14 @@
         <!-- ================= TOP STATUS & APP BAR ================= -->
         <header class="sticky top-0 z-40 glass-header px-4 py-3 flex items-center justify-between gap-3 shadow-xs">
             <!-- App Logo -->
-            <div class="flex items-center gap-2.5 cursor-pointer" onclick="window.app.switchView('landing')">
+            <div class="flex items-center gap-2.5 cursor-pointer" onclick="window.app.setAppRoleMode('guest')">
                 <div class="w-10 h-10 rounded-2xl bg-gradient-to-tr from-emerald-600 via-teal-500 to-emerald-400 flex items-center justify-center text-white text-xl font-black shadow-lg shadow-emerald-500/25">
                     TG
                 </div>
                 <div>
                     <div class="flex items-center gap-1.5">
                         <span class="text-xl font-black tracking-tight text-slate-900 font-heading">TOI<span class="text-emerald-600">GO</span></span>
-                        <span id="header-city-pill" class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200/80">
+                        <span id="header-role-pill" class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-slate-100 text-slate-600 border border-slate-200">
                             📍 Live GPS
                         </span>
                     </div>
@@ -65,8 +65,8 @@
 
             <!-- Top Action Controls -->
             <div class="flex items-center gap-2">
-                <!-- 🚨 1-Click SOS Emergency Button -->
-                <button onclick="window.app.triggerEmergencySOS()" 
+                <!-- 🚨 1-Click SOS Emergency Button (Only for Citizen / Guest) -->
+                <button id="header-sos-btn" onclick="window.app.triggerEmergencySOS()" 
                         class="px-3 py-1.5 bg-gradient-to-r from-red-500 to-rose-600 hover:from-red-600 hover:to-rose-700 text-white rounded-xl text-xs font-extrabold shadow-md shadow-red-500/20 flex items-center gap-1.5 transition active:scale-95">
                     <span class="w-2 h-2 rounded-full bg-white animate-ping"></span>
                     <span>🚨 SOS</span>
@@ -77,7 +77,9 @@
             </div>
         </header>
 
-        <!-- ================= VIEW 1: HOME & ROLE SELECTION ================= -->
+        <!-- =========================================================================
+             VIEW GROUP 1: GUEST / LANDING PORTAL (WHEN NOT LOGGED IN)
+             ========================================================================= -->
         <section id="view-landing" class="app-view p-4 sm:p-6 space-y-6 animate-scale">
             
             <!-- User Welcome Banner -->
@@ -89,23 +91,22 @@
                     </span>
                     <h1 class="text-2xl sm:text-3xl font-black tracking-tight leading-tight">
                         Need a Clean Restroom? <br>
-                        <span class="text-emerald-300">Find, Use & Pay Directly</span>
+                        <span class="text-emerald-300">Choose Your Option</span>
                     </h1>
                     <p class="text-xs text-slate-200 mt-2 max-w-md">
-                        Find verified Indian & Western washrooms. Pay directly to host via UPI and share live photo reviews!
+                        Separate dedicated portals for Citizens and Restroom Hosts with direct UPI payments & live photo reviews.
                     </p>
                 </div>
             </div>
 
-            <!-- Quick Action Hero Cards (1. USE TOILET & 2. PROVIDE TOILET) -->
+            <!-- The Two Distinct Portals -->
             <div class="space-y-3">
                 <div class="flex items-center justify-between px-1">
-                    <h3 class="text-xs font-extrabold text-slate-500 uppercase tracking-wider">Choose Option (Strict Login)</h3>
-                    <span class="text-[11px] text-emerald-600 font-bold">2 Simple Steps</span>
+                    <h3 class="text-xs font-extrabold text-slate-500 uppercase tracking-wider">Select Portal to Enter</h3>
                 </div>
 
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <!-- OPTION 1: USE TOILET -->
+                    <!-- PORTAL 1: CITIZEN (USE TOILET) -->
                     <div onclick="window.app.selectLandingRole('user')" 
                          class="action-card action-card-emerald cursor-pointer bg-white rounded-3xl p-5 border border-slate-200/90 shadow-sm flex flex-col justify-between">
                         <div class="flex items-start justify-between mb-4">
@@ -117,18 +118,18 @@
                             </span>
                         </div>
                         <div>
-                            <h2 class="text-xl font-black text-slate-900 font-heading">1. Use Toilet</h2>
+                            <h2 class="text-xl font-black text-slate-900 font-heading">1. Use Toilet (Citizen Portal)</h2>
                             <p class="text-xs text-slate-600 mt-1 leading-relaxed">
-                                Sign in as Citizen, find nearby verified washrooms on GPS map, pay directly to the host's UPI QR, and post hygiene photo reviews.
+                                Sign in as Citizen. Access Google Maps, find Indian/Western washrooms, scan door QR, pay directly, and upload hygiene photos.
                             </p>
                         </div>
                         <div class="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between text-xs font-bold text-emerald-600">
-                            <span>Explore & Use Now</span>
+                            <span>Open Citizen App →</span>
                             <span class="w-7 h-7 rounded-full bg-emerald-50 flex items-center justify-center text-emerald-700">→</span>
                         </div>
                     </div>
 
-                    <!-- OPTION 2: PROVIDE TOILET -->
+                    <!-- PORTAL 2: HOST (PROVIDE TOILET) -->
                     <div onclick="window.app.selectLandingRole('provider')" 
                          class="action-card action-card-indigo cursor-pointer bg-white rounded-3xl p-5 border border-slate-200/90 shadow-sm flex flex-col justify-between">
                         <div class="flex items-start justify-between mb-4">
@@ -140,75 +141,45 @@
                             </span>
                         </div>
                         <div>
-                            <h2 class="text-xl font-black text-slate-900 font-heading">2. Provide Toilet</h2>
+                            <h2 class="text-xl font-black text-slate-900 font-heading">2. Provide Toilet (Host Portal)</h2>
                             <p class="text-xs text-slate-600 mt-1 leading-relaxed">
-                                Sign in as Host, upload your Bank details & direct UPI QR code. Receive 100% direct customer payments to your account!
+                                Sign in as Host. Upload your Bank & direct UPI QR code, manage washrooms, generate door posters, and earn money directly.
                             </p>
                         </div>
                         <div class="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between text-xs font-bold text-indigo-600">
-                            <span>Host Restroom & Earn</span>
+                            <span>Open Host Dashboard →</span>
                             <span class="w-7 h-7 rounded-full bg-indigo-50 flex items-center justify-center text-indigo-700">→</span>
                         </div>
                     </div>
                 </div>
             </div>
 
-            <!-- Quick Category Pill Filter -->
-            <div class="space-y-2">
-                <div class="flex items-center justify-between px-1">
-                    <h3 class="text-xs font-extrabold text-slate-500 uppercase tracking-wider">Restroom Categories</h3>
-                </div>
-                <div class="grid grid-cols-3 sm:grid-cols-6 gap-2 text-center text-xs">
-                    <button onclick="window.app.quickFilterSearch('all')" class="p-3 bg-white rounded-2xl border border-slate-200 hover:border-emerald-500 shadow-2xs font-bold transition">
-                        <span class="text-lg block mb-1">🚻</span>
-                        All Toilets
-                    </button>
-                    <button onclick="window.app.quickFilterSearch('indian')" class="p-3 bg-white rounded-2xl border border-slate-200 hover:border-emerald-500 shadow-2xs font-bold transition">
-                        <span class="text-lg block mb-1">🇮🇳</span>
-                        Indian Pan
-                    </button>
-                    <button onclick="window.app.quickFilterSearch('western')" class="p-3 bg-white rounded-2xl border border-slate-200 hover:border-emerald-500 shadow-2xs font-bold transition">
-                        <span class="text-lg block mb-1">🚽</span>
-                        Western
-                    </button>
-                    <button onclick="window.app.quickFilterSearch('free')" class="p-3 bg-white rounded-2xl border border-slate-200 hover:border-emerald-500 shadow-2xs font-bold transition">
-                        <span class="text-lg block mb-1">💧</span>
-                        Free Public
-                    </button>
-                    <button onclick="window.app.quickFilterSearch('accessible')" class="p-3 bg-white rounded-2xl border border-slate-200 hover:border-emerald-500 shadow-2xs font-bold transition">
-                        <span class="text-lg block mb-1">♿</span>
-                        Accessible
-                    </button>
-                    <button onclick="window.app.triggerEmergencySOS()" class="p-3 bg-red-50 text-red-700 rounded-2xl border border-red-200 shadow-2xs font-bold transition">
-                        <span class="text-lg block mb-1">🚨</span>
-                        Nearest SOS
-                    </button>
-                </div>
-            </div>
-
-            <!-- Founder / Super Admin Quick Gateway -->
+            <!-- Founder Master Portal Gateway -->
             <div class="bg-gradient-to-r from-slate-900 via-slate-800 to-emerald-950 rounded-3xl p-5 text-white shadow-xl flex items-center justify-between gap-3 border border-emerald-500/20">
                 <div class="flex items-center gap-3">
                     <div class="w-11 h-11 rounded-2xl bg-amber-400/20 border border-amber-400/30 flex items-center justify-center text-xl flex-shrink-0">
                         👑
                     </div>
                     <div>
-                        <h4 class="font-bold text-xs sm:text-sm text-white">App Founder & Owner Portal</h4>
-                        <p class="text-[11px] text-slate-300">Master authority over Users, Hosts, Banking & Direct Approvals.</p>
+                        <h4 class="font-bold text-xs sm:text-sm text-white">Founder & Super Admin Portal</h4>
+                        <p class="text-[11px] text-slate-300">Master authority over all Users, Hosts, Banking & Listings.</p>
                     </div>
                 </div>
-                <button onclick="window.app.selectLandingRole('admin')" class="px-4 py-2 bg-gradient-to-r from-amber-400 to-amber-500 hover:from-amber-500 hover:to-amber-600 text-slate-950 font-black rounded-xl text-xs shadow-md transition whitespace-nowrap">
+                <button onclick="window.app.selectLandingRole('admin')" class="px-4 py-2 bg-gradient-to-r from-amber-400 to-amber-500 hover:from-amber-500 text-slate-950 font-black rounded-xl text-xs shadow-md transition whitespace-nowrap">
                     Founder Control ⚡
                 </button>
             </div>
         </section>
 
-        <!-- ================= VIEW 2: INTERACTIVE GPS MAP (FIND, USE & PAY) ================= -->
-        <section id="view-user" class="app-view hidden flex-1 flex flex-col h-[calc(100vh-8rem)] relative overflow-hidden">
-            
+        <!-- =========================================================================
+             VIEW GROUP 2: CITIZEN USER DEDICATED APP (ONLY USER INTERFACE)
+             ========================================================================= -->
+        
+        <!-- 2A. User Google Map Screen -->
+        <section id="view-user-map" class="app-view hidden flex-1 flex flex-col h-[calc(100vh-8rem)] relative overflow-hidden">
             <div id="map-view" class="w-full h-full z-0"></div>
 
-            <!-- Floating Top Search Bar & Filters -->
+            <!-- Top Search & Filters -->
             <div class="absolute top-3 left-3 right-3 z-20 space-y-2 pointer-events-auto">
                 <div class="glass-pill rounded-2xl p-2 shadow-lg flex items-center gap-2 border border-slate-200">
                     <span class="text-slate-400 pl-2 text-sm">🔍</span>
@@ -240,26 +211,23 @@
                 </div>
             </div>
 
-            <!-- Google Maps Floating Quick Controls (Satellite toggle, Recenter, Zoom) -->
+            <!-- Google Maps Quick Controls -->
             <div class="absolute right-3 top-32 z-20 flex flex-col gap-2 pointer-events-auto">
-                <!-- Toggle Satellite / Street -->
-                <button onclick="window.toigoMap.toggleSatellite()" title="Toggle Satellite / Street View" 
+                <button onclick="window.toigoMap.toggleSatellite()" title="Toggle Satellite / Street" 
                         class="w-10 h-10 bg-white/95 backdrop-blur-md rounded-2xl shadow-lg border border-slate-200 flex items-center justify-center text-base hover:bg-slate-50 transition active:scale-95">
                     🛰️
                 </button>
-                <!-- Recenter on GPS -->
-                <button onclick="window.toigoMap.locateUser(true)" title="Recenter to My Location" 
+                <button onclick="window.toigoMap.locateUser(true)" title="Recenter to GPS" 
                         class="w-10 h-10 bg-white/95 backdrop-blur-md rounded-2xl shadow-lg border border-slate-200 flex items-center justify-center text-base text-blue-600 hover:bg-slate-50 transition active:scale-95">
                     🎯
                 </button>
-                <!-- Zoom Controls -->
                 <div class="bg-white/95 backdrop-blur-md rounded-2xl shadow-lg border border-slate-200 overflow-hidden flex flex-col">
                     <button onclick="window.toigoMap.zoomIn()" title="Zoom In" class="w-10 h-9 flex items-center justify-center text-slate-700 font-bold text-base hover:bg-slate-100 border-b border-slate-100">+</button>
                     <button onclick="window.toigoMap.zoomOut()" title="Zoom Out" class="w-10 h-9 flex items-center justify-center text-slate-700 font-bold text-base hover:bg-slate-100">−</button>
                 </div>
             </div>
 
-            <!-- Bottom Floating Drawer -->
+            <!-- Bottom Floating Drawer with Nearby Toilet Cards -->
             <div class="absolute bottom-2 left-2 right-2 z-20 pointer-events-auto">
                 <div class="glass-pill rounded-3xl p-3 sm:p-4 shadow-2xl border border-white/80">
                     <div class="flex items-center justify-between mb-2 px-1">
@@ -276,111 +244,173 @@
             </div>
         </section>
 
-        <!-- ================= VIEW 3: HOST / PROVIDER DASHBOARD ================= -->
-        <section id="view-provider" class="app-view hidden flex-1 animate-scale pb-12">
-            <div id="provider-dashboard-view">
+        <!-- 2B. User Usage History Screen -->
+        <section id="view-user-history" class="app-view hidden p-4 sm:p-6 space-y-4 animate-scale">
+            <div class="flex items-center justify-between">
+                <div>
+                    <h2 class="text-xl font-black text-slate-900 font-heading">My Washroom Visits</h2>
+                    <p class="text-xs text-slate-500">History of completed visits & direct receipts</p>
+                </div>
+                <button onclick="window.app.switchUserTab('map')" class="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold">
+                    ← Back to Map
+                </button>
             </div>
+            <div id="user-history-list" class="space-y-3"></div>
         </section>
 
-        <!-- ================= VIEW 4: FOUNDER & SUPER ADMIN MASTER TERMINAL ================= -->
-        <section id="view-admin" class="app-view hidden flex-1 animate-scale pb-12">
-            <div id="admin-dashboard-view">
-            </div>
-        </section>
-
-        <!-- ================= VIEW 5: USER PROFILE VIEW ================= -->
-        <section id="view-profile" class="app-view hidden p-4 sm:p-6 space-y-4 animate-scale">
+        <!-- 2C. User Profile Screen -->
+        <section id="view-user-profile" class="app-view hidden p-4 sm:p-6 space-y-4 animate-scale">
             <div class="bg-white rounded-3xl p-6 border border-slate-200 shadow-sm text-center space-y-4">
-                <div class="w-20 h-20 mx-auto rounded-full bg-emerald-600 text-white font-black text-2xl flex items-center justify-center shadow-lg shadow-emerald-600/30" id="profile-avatar-large">
-                    TG
+                <div class="w-20 h-20 mx-auto rounded-full bg-emerald-600 text-white font-black text-2xl flex items-center justify-center shadow-lg shadow-emerald-600/30" id="user-profile-avatar">
+                    U
                 </div>
                 <div>
-                    <h2 class="text-xl font-black text-slate-900" id="profile-user-name">Rahul Sharma</h2>
-                    <p class="text-xs text-slate-500" id="profile-user-email">rahul.sharma@example.com</p>
-                    <span class="inline-block mt-2 px-3 py-0.5 rounded-full text-xs font-bold bg-emerald-100 text-emerald-800" id="profile-user-role-badge">Citizen Account</span>
+                    <h2 class="text-xl font-black text-slate-900" id="user-profile-name">Rahul Sharma</h2>
+                    <p class="text-xs text-slate-500" id="user-profile-email">rahul.sharma@example.com</p>
+                    <span class="inline-block mt-2 px-3 py-0.5 rounded-full text-xs font-bold bg-emerald-100 text-emerald-800">🚻 Citizen User Account</span>
                 </div>
                 <div class="p-4 bg-emerald-50 rounded-2xl border border-emerald-100 flex items-center justify-between text-left">
                     <div>
                         <p class="text-xs text-emerald-800 font-bold">TOIGO Wallet Balance</p>
-                        <p class="text-2xl font-black text-emerald-700" id="profile-wallet-balance">₹150.00</p>
+                        <p class="text-2xl font-black text-emerald-700" id="user-profile-wallet">₹150.00</p>
                     </div>
-                    <button onclick="window.app.showToast('Wallet recharged with ₹100!', 'success'); window.db.data.currentUser.walletBalance += 100; window.db.save(); window.app.renderProfileView();" class="px-3 py-1.5 bg-emerald-600 text-white rounded-xl text-xs font-bold shadow-xs">
+                    <button onclick="window.app.showToast('Wallet recharged with ₹100!', 'success'); if(window.db.data.currentUser){window.db.data.currentUser.walletBalance += 100; window.db.save();} window.app.renderUserProfile();" class="px-3 py-1.5 bg-emerald-600 text-white rounded-xl text-xs font-bold shadow-xs">
                         + Add ₹100
                     </button>
                 </div>
-                
-                <!-- Role Switcher Gateway -->
-                <div id="profile-switch-role-btn" class="pt-2"></div>
-
-                <div class="pt-1">
-                    <button onclick="window.app.logout()" class="w-full py-3 bg-red-50 hover:bg-red-100 text-red-600 font-bold rounded-2xl text-xs transition">
-                        🚪 Sign Out of TOIGO
-                    </button>
-                </div>
-            </div>
-        </section>
-
-        <!-- ================= VIEW 5: USER PROFILE VIEW ================= -->
-        <section id="view-profile" class="app-view hidden p-4 sm:p-6 space-y-4 animate-scale">
-            <div class="bg-white rounded-3xl p-6 border border-slate-200 shadow-sm text-center space-y-4">
-                <div class="w-20 h-20 mx-auto rounded-full bg-emerald-600 text-white font-black text-2xl flex items-center justify-center shadow-lg shadow-emerald-600/30" id="profile-avatar-large">
-                    TG
-                </div>
-                <div>
-                    <h2 class="text-xl font-black text-slate-900" id="profile-user-name">Rahul Sharma</h2>
-                    <p class="text-xs text-slate-500" id="profile-user-email">rahul.sharma@example.com</p>
-                    <span class="inline-block mt-2 px-3 py-0.5 rounded-full text-xs font-bold bg-emerald-100 text-emerald-800" id="profile-user-role-badge">Citizen Account</span>
-                </div>
-                <div class="p-4 bg-emerald-50 rounded-2xl border border-emerald-100 flex items-center justify-between text-left">
-                    <div>
-                        <p class="text-xs text-emerald-800 font-bold">TOIGO Wallet Balance</p>
-                        <p class="text-2xl font-black text-emerald-700" id="profile-wallet-balance">₹150.00</p>
-                    </div>
-                    <button onclick="window.app.showToast('Wallet recharged with ₹100!', 'success'); if(window.db.data.currentUser){window.db.data.currentUser.walletBalance += 100; window.db.save();} window.app.renderProfileView();" class="px-3 py-1.5 bg-emerald-600 text-white rounded-xl text-xs font-bold shadow-xs">
-                        + Add ₹100
-                    </button>
-                </div>
-
                 <div class="pt-2">
                     <button onclick="window.app.logout()" class="w-full py-3 bg-red-50 hover:bg-red-100 text-red-600 font-bold rounded-2xl text-xs transition">
-                        🚪 Sign Out of TOIGO
+                        🚪 Sign Out
                     </button>
                 </div>
             </div>
         </section>
 
-        <!-- ================= MAIN UNIFIED BOTTOM NAVIGATION BAR ================= -->
-        <nav class="fixed bottom-0 left-0 right-0 z-40 bg-white/95 backdrop-blur-lg border-t border-slate-200 shadow-xl max-w-xl lg:max-w-7xl mx-auto">
-            <div class="grid grid-cols-5 h-16 items-center text-center">
-                <button onclick="window.app.switchView('landing')" id="nav-btn-landing" class="nav-tab-item active flex flex-col items-center justify-center text-slate-500 hover:text-emerald-600 transition" data-view="landing">
-                    <span class="text-lg">🏠</span>
-                    <span class="text-[10px] font-bold mt-0.5">Home</span>
-                </button>
+        <!-- =========================================================================
+             VIEW GROUP 3: PROVIDER / HOST DEDICATED APP (ONLY HOST INTERFACE)
+             ========================================================================= -->
+        
+        <!-- 3A. Host Restroom Dashboard -->
+        <section id="view-provider-dashboard" class="app-view hidden flex-1 animate-scale pb-12">
+            <div id="provider-dashboard-view"></div>
+        </section>
 
-                <button onclick="window.app.selectLandingRole('user')" id="nav-btn-user" class="nav-tab-item flex flex-col items-center justify-center text-slate-500 hover:text-emerald-600 transition" data-view="user">
+        <!-- 3B. Host Direct Earnings & Banking -->
+        <section id="view-provider-earnings" class="app-view hidden p-4 sm:p-6 space-y-4 animate-scale pb-12">
+            <div class="flex items-center justify-between pb-2 border-b border-slate-200">
+                <h2 class="text-xl font-black text-slate-900 font-heading">Host Direct Revenue & Banking</h2>
+                <button onclick="window.app.switchProviderTab('dashboard')" class="px-3 py-1.5 bg-slate-100 rounded-xl text-xs font-bold">← Dashboard</button>
+            </div>
+            <div id="provider-earnings-content"></div>
+        </section>
+
+        <!-- 3C. Host Account -->
+        <section id="view-provider-account" class="app-view hidden p-4 sm:p-6 space-y-4 animate-scale pb-12">
+            <div class="bg-white rounded-3xl p-6 border border-slate-200 shadow-sm text-center space-y-4">
+                <div class="w-20 h-20 mx-auto rounded-full bg-indigo-600 text-white font-black text-2xl flex items-center justify-center shadow-lg shadow-indigo-600/30">
+                    🏢
+                </div>
+                <div>
+                    <h2 class="text-xl font-black text-slate-900" id="provider-account-name">Amit Verma</h2>
+                    <p class="text-xs font-bold text-indigo-600" id="provider-account-biz">SmartRest Commercial Sanitations</p>
+                    <p class="text-xs text-slate-400 mt-0.5 font-mono" id="provider-account-upi">amit.verma@okaxis</p>
+                    <span class="inline-block mt-2 px-3 py-0.5 rounded-full text-xs font-bold bg-indigo-100 text-indigo-800">Verified Toilet Host Partner</span>
+                </div>
+                <div class="pt-4">
+                    <button onclick="window.app.logout()" class="w-full py-3 bg-red-50 hover:bg-red-100 text-red-600 font-bold rounded-2xl text-xs transition">
+                        🚪 Sign Out of Host Account
+                    </button>
+                </div>
+            </div>
+        </section>
+
+        <!-- =========================================================================
+             VIEW GROUP 4: FOUNDER & SUPER ADMIN MASTER CONTROL (ONLY ADMIN)
+             ========================================================================= -->
+        <section id="view-admin" class="app-view hidden flex-1 animate-scale pb-12">
+            <div id="admin-dashboard-view"></div>
+        </section>
+
+        <!-- =========================================================================
+             DEDICATED ROLE BOTTOM NAVIGATION BARS
+             ========================================================================= -->
+        
+        <!-- 1. USER DEDICATED NAVIGATION BAR -->
+        <nav id="nav-bar-user" class="role-nav-bar fixed bottom-0 left-0 right-0 z-40 bg-white/95 backdrop-blur-lg border-t border-slate-200 shadow-xl max-w-xl lg:max-w-7xl mx-auto hidden">
+            <div class="grid grid-cols-3 h-16 items-center text-center">
+                <button onclick="window.app.switchUserTab('map')" class="nav-tab-item active flex flex-col items-center justify-center text-slate-500 hover:text-emerald-600 transition" data-tab="map">
                     <span class="text-lg">🗺️</span>
-                    <span class="text-[10px] font-bold mt-0.5">Use Toilet</span>
+                    <span class="text-[10px] font-bold mt-0.5">Find Toilets</span>
                 </button>
-
-                <button onclick="window.app.selectLandingRole('provider')" id="nav-btn-provider" class="nav-tab-item flex flex-col items-center justify-center text-slate-500 hover:text-indigo-600 transition" data-view="provider">
-                    <span class="text-lg">🏢</span>
-                    <span class="text-[10px] font-bold mt-0.5">Provide Toilet</span>
+                <button onclick="window.app.switchUserTab('history')" class="nav-tab-item flex flex-col items-center justify-center text-slate-500 hover:text-emerald-600 transition" data-tab="history">
+                    <span class="text-lg">📋</span>
+                    <span class="text-[10px] font-bold mt-0.5">My Visits</span>
                 </button>
-
-                <button onclick="window.app.selectLandingRole('admin')" id="nav-btn-admin" class="nav-tab-item flex flex-col items-center justify-center text-amber-600 hover:text-amber-700 transition" data-view="admin">
-                    <span class="text-lg">👑</span>
-                    <span class="text-[10px] font-bold mt-0.5">Founder</span>
-                </button>
-
-                <button onclick="window.app.openProfileView()" id="nav-btn-profile" class="nav-tab-item flex flex-col items-center justify-center text-slate-500 hover:text-emerald-600 transition" data-view="profile">
+                <button onclick="window.app.switchUserTab('profile')" class="nav-tab-item flex flex-col items-center justify-center text-slate-500 hover:text-emerald-600 transition" data-tab="profile">
                     <span class="text-lg">👤</span>
-                    <span class="text-[10px] font-bold mt-0.5">Profile</span>
+                    <span class="text-[10px] font-bold mt-0.5">My Profile</span>
+                </button>
+            </div>
+        </nav>
+
+        <!-- 2. PROVIDER DEDICATED NAVIGATION BAR -->
+        <nav id="nav-bar-provider" class="role-nav-bar fixed bottom-0 left-0 right-0 z-40 bg-white/95 backdrop-blur-lg border-t border-slate-200 shadow-xl max-w-xl lg:max-w-7xl mx-auto hidden">
+            <div class="grid grid-cols-4 h-16 items-center text-center">
+                <button onclick="window.app.switchProviderTab('dashboard')" class="nav-tab-item active flex flex-col items-center justify-center text-slate-500 hover:text-indigo-600 transition" data-tab="dashboard">
+                    <span class="text-lg">🏢</span>
+                    <span class="text-[10px] font-bold mt-0.5">Restrooms</span>
+                </button>
+                <button onclick="window.app.switchProviderTab('add')" class="nav-tab-item flex flex-col items-center justify-center text-slate-500 hover:text-indigo-600 transition" data-tab="add">
+                    <span class="text-lg">➕</span>
+                    <span class="text-[10px] font-bold mt-0.5">Add Toilet</span>
+                </button>
+                <button onclick="window.app.switchProviderTab('earnings')" class="nav-tab-item flex flex-col items-center justify-center text-slate-500 hover:text-indigo-600 transition" data-tab="earnings">
+                    <span class="text-lg">💰</span>
+                    <span class="text-[10px] font-bold mt-0.5">Direct Revenue</span>
+                </button>
+                <button onclick="window.app.switchProviderTab('account')" class="nav-tab-item flex flex-col items-center justify-center text-slate-500 hover:text-indigo-600 transition" data-tab="account">
+                    <span class="text-lg">👤</span>
+                    <span class="text-[10px] font-bold mt-0.5">Host Account</span>
+                </button>
+            </div>
+        </nav>
+
+        <!-- 3. ADMIN DEDICATED NAVIGATION BAR -->
+        <nav id="nav-bar-admin" class="role-nav-bar fixed bottom-0 left-0 right-0 z-40 bg-slate-900 text-white border-t border-slate-800 shadow-xl max-w-xl lg:max-w-7xl mx-auto hidden">
+            <div class="grid grid-cols-2 h-16 items-center text-center">
+                <button onclick="window.app.switchAdminTab('overview')" class="nav-tab-item active flex flex-col items-center justify-center text-amber-400 font-bold">
+                    <span class="text-lg">👑</span>
+                    <span class="text-[10px] mt-0.5">Master Terminal</span>
+                </button>
+                <button onclick="window.app.logout()" class="nav-tab-item flex flex-col items-center justify-center text-slate-400 hover:text-white">
+                    <span class="text-lg">🚪</span>
+                    <span class="text-[10px] font-bold mt-0.5">Sign Out</span>
+                </button>
+            </div>
+        </nav>
+
+        <!-- 4. GUEST / WELCOME NAVIGATION BAR -->
+        <nav id="nav-bar-guest" class="role-nav-bar fixed bottom-0 left-0 right-0 z-40 bg-white/95 backdrop-blur-lg border-t border-slate-200 shadow-xl max-w-xl lg:max-w-7xl mx-auto">
+            <div class="grid grid-cols-3 h-16 items-center text-center">
+                <button onclick="window.app.setAppRoleMode('guest')" class="nav-tab-item active flex flex-col items-center justify-center text-slate-500 hover:text-emerald-600 transition">
+                    <span class="text-lg">🏠</span>
+                    <span class="text-[10px] font-bold mt-0.5">Welcome</span>
+                </button>
+                <button onclick="window.app.selectLandingRole('user')" class="nav-tab-item flex flex-col items-center justify-center text-emerald-600 font-bold transition">
+                    <span class="text-lg">🚻</span>
+                    <span class="text-[10px] mt-0.5">Citizen Portal</span>
+                </button>
+                <button onclick="window.app.selectLandingRole('provider')" class="nav-tab-item flex flex-col items-center justify-center text-indigo-600 font-bold transition">
+                    <span class="text-lg">🏢</span>
+                    <span class="text-[10px] mt-0.5">Host Portal</span>
                 </button>
             </div>
         </nav>
     </div>
 
-    <!-- ================= ALL INTERACTIVE MODALS ================= -->
+    <!-- =========================================================================
+         ALL INTERACTIVE MODALS
+         ========================================================================= -->
 
     <!-- 1. MANDATORY SIGN IN / REGISTER MODAL -->
     <div id="auth-modal" class="hidden fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
@@ -388,12 +418,11 @@
             <div class="flex items-center justify-between pb-3 border-b border-slate-100">
                 <div>
                     <h3 class="text-base font-black text-slate-900 font-heading">Sign In / Register</h3>
-                    <p class="text-xs text-slate-500">Mandatory Login for Citizens & Hosts</p>
+                    <p class="text-xs text-slate-500">Access your dedicated portal</p>
                 </div>
                 <button onclick="window.app.closeAuthModal()" class="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-600 flex items-center justify-center font-bold text-xs">✕</button>
             </div>
 
-            <!-- Role Selector -->
             <div class="flex bg-slate-100 p-1 rounded-xl my-4 text-xs font-bold">
                 <button onclick="window.app.switchAuthTab('user')" data-role="user" class="auth-tab-btn flex-1 py-2 text-xs font-bold rounded-lg bg-emerald-600 text-white shadow-sm transition">
                     🚻 Citizen User
@@ -406,7 +435,6 @@
                 </button>
             </div>
 
-            <!-- Form Credentials -->
             <div id="auth-step-credentials" class="space-y-3 text-xs">
                 <div>
                     <label class="block font-bold text-slate-700 mb-1">Your Full Name *</label>
@@ -424,7 +452,7 @@
                     <input id="auth-email-input" type="email" placeholder="name@example.com" class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl font-semibold focus:outline-hidden focus:border-emerald-500" />
                 </div>
 
-                <!-- Provider Direct Payment & Banking Fields (Explicit Update 1) -->
+                <!-- Host Direct Banking & Payment QR Fields -->
                 <div id="provider-specific-fields" class="hidden space-y-3 pt-3 border-t-2 border-emerald-100 bg-emerald-50/50 p-3 rounded-2xl">
                     <div class="flex items-center gap-1.5 text-emerald-800 font-extrabold text-[11px]">
                         <span>💳</span>
@@ -432,7 +460,7 @@
                     </div>
 
                     <div>
-                        <label class="block font-bold text-slate-700 mb-1">Host UPI ID (VPA) for Direct User Payments *</label>
+                        <label class="block font-bold text-slate-700 mb-1">Host UPI ID (VPA) for Direct Payments *</label>
                         <input id="auth-upi-input" type="text" placeholder="yourname@okaxis / 9899001122@upi" class="w-full px-3.5 py-2 bg-white border border-slate-200 rounded-xl font-bold text-emerald-700" />
                     </div>
 
@@ -464,7 +492,6 @@
                 </button>
             </div>
 
-            <!-- OTP Step -->
             <div id="auth-step-otp" class="hidden space-y-4 text-center py-2">
                 <div class="w-12 h-12 bg-emerald-100 text-emerald-700 rounded-full flex items-center justify-center mx-auto text-xl">🔐</div>
                 <div>
@@ -480,13 +507,12 @@
         </div>
     </div>
 
-    <!-- 2. TOILET DETAIL BOTTOM SHEET -->
+    <!-- 2. TOILET DETAIL BOTTOM SHEET (USER ONLY) -->
     <div id="toilet-detail-modal" class="hidden fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-end sm:items-center justify-center p-0 sm:p-4">
-        <div class="modal-content-container bg-white rounded-t-3xl sm:rounded-3xl max-w-lg w-full shadow-2xl border border-slate-100 overflow-hidden animate-drawer">
-        </div>
+        <div class="modal-content-container bg-white rounded-t-3xl sm:rounded-3xl max-w-lg w-full shadow-2xl border border-slate-100 overflow-hidden animate-drawer"></div>
     </div>
 
-    <!-- 3. DOOR QR SCANNER SIMULATOR -->
+    <!-- 3. DOOR QR SCANNER (USER ONLY) -->
     <div id="qr-scanner-modal" class="hidden fixed inset-0 z-50 bg-slate-950/85 backdrop-blur-md flex items-center justify-center p-4">
         <div class="bg-slate-900 text-white rounded-3xl p-6 max-w-sm w-full shadow-2xl border border-slate-800 text-center space-y-4 animate-scale">
             <div class="flex items-center justify-between pb-2 border-b border-slate-800">
@@ -495,7 +521,7 @@
             </div>
             <div>
                 <p id="qr-target-toilet-name" class="font-bold text-white text-base">Facility Door</p>
-                <p id="qr-target-price" class="text-xs text-emerald-400 font-semibold mt-0.5">Direct Host Fee: ₹10</p>
+                <p id="qr-target-price" class="text-xs text-emerald-400 font-semibold mt-0.5">Direct Entry Fee: ₹10</p>
             </div>
             <div class="scanner-box w-56 h-56 mx-auto bg-slate-950 border border-slate-700 flex items-center justify-center relative">
                 <div class="laser-line"></div>
@@ -507,7 +533,7 @@
         </div>
     </div>
 
-    <!-- 4. ACTIVE WASHROOM TIMER SCREEN -->
+    <!-- 4. ACTIVE WASHROOM TIMER (USER ONLY) -->
     <div id="usage-timer-modal" class="hidden fixed inset-0 z-50 bg-slate-950/95 backdrop-blur-xl flex items-center justify-center p-4">
         <div class="bg-slate-900 text-white rounded-3xl p-6 sm:p-8 max-w-sm w-full shadow-2xl border border-emerald-500/30 text-center space-y-6 animate-scale">
             <div class="inline-flex items-center gap-2 px-3 py-1 bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 rounded-full text-xs font-bold">
@@ -529,7 +555,7 @@
         </div>
     </div>
 
-    <!-- 5. DIRECT HOST PAYMENT CHECKOUT MODAL -->
+    <!-- 5. DIRECT HOST PAYMENT CHECKOUT MODAL (USER ONLY) -->
     <div id="payment-checkout-modal" class="hidden fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
         <div class="bg-white rounded-3xl p-6 max-w-md w-full shadow-2xl border border-slate-100 space-y-4 animate-drawer">
             <div class="flex items-center justify-between pb-3 border-b border-slate-100">
@@ -550,7 +576,7 @@
                 </div>
             </div>
 
-            <!-- Host Direct Payment QR Code (Explicit Update 1) -->
+            <!-- Host Direct Payment QR Code -->
             <div class="text-center p-3 bg-emerald-50/70 rounded-2xl border border-emerald-200">
                 <p class="text-xs font-extrabold text-emerald-900 mb-1">Scan Host's Direct Payment QR Code</p>
                 <p id="pay-host-upi-label" class="text-[10px] font-mono text-emerald-800 mb-2 font-bold">Host UPI: host@okaxis</p>
@@ -576,7 +602,7 @@
         </div>
     </div>
 
-    <!-- 6. CITIZEN HYGIENE PHOTO REVIEW & FEEDBACK MODAL (Explicit Update 2) -->
+    <!-- 6. CITIZEN HYGIENE PHOTO REVIEW (USER ONLY) -->
     <div id="rating-feedback-modal" class="hidden fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
         <div class="bg-white rounded-3xl p-6 max-w-md w-full max-h-[90vh] overflow-y-auto shadow-2xl border border-slate-100 text-center space-y-4 animate-scale">
             <div class="w-14 h-14 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mx-auto text-2xl">
@@ -588,7 +614,6 @@
                 <p class="text-xs text-slate-500 mt-0.5">Rate hygiene & upload photo proof of toilet condition!</p>
             </div>
 
-            <!-- Star Cleanliness Selector -->
             <div class="flex justify-center gap-2 text-3xl cursor-pointer">
                 <span onclick="window.userFlow.setReviewRating(1)" class="feedback-star-btn text-amber-400">★</span>
                 <span onclick="window.userFlow.setReviewRating(2)" class="feedback-star-btn text-amber-400">★</span>
@@ -597,7 +622,6 @@
                 <span onclick="window.userFlow.setReviewRating(5)" class="feedback-star-btn text-amber-400">★</span>
             </div>
 
-            <!-- Hygiene Condition Tag Selector -->
             <div class="flex flex-wrap justify-center gap-1.5 text-xs">
                 <button type="button" onclick="window.userFlow.setHygieneTag('✨ Spotless Clean')" data-tag="✨ Spotless Clean" class="hygiene-tag-pill px-2.5 py-1 rounded-xl text-xs font-bold bg-emerald-600 text-white shadow-2xs">
                     ✨ Spotless Clean
@@ -613,7 +637,6 @@
                 </button>
             </div>
 
-            <!-- Hygiene Condition Photo Upload (Explicit Update 2) -->
             <div class="p-3.5 bg-slate-50 border-2 border-dashed border-emerald-300 rounded-2xl text-left space-y-2">
                 <div class="flex items-center justify-between">
                     <span class="text-xs font-extrabold text-slate-800">📸 Upload Toilet Condition Photo</span>
@@ -621,12 +644,9 @@
                 </div>
                 <input type="file" accept="image/*" multiple onchange="window.userFlow.handleReviewPhotoUpload(event)" 
                        class="w-full text-xs text-slate-500 file:mr-2 file:py-1.5 file:px-3 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-emerald-600 file:text-white hover:file:bg-emerald-700 cursor-pointer" />
-                
-                <!-- Photo Previews -->
                 <div id="review-photo-preview" class="flex gap-2 overflow-x-auto pt-1 no-scrollbar"></div>
             </div>
 
-            <!-- Review Comment -->
             <textarea id="review-comment-input" rows="2" placeholder="Write feedback about cleanliness, odor, water, locks..." class="w-full p-3 bg-slate-50 border border-slate-200 rounded-2xl text-xs font-semibold focus:outline-hidden focus:border-emerald-500"></textarea>
 
             <button onclick="window.userFlow.submitRatingFeedback()" class="w-full py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-2xl text-xs shadow-md transition">
@@ -635,7 +655,7 @@
         </div>
     </div>
 
-    <!-- 7. ADD TOILET LISTING MODAL -->
+    <!-- 7. ADD TOILET LISTING MODAL (HOST ONLY) -->
     <div id="add-toilet-modal" class="hidden fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
         <div class="bg-white rounded-3xl p-6 max-w-xl w-full max-h-[90vh] overflow-y-auto shadow-2xl border border-slate-100 space-y-4 animate-drawer">
             <div class="flex items-center justify-between pb-3 border-b border-slate-100">
@@ -678,7 +698,6 @@
                     </div>
                 </div>
 
-                <!-- Custom Direct Payment QR Code for Listing -->
                 <div class="p-3 bg-emerald-50 rounded-2xl border border-emerald-200 space-y-2">
                     <label class="block font-extrabold text-emerald-900">Direct Payment QR Code for This Washroom *</label>
                     <input type="file" accept="image/*" onchange="window.providerFlow.handleListingQrUpload(event)" 
@@ -698,7 +717,7 @@
         </div>
     </div>
 
-    <!-- 8. DOOR QR POSTER MODAL -->
+    <!-- 8. DOOR QR POSTER (HOST ONLY) -->
     <div id="qr-poster-modal" class="hidden fixed inset-0 z-50 bg-black/70 backdrop-blur-xs flex items-center justify-center p-4">
         <div class="bg-white rounded-3xl p-6 max-w-sm w-full shadow-2xl border border-slate-100 text-center space-y-4 animate-scale">
             <div class="flex items-center justify-between pb-2 border-b border-slate-100">
