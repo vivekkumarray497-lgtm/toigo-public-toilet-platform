@@ -1,5 +1,5 @@
 /**
- * TOIGO: Map Controller (Leaflet.js + Live Geolocation + Custom Toilet Markers + Routing)
+ * TOIGO: Map Controller (Google Maps HD Engine + Geolocation + Navigation Routing)
  */
 
 class MapController {
@@ -8,11 +8,11 @@ class MapController {
         this.markersLayer = null;
         this.userMarker = null;
         this.routeLayer = null;
-        this.radiusCircle = null;
+        this.currentTileLayer = null;
+        this.mapType = 'google_streets'; // 'google_streets' | 'google_satellite' | 'osm'
         this.userCoords = { lat: 28.6315, lng: 77.2167 }; // Default Central Delhi
         this.isLocating = false;
         this.hasSeededLive = false;
-        this.pickerMarker = null;
     }
 
     init(containerId = 'map-view') {
@@ -24,30 +24,62 @@ class MapController {
         const mapEl = document.getElementById(containerId);
         if (!mapEl) return;
 
-        // Create Leaflet map
+        // Create Leaflet map container
         this.map = L.map(containerId, {
             zoomControl: false,
             attributionControl: false
-        }).setView([this.userCoords.lat, this.userCoords.lng], 15);
+        }).setView([this.userCoords.lat, this.userCoords.lng], 16);
 
-        // Tile layer (Clean modern style)
-        L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
-            maxZoom: 19,
-            subdomains: 'abcd'
-        }).addTo(this.map);
+        // Add Google Maps HD Street Layer (No watermarks, clean authentic Google Maps UI!)
+        this.setMapType('google_streets');
 
-        // Zoom control in bottom right
-        L.control.zoom({ position: 'bottomright' }).addTo(this.map);
-
-        // Markers group
+        // Markers and Route groups
         this.markersLayer = L.layerGroup().addTo(this.map);
         this.routeLayer = L.layerGroup().addTo(this.map);
 
-        // Add user marker
+        // Add User Location indicator
         this.updateUserMarker();
 
-        // Request real GPS
+        // Auto-detect GPS location
         this.locateUser(false);
+    }
+
+    // Switch between Google Street and Google Satellite
+    setMapType(type) {
+        this.mapType = type;
+        if (this.currentTileLayer && this.map) {
+            this.map.removeLayer(this.currentTileLayer);
+        }
+
+        let tileUrl = 'https://{s}.google.com/vt/lyrs=m&x={x}&y={y}&z={z}'; // Google Street Maps
+        if (type === 'google_satellite') {
+            tileUrl = 'https://{s}.google.com/vt/lyrs=s,h&x={x}&y={y}&z={z}'; // Google Hybrid Satellite
+        } else if (type === 'osm') {
+            tileUrl = 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png';
+        }
+
+        this.currentTileLayer = L.tileLayer(tileUrl, {
+            maxZoom: 20,
+            subdomains: ['mt0', 'mt1', 'mt2', 'mt3']
+        }).addTo(this.map);
+    }
+
+    toggleSatellite() {
+        if (this.mapType === 'google_streets') {
+            this.setMapType('google_satellite');
+            window.app.showToast('Switched to Google Satellite View 🛰️', 'info');
+        } else {
+            this.setMapType('google_streets');
+            window.app.showToast('Switched to Google Street Map 🗺️', 'info');
+        }
+    }
+
+    zoomIn() {
+        if (this.map) this.map.zoomIn();
+    }
+
+    zoomOut() {
+        if (this.map) this.map.zoomOut();
     }
 
     locateUser(panToUser = true) {
@@ -82,7 +114,7 @@ class MapController {
                     this.map.flyTo([this.userCoords.lat, this.userCoords.lng], 16, { animate: true, duration: 1.2 });
                 }
 
-                window.app?.showToast('Location updated! Showing nearest toilets.', 'success');
+                window.app?.showToast('GPS Location updated! Showing nearest washrooms.', 'success');
                 window.userFlow?.renderToiletList();
             },
             (err) => {
@@ -101,20 +133,21 @@ class MapController {
         if (this.userMarker) {
             this.userMarker.setLatLng([this.userCoords.lat, this.userCoords.lng]);
         } else {
+            // Google Maps authentic blue pulsing GPS location dot
             const userIcon = L.divIcon({
                 className: 'custom-user-pin',
                 html: `
                     <div class="relative flex items-center justify-center">
-                        <span class="animate-ping absolute inline-flex h-8 w-8 rounded-full bg-emerald-400 opacity-75"></span>
-                        <span class="relative inline-flex rounded-full h-5 w-5 bg-emerald-600 border-2 border-white shadow-lg shadow-emerald-500/50"></span>
+                        <span class="animate-ping absolute inline-flex h-9 w-9 rounded-full bg-blue-400 opacity-70"></span>
+                        <span class="relative inline-flex rounded-full h-5 w-5 bg-blue-600 border-2 border-white shadow-xl shadow-blue-500/50"></span>
                     </div>
                 `,
-                iconSize: [32, 32],
-                iconAnchor: [16, 16]
+                iconSize: [36, 36],
+                iconAnchor: [18, 18]
             });
 
             this.userMarker = L.marker([this.userCoords.lat, this.userCoords.lng], { icon: userIcon })
-                .bindPopup('<div class="p-1 font-semibold text-xs text-gray-800">📍 You are here</div>')
+                .bindPopup('<div class="p-1 font-bold text-xs text-slate-800">📍 You are here</div>')
                 .addTo(this.map);
         }
     }
@@ -128,40 +161,36 @@ class MapController {
         toilets.forEach((toilet) => {
             if (!toilet.lat || !toilet.lng) return;
 
-            const isWestern = toilet.type.includes('English') || toilet.type.includes('Western');
             const isFree = toilet.price === 0 || toilet.isFree;
             const priceBadge = isFree ? 'FREE' : `₹${toilet.price}`;
             
-            // Icon color scheme based on toilet type
-            let bgGradient = 'from-emerald-500 to-teal-600';
-            let iconGlyph = '🚻';
+            // Clean Google Maps style color badges
+            let badgeBg = 'bg-emerald-600';
+            let glyph = '🚻';
             if (toilet.type === 'Indian') {
-                bgGradient = 'from-amber-500 to-orange-600';
-                iconGlyph = '🇮🇳';
+                badgeBg = 'bg-amber-600';
+                glyph = '🇮🇳';
             } else if (toilet.type.includes('Both')) {
-                bgGradient = 'from-indigo-500 to-purple-600';
-                iconGlyph = '✨';
-            } else if (isFree) {
-                bgGradient = 'from-blue-500 to-cyan-600';
-                iconGlyph = '💧';
+                badgeBg = 'bg-indigo-600';
+                glyph = '✨';
             }
 
             const customMarkerHtml = `
-                <div class="toilet-map-badge group cursor-pointer transform hover:scale-110 transition-all duration-200">
-                    <div class="flex items-center gap-1.5 px-2.5 py-1.5 rounded-full bg-gradient-to-r ${bgGradient} text-white text-xs font-bold shadow-xl border-2 border-white">
-                        <span>${iconGlyph}</span>
+                <div class="toilet-marker-pill cursor-pointer flex flex-col items-center group">
+                    <div class="flex items-center gap-1.5 px-2.5 py-1 rounded-full ${badgeBg} text-white text-xs font-black shadow-xl border-2 border-white">
+                        <span>${glyph}</span>
                         <span>${priceBadge}</span>
-                        <span class="text-[10px] bg-white/20 px-1 rounded">★${toilet.rating}</span>
+                        <span class="text-[9px] bg-black/20 px-1 py-0.2 rounded font-bold">★${toilet.rating}</span>
                     </div>
-                    <div class="w-2 h-2 bg-gray-900 rotate-45 mx-auto -mt-1 shadow-sm"></div>
+                    <div class="w-2.5 h-2.5 ${badgeBg} rotate-45 -mt-1.5 border-r border-b border-white shadow-sm"></div>
                 </div>
             `;
 
             const icon = L.divIcon({
                 className: 'custom-toilet-icon',
                 html: customMarkerHtml,
-                iconSize: [90, 36],
-                iconAnchor: [45, 34]
+                iconSize: [95, 38],
+                iconAnchor: [47, 36]
             });
 
             const marker = L.marker([toilet.lat, toilet.lng], { icon: icon });
@@ -182,19 +211,15 @@ class MapController {
         const start = [this.userCoords.lat, this.userCoords.lng];
         const end = [toilet.lat, toilet.lng];
 
-        // Draw curved direct walking path
-        const midLat = (start[0] + end[0]) / 2 + 0.0003;
-        const midLng = (start[1] + end[1]) / 2 - 0.0003;
-
-        const polyline = L.polyline([start, [midLat, midLng], end], {
-            color: '#059669', // Emerald 600
-            weight: 5,
-            opacity: 0.85,
+        // Google Maps style walking route polyline (Royal Blue)
+        const polyline = L.polyline([start, end], {
+            color: '#2563eb', // Google Blue
+            weight: 6,
+            opacity: 0.9,
             dashArray: '8, 8',
             lineCap: 'round'
         }).addTo(this.routeLayer);
 
-        // Fit bounds to show user and destination
         this.map.fitBounds([start, end], { padding: [80, 80] });
     }
 
@@ -204,7 +229,7 @@ class MapController {
         }
     }
 
-    // Interactive picker for Provider when adding new toilet
+    // Google Maps picker for Host washroom registration
     initPickerMap(containerId = 'picker-map', initialCoords = null, onSelect = null) {
         const coords = initialCoords || this.userCoords;
         const pickerMap = L.map(containerId, {
@@ -212,8 +237,9 @@ class MapController {
             attributionControl: false
         }).setView([coords.lat, coords.lng], 16);
 
-        L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
-            maxZoom: 19
+        L.tileLayer('https://{s}.google.com/vt/lyrs=m&x={x}&y={y}&z={z}', {
+            maxZoom: 20,
+            subdomains: ['mt0', 'mt1', 'mt2', 'mt3']
         }).addTo(pickerMap);
 
         const marker = L.marker([coords.lat, coords.lng], { draggable: true }).addTo(pickerMap);

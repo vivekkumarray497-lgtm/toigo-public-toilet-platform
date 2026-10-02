@@ -240,6 +240,25 @@
                 </div>
             </div>
 
+            <!-- Google Maps Floating Quick Controls (Satellite toggle, Recenter, Zoom) -->
+            <div class="absolute right-3 top-32 z-20 flex flex-col gap-2 pointer-events-auto">
+                <!-- Toggle Satellite / Street -->
+                <button onclick="window.toigoMap.toggleSatellite()" title="Toggle Satellite / Street View" 
+                        class="w-10 h-10 bg-white/95 backdrop-blur-md rounded-2xl shadow-lg border border-slate-200 flex items-center justify-center text-base hover:bg-slate-50 transition active:scale-95">
+                    🛰️
+                </button>
+                <!-- Recenter on GPS -->
+                <button onclick="window.toigoMap.locateUser(true)" title="Recenter to My Location" 
+                        class="w-10 h-10 bg-white/95 backdrop-blur-md rounded-2xl shadow-lg border border-slate-200 flex items-center justify-center text-base text-blue-600 hover:bg-slate-50 transition active:scale-95">
+                    🎯
+                </button>
+                <!-- Zoom Controls -->
+                <div class="bg-white/95 backdrop-blur-md rounded-2xl shadow-lg border border-slate-200 overflow-hidden flex flex-col">
+                    <button onclick="window.toigoMap.zoomIn()" title="Zoom In" class="w-10 h-9 flex items-center justify-center text-slate-700 font-bold text-base hover:bg-slate-100 border-b border-slate-100">+</button>
+                    <button onclick="window.toigoMap.zoomOut()" title="Zoom Out" class="w-10 h-9 flex items-center justify-center text-slate-700 font-bold text-base hover:bg-slate-100">−</button>
+                </div>
+            </div>
+
             <!-- Bottom Floating Drawer -->
             <div class="absolute bottom-2 left-2 right-2 z-20 pointer-events-auto">
                 <div class="glass-pill rounded-3xl p-3 sm:p-4 shadow-2xl border border-white/80">
