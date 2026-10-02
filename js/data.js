@@ -1,18 +1,18 @@
 /**
  * TOIGO: Find, Use & Pay - Data & Storage Layer
- * Manages Mock Database, LocalStorage sync, Seed Data & CRUD operations
+ * Supports Direct Provider QR/Bank details & Citizen Hygiene Photo Reviews
  */
 
-const STORAGE_KEY = 'TOIGO_APP_DATA_V1';
+const STORAGE_KEY = 'TOIGO_APP_DATA_V2';
 
-// Default initial state
+// Default initial seed data
 const defaultInitialData = {
     currentUser: null, // { id, name, email, phone, role: 'user'|'provider'|'admin', walletBalance, avatar }
     settings: {
-        platformCommissionPct: 10, // 10% platform fee for founder
+        platformCommissionPct: 0, // 0% or direct payout to host
         sosEmergencyNumber: '112 / 108',
         announcements: [
-            { id: 'ann-1', title: 'Welcome to TOIGO!', message: 'India’s #1 Smart Public & Private Toilet Network. Hygienic, safe & pay-per-use.', date: 'Today' }
+            { id: 'ann-1', title: 'Welcome to TOIGO!', message: 'India’s #1 Smart Toilet Network. Direct UPI payment to hosts & citizen hygiene photo reviews.', date: 'Today' }
         ]
     },
     users: [
@@ -50,6 +50,10 @@ const defaultInitialData = {
             role: 'provider',
             businessName: 'SmartRest Commercial Sanitations',
             upiId: 'amit.verma@okaxis',
+            bankAccountNo: '918273645012',
+            bankIfsc: 'UTIB0000123',
+            bankHolderName: 'Amit Verma',
+            qrCodeImage: 'https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=upi%3A%2F%2Fpay%3Fpa%3Damit.verma%40okaxis%26pn%3DSmartRest%20Washrooms%26cu%3DINR',
             walletBalance: 4200,
             totalEarned: 18500,
             status: 'verified',
@@ -63,8 +67,12 @@ const defaultInitialData = {
             email: 'sunita.devi@cafesan.com',
             phone: '9765432109',
             role: 'provider',
-            businessName: 'Sunita Clean Restrooms (Home/Shop Host)',
+            businessName: 'Sunita Clean Restrooms',
             upiId: 'sunita976@ybl',
+            bankAccountNo: '5010023491823',
+            bankIfsc: 'HDFC0000456',
+            bankHolderName: 'Sunita Devi',
+            qrCodeImage: 'https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=upi%3A%2F%2Fpay%3Fpa%3Dsunita976%40ybl%26pn%3DSunita%20Restrooms%26cu%3DINR',
             walletBalance: 1850,
             totalEarned: 6400,
             status: 'verified',
@@ -90,19 +98,21 @@ const defaultInitialData = {
             providerId: 'prov-1',
             providerName: 'Amit Verma (SmartRest)',
             phone: '+91 9899001122',
+            upiId: 'amit.verma@okaxis',
+            qrCodeImage: 'https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=upi%3A%2F%2Fpay%3Fpa%3Damit.verma%40okaxis%26pn%3DSmartRest%20Washrooms%26am%3D15%26cu%3DINR',
             address: 'Block A, Connaught Place, Inner Circle, Near Metro Gate 3',
             city: 'New Delhi',
             lat: 28.6315,
             lng: 77.2167,
-            type: 'English / Western', // 'Indian', 'English / Western', 'Both (Indian & Western)', 'Urinal Only'
+            type: 'English / Western',
             genderType: 'Unisex & Separate Men/Women',
             price: 15,
             isFree: false,
             rating: 4.9,
             totalReviews: 142,
             cleanlinessScore: '98%',
-            status: 'open', // 'open', 'closed', 'cleaning'
-            approvalStatus: 'approved', // 'pending', 'approved', 'rejected'
+            status: 'open',
+            approvalStatus: 'approved',
             isVerified: true,
             isFeatured: true,
             images: [
@@ -111,7 +121,6 @@ const defaultInitialData = {
             ],
             amenities: ['Air Conditioned', 'Hand Soap', 'Tissue / Toilet Paper', 'Hand Sanitizer', 'Jet Spray', 'Wheelchair Accessible', 'Mirror', 'Sanitary Pad Dispenser', 'Baby Care Station'],
             timings: '06:00 AM - 11:30 PM',
-            upiQrString: 'upi://pay?pa=amit.verma@okaxis&pn=SmartRest%20Toilets&am=15&cu=INR',
             description: 'Ultra-hygienic premium air-conditioned washroom facility with automated touchless taps, sanitized seats and full handicap access.'
         },
         {
@@ -120,6 +129,8 @@ const defaultInitialData = {
             providerId: 'prov-2',
             providerName: 'Sunita Devi',
             phone: '+91 9765432109',
+            upiId: 'sunita976@ybl',
+            qrCodeImage: 'https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=upi%3A%2F%2Fpay%3Fpa%3Dsunita976%40ybl%26pn%3DSunita%20Restrooms%26am%3D10%26cu%3DINR',
             address: 'Shop #12, Janpath Market Road, Opp Central Bank',
             city: 'New Delhi',
             lat: 28.6250,
@@ -141,7 +152,6 @@ const defaultInitialData = {
             ],
             amenities: ['Hand Soap', 'Jet Spray', 'Mirror', 'Fresh Water', 'Sanitary Pad Dispenser'],
             timings: '07:00 AM - 10:00 PM',
-            upiQrString: 'upi://pay?pa=sunita976@ybl&pn=Sunita%20Restrooms&am=10&cu=INR',
             description: 'Clean commercial shop toilet maintained hourly. Separate Indian and Western commodes available.'
         },
         {
@@ -150,6 +160,8 @@ const defaultInitialData = {
             providerId: 'prov-1',
             providerName: 'Delhi Transit & SmartRest',
             phone: '+91 1123456789',
+            upiId: 'amit.verma@okaxis',
+            qrCodeImage: 'https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=upi%3A%2F%2Fpay%3Fpa%3Damit.verma%40okaxis%26pn%3DMetro%20Toigo%26am%3D5%26cu%3DINR',
             address: 'Rajiv Chowk Metro Concourse, Gate 6',
             city: 'New Delhi',
             lat: 28.6328,
@@ -170,7 +182,6 @@ const defaultInitialData = {
             ],
             amenities: ['Hand Soap', 'Running Tap Water', 'Dustbin', 'Wheelchair Accessible'],
             timings: '05:30 AM - 11:45 PM',
-            upiQrString: 'upi://pay?pa=amit.verma@okaxis&pn=Metro%20Toigo&am=5&cu=INR',
             description: 'Fast public toilet hub with quick turnaround, dedicated attendants and regular disinfection.'
         },
         {
@@ -179,6 +190,8 @@ const defaultInitialData = {
             providerId: 'prov-1',
             providerName: 'Municipal Smart City Project',
             phone: '+91 1800112233',
+            upiId: 'free@municipal',
+            qrCodeImage: 'https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=FREE_ACCESS',
             address: 'Central Park North Lawn, Near Fountain',
             city: 'New Delhi',
             lat: 28.6342,
@@ -190,7 +203,7 @@ const defaultInitialData = {
             rating: 4.2,
             totalReviews: 64,
             cleanlinessScore: '85%',
-            status: 'cleaning',
+            status: 'open',
             approvalStatus: 'approved',
             isVerified: true,
             isFeatured: false,
@@ -199,37 +212,7 @@ const defaultInitialData = {
             ],
             amenities: ['Free Water', 'Soap Dispenser', 'Wheelchair Ramp', 'Solar Powered Lighting'],
             timings: '24 Hours',
-            upiQrString: 'upi://pay?pa=amit.verma@okaxis&pn=Free%20Public%20Toilet&am=0&cu=INR',
-            description: 'Free public community toilet funded by CSR. Currently undergoing routine 15-minute sanitization cycle.'
-        },
-        {
-            id: 't-5',
-            name: 'Royal Comfort Cafe & Rest Lounge',
-            providerId: 'prov-2',
-            providerName: 'Sunita Devi',
-            phone: '+91 9765432109',
-            address: 'Kasturba Gandhi Marg, Near Barakhamba Road',
-            city: 'New Delhi',
-            lat: 28.6280,
-            lng: 77.2240,
-            type: 'English / Western',
-            genderType: 'Unisex',
-            price: 20,
-            isFree: false,
-            rating: 4.95,
-            totalReviews: 53,
-            cleanlinessScore: '99%',
-            status: 'open',
-            approvalStatus: 'approved',
-            isVerified: true,
-            isFeatured: true,
-            images: [
-                'https://images.unsplash.com/photo-1584622650111-993a426fbf0a?auto=format&fit=crop&w=600&q=80'
-            ],
-            amenities: ['Air Conditioned', 'Premium Fragrance', 'Tissue / Toilet Paper', 'Hand Dryer', 'Warm Water', 'Sanitary Pad Dispenser', 'Mirror'],
-            timings: '08:00 AM - 11:00 PM',
-            upiQrString: 'upi://pay?pa=sunita976@ybl&pn=Royal%20Comfort&am=20&cu=INR',
-            description: 'Premium boutique restroom with luxury automated fixtures, organic soap, and refreshing aroma.'
+            description: 'Free public community toilet funded by CSR.'
         }
     ],
     bookings: [
@@ -241,59 +224,11 @@ const defaultInitialData = {
             userName: 'Rahul Sharma',
             providerId: 'prov-1',
             amount: 15,
-            platformFee: 1.5,
-            providerEarning: 13.5,
-            paymentMethod: 'UPI (GPay)',
+            providerEarning: 15,
+            paymentMethod: 'Direct UPI (GPay)',
             paymentStatus: 'PAID',
             timestamp: new Date(Date.now() - 3600000 * 4).toISOString(),
-            status: 'Completed',
-            ratingGiven: 5,
-            reviewText: 'Extremely clean and aromatic! Worth every rupee.'
-        },
-        {
-            id: 'bk-102',
-            toiletId: 't-2',
-            toiletName: 'Sunita Clean & Safe Restroom (Shop Front)',
-            userId: 'usr-2',
-            userName: 'Priya Patel',
-            providerId: 'prov-2',
-            amount: 10,
-            platformFee: 1.0,
-            providerEarning: 9.0,
-            paymentMethod: 'TOIGO Wallet',
-            paymentStatus: 'PAID',
-            timestamp: new Date(Date.now() - 3600000 * 12).toISOString(),
-            status: 'Completed',
-            ratingGiven: 5,
-            reviewText: 'Very safe for women, good lock and sanitary pads available.'
-        },
-        {
-            id: 'bk-103',
-            toiletId: 't-3',
-            toiletName: 'Public Metro Station Hygiene Complex',
-            userId: 'usr-1',
-            userName: 'Rahul Sharma',
-            providerId: 'prov-1',
-            amount: 5,
-            platformFee: 0.5,
-            providerEarning: 4.5,
-            paymentMethod: 'Paytm UPI',
-            paymentStatus: 'PAID',
-            timestamp: new Date(Date.now() - 3600000 * 24).toISOString(),
-            status: 'Completed',
-            ratingGiven: 4,
-            reviewText: 'Quick entry via QR scan.'
-        }
-    ],
-    payoutRequests: [
-        {
-            id: 'po-1',
-            providerId: 'prov-1',
-            providerName: 'Amit Verma (SmartRest)',
-            amount: 2500,
-            upiId: 'amit.verma@okaxis',
-            status: 'pending', // 'pending', 'approved', 'rejected'
-            requestedAt: new Date(Date.now() - 3600000 * 18).toISOString()
+            status: 'Completed'
         }
     ],
     reviews: [
@@ -302,8 +237,13 @@ const defaultInitialData = {
             toiletId: 't-1',
             userId: 'usr-1',
             userName: 'Rahul Sharma',
+            userAvatar: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=150&q=80',
             rating: 5,
-            comment: 'Super clean, smelled great and very convenient!',
+            hygieneTag: '✨ Spotless Clean',
+            comment: 'Super clean, pleasant fragrance and jet spray had great pressure. Very safe!',
+            photos: [
+                'https://images.unsplash.com/photo-1584622650111-993a426fbf0a?auto=format&fit=crop&w=400&q=80'
+            ],
             date: '2 hours ago'
         },
         {
@@ -311,14 +251,19 @@ const defaultInitialData = {
             toiletId: 't-2',
             userId: 'usr-2',
             userName: 'Priya Patel',
+            userAvatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=150&q=80',
             rating: 5,
-            comment: 'Safe, private and hygiene maintained with proper water supply.',
+            hygieneTag: '🧼 Fresh & Sanitized',
+            comment: 'Very safe for women. Clean mirror, sanitary pads available and dry floor.',
+            photos: [
+                'https://images.unsplash.com/photo-1620626011761-996317b8d101?auto=format&fit=crop&w=400&q=80'
+            ],
             date: 'Yesterday'
         }
     ]
 };
 
-// Application Database Controller
+// Database Controller
 class ToigoDB {
     constructor() {
         this.data = this.load();
@@ -329,11 +274,10 @@ class ToigoDB {
             const raw = localStorage.getItem(STORAGE_KEY);
             if (raw) {
                 const parsed = JSON.parse(raw);
-                // merge with defaults in case of missing keys
                 return { ...defaultInitialData, ...parsed };
             }
         } catch (e) {
-            console.error('Error loading TOIGO data from localStorage:', e);
+            console.error('Error loading data:', e);
         }
         this.save(defaultInitialData);
         return defaultInitialData;
@@ -344,11 +288,10 @@ class ToigoDB {
         try {
             localStorage.setItem(STORAGE_KEY, JSON.stringify(this.data));
         } catch (e) {
-            console.error('Error saving TOIGO data to localStorage:', e);
+            console.error('Error saving data:', e);
         }
     }
 
-    // Auth helpers
     getCurrentUser() {
         return this.data.currentUser;
     }
@@ -363,21 +306,22 @@ class ToigoDB {
         this.save();
     }
 
-    // User CRUD
     findUserByPhoneOrEmail(identifier) {
+        if (!identifier) return null;
         const idLower = identifier.trim().toLowerCase();
-        return this.data.users.find(u => u.phone === idLower || u.email.toLowerCase() === idLower);
+        return this.data.users.find(u => u.phone === idLower || (u.email && u.email.toLowerCase() === idLower));
     }
 
     findProviderByPhoneOrEmail(identifier) {
+        if (!identifier) return null;
         const idLower = identifier.trim().toLowerCase();
-        return this.data.providers.find(p => p.phone === idLower || p.email.toLowerCase() === idLower);
+        return this.data.providers.find(p => p.phone === idLower || (p.email && p.email.toLowerCase() === idLower));
     }
 
     createUser(userData) {
         const newUser = {
             id: 'usr-' + Date.now(),
-            walletBalance: 100, // Welcome gift ₹100
+            walletBalance: 100,
             avatar: `https://api.dicebear.com/7.x/bottts/svg?seed=${encodeURIComponent(userData.name || 'User')}`,
             status: 'active',
             joinedAt: new Date().toISOString().split('T')[0],
@@ -391,6 +335,9 @@ class ToigoDB {
     }
 
     createProvider(providerData) {
+        const upi = providerData.upiId || 'host@upi';
+        const defaultQr = `https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent('upi://pay?pa=' + upi + '&pn=' + (providerData.businessName || providerData.name) + '&cu=INR')}`;
+
         const newProvider = {
             id: 'prov-' + Date.now(),
             walletBalance: 0,
@@ -399,6 +346,7 @@ class ToigoDB {
             kycStatus: 'Approved',
             joinedAt: new Date().toISOString().split('T')[0],
             avatar: `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(providerData.name || 'Provider')}`,
+            qrCodeImage: providerData.qrCodeImage || defaultQr,
             ...providerData,
             role: 'provider'
         };
@@ -407,7 +355,6 @@ class ToigoDB {
         return newProvider;
     }
 
-    // Toilet CRUD
     getAllToilets(includePending = false) {
         if (includePending) return this.data.toilets;
         return this.data.toilets.filter(t => t.approvalStatus === 'approved');
@@ -421,20 +368,29 @@ class ToigoDB {
         return this.data.toilets.filter(t => t.providerId === providerId);
     }
 
+    getReviewsForToilet(toiletId) {
+        return (this.data.reviews || []).filter(r => r.toiletId === toiletId);
+    }
+
     addToilet(toiletData) {
+        const prov = this.data.providers.find(p => p.id === toiletData.providerId) || {};
+        const upi = toiletData.upiId || prov.upiId || 'host@okaxis';
+        const qrImg = toiletData.qrCodeImage || prov.qrCodeImage || `https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent('upi://pay?pa=' + upi + '&pn=' + encodeURIComponent(toiletData.name) + '&am=' + toiletData.price + '&cu=INR')}`;
+
         const newToilet = {
             id: 't-' + Date.now(),
             rating: 5.0,
             totalReviews: 1,
             cleanlinessScore: '98%',
             status: 'open',
-            approvalStatus: 'approved', // Auto approved for instant host gratification
+            approvalStatus: 'approved',
             isVerified: true,
             isFeatured: false,
+            upiId: upi,
+            qrCodeImage: qrImg,
             images: toiletData.images && toiletData.images.length > 0 ? toiletData.images : [
                 'https://images.unsplash.com/photo-1584622650111-993a426fbf0a?auto=format&fit=crop&w=600&q=80'
             ],
-            upiQrString: `upi://pay?pa=${toiletData.upiId || 'host@toigo'}&pn=${encodeURIComponent(toiletData.name)}&am=${toiletData.price}&cu=INR`,
             ...toiletData
         };
         this.data.toilets.unshift(newToilet);
@@ -457,45 +413,37 @@ class ToigoDB {
         this.save();
     }
 
-    // Bookings & Transactions
     createBooking({ toiletId, userId, amount, paymentMethod }) {
         const toilet = this.getToiletById(toiletId);
-        const user = this.data.users.find(u => u.id === userId) || this.data.currentUser || { name: 'Guest User' };
+        const user = this.data.users.find(u => u.id === userId) || this.data.currentUser || { name: 'User' };
         
-        const commPct = this.data.settings.platformCommissionPct || 10;
-        const platformFee = Number(((amount * commPct) / 100).toFixed(2));
-        const providerEarning = Number((amount - platformFee).toFixed(2));
-
         const newBooking = {
             id: 'bk-' + Date.now(),
             toiletId,
-            toiletName: toilet ? toilet.name : 'Public Toilet',
+            toiletName: toilet ? toilet.name : 'Public Restroom',
             userId: user.id || 'usr-guest',
-            userName: user.name || 'User',
+            userName: user.name || 'Citizen User',
             providerId: toilet ? toilet.providerId : 'prov-1',
             amount: Number(amount),
-            platformFee,
-            providerEarning,
+            providerEarning: Number(amount),
             paymentMethod,
-            paymentStatus: 'PAID',
+            paymentStatus: 'PAID (Direct to Host)',
             timestamp: new Date().toISOString(),
-            status: 'Completed',
-            ratingGiven: null,
-            reviewText: null
+            status: 'Completed'
         };
 
         this.data.bookings.unshift(newBooking);
 
-        // Update provider earnings
+        // Credit provider
         if (toilet && toilet.providerId) {
             const prov = this.data.providers.find(p => p.id === toilet.providerId);
             if (prov) {
-                prov.walletBalance = (prov.walletBalance || 0) + providerEarning;
-                prov.totalEarned = (prov.totalEarned || 0) + providerEarning;
+                prov.walletBalance = (prov.walletBalance || 0) + Number(amount);
+                prov.totalEarned = (prov.totalEarned || 0) + Number(amount);
             }
         }
 
-        // Deduct from user wallet if wallet payment
+        // Deduct wallet if wallet pay
         if (paymentMethod === 'TOIGO Wallet' && user.id) {
             const dbUser = this.data.users.find(u => u.id === user.id);
             if (dbUser) {
@@ -507,70 +455,41 @@ class ToigoDB {
         return newBooking;
     }
 
-    addReview({ toiletId, userId, userName, rating, comment }) {
+    addReview({ toiletId, userId, userName, userAvatar, rating, hygieneTag, comment, photos }) {
         const newReview = {
             id: 'rev-' + Date.now(),
             toiletId,
             userId,
-            userName,
+            userName: userName || 'Citizen',
+            userAvatar: userAvatar || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=150&q=80',
             rating: Number(rating),
-            comment,
+            hygieneTag: hygieneTag || '✨ Spotless Clean',
+            comment: comment || 'Verified clean and hygienic washroom.',
+            photos: photos || [],
             date: 'Just now'
         };
+
+        if (!this.data.reviews) this.data.reviews = [];
         this.data.reviews.unshift(newReview);
 
-        // Update toilet average rating
+        // Update toilet rating & cleanliness score
         const toiletReviews = this.data.reviews.filter(r => r.toiletId === toiletId);
-        const avg = toiletReviews.reduce((sum, r) => sum + r.rating, 0) / toiletReviews.length;
+        const avgRating = toiletReviews.reduce((sum, r) => sum + r.rating, 0) / toiletReviews.length;
+        const hygieneScorePct = Math.round((avgRating / 5) * 100);
+
         this.updateToilet(toiletId, {
-            rating: Number(avg.toFixed(1)),
-            totalReviews: toiletReviews.length
+            rating: Number(avgRating.toFixed(1)),
+            totalReviews: toiletReviews.length,
+            cleanlinessScore: `${hygieneScorePct}%`
         });
 
         this.save();
         return newReview;
     }
 
-    // Payout Requests
-    requestPayout(providerId, amount, upiId) {
-        const prov = this.data.providers.find(p => p.id === providerId);
-        if (!prov) throw new Error('Provider not found');
-        if (prov.walletBalance < amount) throw new Error('Insufficient wallet balance');
-
-        prov.walletBalance -= amount;
-        const payout = {
-            id: 'po-' + Date.now(),
-            providerId,
-            providerName: prov.name,
-            amount,
-            upiId,
-            status: 'pending',
-            requestedAt: new Date().toISOString()
-        };
-        this.data.payoutRequests.unshift(payout);
-        this.save();
-        return payout;
-    }
-
-    resolvePayout(payoutId, newStatus) {
-        const po = this.data.payoutRequests.find(p => p.id === payoutId);
-        if (po) {
-            po.status = newStatus;
-            if (newStatus === 'rejected') {
-                // Refund provider wallet
-                const prov = this.data.providers.find(p => p.id === po.providerId);
-                if (prov) prov.walletBalance += po.amount;
-            }
-            this.save();
-            return po;
-        }
-        return null;
-    }
-
-    // Distance calculation helper (Haversine formula in Kilometers)
     calculateDistance(lat1, lon1, lat2, lon2) {
         if (!lat1 || !lon1 || !lat2 || !lon2) return 0.8;
-        const R = 6371; // Radius of the earth in km
+        const R = 6371;
         const dLat = (lat2 - lat1) * (Math.PI / 180);
         const dLon = (lon2 - lon1) * (Math.PI / 180);
         const a =
@@ -578,19 +497,16 @@ class ToigoDB {
             Math.cos(lat1 * (Math.PI / 180)) * Math.cos(lat2 * (Math.PI / 180)) *
             Math.sin(dLon / 2) * Math.sin(dLon / 2);
         const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-        const d = R * c; // Distance in km
-        return Number(d.toFixed(2));
+        return Number((R * c).toFixed(2));
     }
 
-    // Relocate demo toilets around user's live coordinates so map is immediately full of nearby pins!
     seedAroundUserLocation(userLat, userLng) {
         if (!userLat || !userLng) return;
         const offsets = [
-            { dLat: 0.0021, dLng: 0.0018, name: 'SmartRest Luxury Washroom (Near You)' },
-            { dLat: -0.0019, dLng: 0.0025, name: 'Sunita Clean Restroom & Indian Pan' },
-            { dLat: 0.0035, dLng: -0.0022, name: 'City Metro Station Pay & Use' },
-            { dLat: -0.0031, dLng: -0.0019, name: 'Free Public Eco Sanitation Complex' },
-            { dLat: 0.0012, dLng: 0.0041, name: 'Royal Comfort Western Lounge' }
+            { dLat: 0.0021, dLng: 0.0018 },
+            { dLat: -0.0019, dLng: 0.0025 },
+            { dLat: 0.0035, dLng: -0.0022 },
+            { dLat: -0.0031, dLng: -0.0019 }
         ];
 
         this.data.toilets.forEach((t, i) => {
@@ -601,13 +517,6 @@ class ToigoDB {
         });
         this.save();
     }
-
-    resetAllData() {
-        localStorage.removeItem(STORAGE_KEY);
-        this.data = JSON.parse(JSON.stringify(defaultInitialData));
-        this.save();
-    }
 }
 
-// Global Singleton Instance
 window.db = new ToigoDB();

@@ -1,12 +1,13 @@
 /**
  * TOIGO: Auth & Session Management
- * Role handling for User, Provider, and Founder/Admin
+ * Enforces strict login for both Users & Providers, and collects Host Bank/QR details
  */
 
 class AuthManager {
     constructor() {
         this.currentOtp = null;
         this.pendingAuthData = null;
+        this.uploadedQrImage = null;
     }
 
     getCurrentUser() {
@@ -32,10 +33,27 @@ class AuthManager {
         return u && u.role === 'admin';
     }
 
-    // Step 1: Send OTP simulation
+    // Strict Login Requirement Helper
+    requireLogin(targetRole = 'user', onSuccess = null) {
+        if (this.isLoggedIn()) {
+            const user = this.getCurrentUser();
+            if (targetRole === 'provider' && user.role !== 'provider' && user.role !== 'admin') {
+                window.app.showToast('Please sign in with a Host / Provider account.', 'info');
+                window.app.openAuthModal('provider', onSuccess);
+                return false;
+            }
+            if (onSuccess) onSuccess(user);
+            return true;
+        }
+
+        window.app.showToast(`Please sign in first to continue as ${targetRole === 'provider' ? 'Host' : 'Citizen'}.`, 'info');
+        window.app.openAuthModal(targetRole, onSuccess);
+        return false;
+    }
+
+    // Step 1: Send OTP
     requestOtp(authData) {
         this.pendingAuthData = authData;
-        // Generate 4-digit OTP
         this.currentOtp = Math.floor(1000 + Math.random() * 9000).toString();
         
         console.log(`[TOIGO Security] OTP for ${authData.phone || authData.email}: ${this.currentOtp}`);
@@ -43,16 +61,15 @@ class AuthManager {
         return {
             success: true,
             otp: this.currentOtp,
-            message: `OTP sent to ${authData.phone || authData.email}: ${this.currentOtp}`
+            message: `OTP sent: ${this.currentOtp}`
         };
     }
 
-    // Step 2: Verify OTP and finalize login/signup
+    // Step 2: Verify OTP
     verifyOtp(enteredOtp) {
         if (!this.currentOtp || enteredOtp !== this.currentOtp) {
-            // Allow master debug OTP '1234' for quick testing
             if (enteredOtp !== '1234' && enteredOtp !== this.currentOtp) {
-                return { success: false, message: 'Invalid OTP. Please enter the correct code or use 1234.' };
+                return { success: false, message: 'Invalid OTP. Please enter the correct 4-digit code.' };
             }
         }
 
@@ -62,10 +79,8 @@ class AuthManager {
         let userObj = null;
 
         if (data.role === 'admin') {
-            // Admin Founder Login
             userObj = window.db.data.admin;
         } else if (data.role === 'provider') {
-            // Look up existing provider or create new
             let prov = window.db.findProviderByPhoneOrEmail(data.phone || data.email);
             if (!prov) {
                 prov = window.db.createProvider({
@@ -73,12 +88,15 @@ class AuthManager {
                     email: data.email || 'host@toigo.app',
                     phone: data.phone || '9988776655',
                     businessName: data.businessName || 'Clean Restroom Hub',
-                    upiId: data.upiId || 'host@okaxis'
+                    upiId: data.upiId || 'host@okaxis',
+                    bankAccountNo: data.bankAccountNo || '918273645012',
+                    bankIfsc: data.bankIfsc || 'UTIB0000123',
+                    bankHolderName: data.bankHolderName || data.name || 'Toilet Host',
+                    qrCodeImage: data.qrCodeImage || this.uploadedQrImage || `https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent('upi://pay?pa=' + (data.upiId || 'host@upi') + '&pn=' + (data.businessName || 'Restroom') + '&cu=INR')}`
                 });
             }
             userObj = prov;
         } else {
-            // Standard User
             let usr = window.db.findUserByPhoneOrEmail(data.phone || data.email);
             if (!usr) {
                 usr = window.db.createUser({
@@ -93,6 +111,7 @@ class AuthManager {
         window.db.setCurrentUser(userObj);
         this.currentOtp = null;
         this.pendingAuthData = null;
+        this.uploadedQrImage = null;
 
         return {
             success: true,
@@ -101,7 +120,6 @@ class AuthManager {
         };
     }
 
-    // Direct 1-Click Fast Login for quick role testing
     quickLoginAs(role) {
         if (role === 'admin') {
             const admin = window.db.data.admin;

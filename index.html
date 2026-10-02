@@ -89,10 +89,10 @@
                     </span>
                     <h1 class="text-2xl sm:text-3xl font-black tracking-tight leading-tight">
                         Need a Clean Restroom? <br>
-                        <span class="text-emerald-300">Find, Use & Pay Easily</span>
+                        <span class="text-emerald-300">Find, Use & Pay Directly</span>
                     </h1>
                     <p class="text-xs text-slate-200 mt-2 max-w-md">
-                        Locate verified hygienic Indian & Western washrooms nearby or list your space to start earning income.
+                        Find verified Indian & Western washrooms. Pay directly to host via UPI and share live photo reviews!
                     </p>
                 </div>
             </div>
@@ -100,7 +100,7 @@
             <!-- Quick Action Hero Cards (1. USE TOILET & 2. PROVIDE TOILET) -->
             <div class="space-y-3">
                 <div class="flex items-center justify-between px-1">
-                    <h3 class="text-xs font-extrabold text-slate-500 uppercase tracking-wider">Choose Your Action</h3>
+                    <h3 class="text-xs font-extrabold text-slate-500 uppercase tracking-wider">Choose Option (Strict Login)</h3>
                     <span class="text-[11px] text-emerald-600 font-bold">2 Simple Steps</span>
                 </div>
 
@@ -119,11 +119,11 @@
                         <div>
                             <h2 class="text-xl font-black text-slate-900 font-heading">1. Use Toilet</h2>
                             <p class="text-xs text-slate-600 mt-1 leading-relaxed">
-                                Find nearby verified washrooms on GPS map. Filter Indian pan or Western commode, unlock entrance & pay securely via UPI.
+                                Sign in as Citizen, find nearby verified washrooms on GPS map, pay directly to the host's UPI QR, and post hygiene photo reviews.
                             </p>
                         </div>
                         <div class="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between text-xs font-bold text-emerald-600">
-                            <span>Explore Nearby Toilets</span>
+                            <span>Explore & Use Now</span>
                             <span class="w-7 h-7 rounded-full bg-emerald-50 flex items-center justify-center text-emerald-700">→</span>
                         </div>
                     </div>
@@ -142,7 +142,7 @@
                         <div>
                             <h2 class="text-xl font-black text-slate-900 font-heading">2. Provide Toilet</h2>
                             <p class="text-xs text-slate-600 mt-1 leading-relaxed">
-                                Earn money from your shop, cafe, petrol pump, or home washroom. Set your entry fee, get door QR poster & receive instant payouts.
+                                Sign in as Host, upload your Bank details & direct UPI QR code. Receive 100% direct customer payments to your account!
                             </p>
                         </div>
                         <div class="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between text-xs font-bold text-indigo-600">
@@ -194,7 +194,7 @@
                     </div>
                     <div>
                         <h4 class="font-bold text-xs sm:text-sm text-white">App Founder & Owner Portal</h4>
-                        <p class="text-[11px] text-slate-300">Manage all users, hosts, listings & 10% platform commission.</p>
+                        <p class="text-[11px] text-slate-300">Master authority over Users, Hosts, Banking & Direct Approvals.</p>
                     </div>
                 </div>
                 <button onclick="window.app.selectLandingRole('admin')" class="px-4 py-2 bg-gradient-to-r from-amber-400 to-amber-500 hover:from-amber-500 hover:to-amber-600 text-slate-950 font-black rounded-xl text-xs shadow-md transition whitespace-nowrap">
@@ -206,15 +206,13 @@
         <!-- ================= VIEW 2: INTERACTIVE GPS MAP (FIND, USE & PAY) ================= -->
         <section id="view-user" class="app-view hidden flex-1 flex flex-col h-[calc(100vh-8rem)] relative overflow-hidden">
             
-            <!-- Leaflet Map Container -->
             <div id="map-view" class="w-full h-full z-0"></div>
 
             <!-- Floating Top Search Bar & Filters -->
             <div class="absolute top-3 left-3 right-3 z-20 space-y-2 pointer-events-auto">
-                <!-- Search Box -->
                 <div class="glass-pill rounded-2xl p-2 shadow-lg flex items-center gap-2 border border-slate-200">
                     <span class="text-slate-400 pl-2 text-sm">🔍</span>
-                    <input id="search-toilet-input" type="text" placeholder="Search by area, metro, toilet type..." 
+                    <input id="search-toilet-input" type="text" placeholder="Search area, landmark, Indian/Western..." 
                            class="w-full bg-transparent text-xs sm:text-sm font-semibold text-slate-800 placeholder-slate-400 focus:outline-hidden py-1" />
                     
                     <button id="locate-me-btn" onclick="window.toigoMap.locateUser(true)" title="My GPS Location" 
@@ -223,7 +221,6 @@
                     </button>
                 </div>
 
-                <!-- Filter Pills -->
                 <div class="flex items-center gap-1.5 overflow-x-auto no-scrollbar py-1">
                     <button class="filter-type-pill active-filter px-3 py-1.5 bg-white/90 backdrop-blur-md rounded-xl text-xs font-bold text-slate-700 border border-slate-200 shadow-2xs whitespace-nowrap transition" data-type="all">
                         All Toilets
@@ -243,7 +240,7 @@
                 </div>
             </div>
 
-            <!-- Bottom Floating Drawer with Nearby Cards -->
+            <!-- Bottom Floating Drawer -->
             <div class="absolute bottom-2 left-2 right-2 z-20 pointer-events-auto">
                 <div class="glass-pill rounded-3xl p-3 sm:p-4 shadow-2xl border border-white/80">
                     <div class="flex items-center justify-between mb-2 px-1">
@@ -254,7 +251,6 @@
                         <span class="text-[11px] text-slate-500">Tap card to unlock & navigate</span>
                     </div>
 
-                    <!-- Injected via UserFlowController -->
                     <div id="toilet-cards-container" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2.5 max-h-52 overflow-y-auto pr-1">
                     </div>
                 </div>
@@ -264,14 +260,12 @@
         <!-- ================= VIEW 3: HOST / PROVIDER DASHBOARD ================= -->
         <section id="view-provider" class="app-view hidden flex-1 animate-scale pb-12">
             <div id="provider-dashboard-view">
-                <!-- Injected via ProviderFlowController -->
             </div>
         </section>
 
         <!-- ================= VIEW 4: FOUNDER & SUPER ADMIN MASTER TERMINAL ================= -->
         <section id="view-admin" class="app-view hidden flex-1 animate-scale pb-12">
             <div id="admin-dashboard-view">
-                <!-- Injected via AdminFlowController -->
             </div>
         </section>
 
@@ -291,7 +285,7 @@
                         <p class="text-xs text-emerald-800 font-bold">TOIGO Wallet Balance</p>
                         <p class="text-2xl font-black text-emerald-700" id="profile-wallet-balance">₹150.00</p>
                     </div>
-                    <button onclick="window.app.showToast('Wallet recharged with ₹100 promo!', 'success'); window.db.data.currentUser.walletBalance += 100; window.db.save(); window.app.updateHeaderAuthStatus();" class="px-3 py-1.5 bg-emerald-600 text-white rounded-xl text-xs font-bold shadow-xs">
+                    <button onclick="window.app.showToast('Wallet recharged with ₹100!', 'success'); window.db.data.currentUser.walletBalance += 100; window.db.save(); window.app.renderProfileView();" class="px-3 py-1.5 bg-emerald-600 text-white rounded-xl text-xs font-bold shadow-xs">
                         + Add ₹100
                     </button>
                 </div>
@@ -306,7 +300,6 @@
         <!-- ================= FIXED BOTTOM APP NAVIGATION BAR ================= -->
         <nav class="fixed bottom-0 left-0 right-0 z-40 bg-white/95 backdrop-blur-lg border-t border-slate-200 shadow-xl max-w-xl lg:max-w-7xl mx-auto">
             <div class="grid grid-cols-5 h-16 items-center text-center">
-                
                 <button onclick="window.app.switchView('landing')" id="nav-btn-landing" class="nav-tab-item active flex flex-col items-center justify-center text-slate-500 hover:text-emerald-600 transition">
                     <span class="text-lg">🏠</span>
                     <span class="text-[10px] font-bold mt-0.5">Home</span>
@@ -337,13 +330,13 @@
 
     <!-- ================= ALL INTERACTIVE MODALS ================= -->
 
-    <!-- 1. SIGN IN / REGISTER MODAL -->
+    <!-- 1. MANDATORY SIGN IN / REGISTER MODAL -->
     <div id="auth-modal" class="hidden fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
-        <div class="bg-white rounded-3xl p-6 max-w-md w-full shadow-2xl border border-slate-100 animate-drawer">
+        <div class="bg-white rounded-3xl p-6 max-w-md w-full max-h-[90vh] overflow-y-auto shadow-2xl border border-slate-100 animate-drawer">
             <div class="flex items-center justify-between pb-3 border-b border-slate-100">
                 <div>
-                    <h3 class="text-base font-black text-slate-900 font-heading">Sign In to TOIGO</h3>
-                    <p class="text-xs text-slate-500">Fast access with Mobile Phone or Email</p>
+                    <h3 class="text-base font-black text-slate-900 font-heading">Sign In / Register</h3>
+                    <p class="text-xs text-slate-500">Mandatory Login for Citizens & Hosts</p>
                 </div>
                 <button onclick="window.app.closeAuthModal()" class="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-600 flex items-center justify-center font-bold text-xs">✕</button>
             </div>
@@ -351,10 +344,10 @@
             <!-- Role Selector -->
             <div class="flex bg-slate-100 p-1 rounded-xl my-4 text-xs font-bold">
                 <button onclick="window.app.switchAuthTab('user')" data-role="user" class="auth-tab-btn flex-1 py-2 text-xs font-bold rounded-lg bg-emerald-600 text-white shadow-sm transition">
-                    🚻 Citizen
+                    🚻 Citizen User
                 </button>
                 <button onclick="window.app.switchAuthTab('provider')" data-role="provider" class="auth-tab-btn flex-1 py-2 text-xs font-bold rounded-lg text-slate-500 hover:text-slate-900 transition">
-                    🏢 Host
+                    🏢 Toilet Host
                 </button>
                 <button onclick="window.app.switchAuthTab('admin')" data-role="admin" class="auth-tab-btn flex-1 py-2 text-xs font-bold rounded-lg text-slate-500 hover:text-slate-900 transition">
                     👑 Founder
@@ -364,30 +357,49 @@
             <!-- Form Credentials -->
             <div id="auth-step-credentials" class="space-y-3 text-xs">
                 <div>
-                    <label class="block font-bold text-slate-700 mb-1">Full Name</label>
+                    <label class="block font-bold text-slate-700 mb-1">Your Full Name *</label>
                     <input id="auth-name-input" type="text" placeholder="e.g. Rahul Sharma" class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl font-semibold focus:outline-hidden focus:border-emerald-500" />
                 </div>
                 <div>
-                    <label class="block font-bold text-slate-700 mb-1">Mobile Phone Number</label>
+                    <label class="block font-bold text-slate-700 mb-1">Mobile Phone Number *</label>
                     <div class="flex gap-2">
                         <span class="px-3 py-2.5 bg-slate-100 border border-slate-200 rounded-xl font-bold text-slate-600">+91</span>
                         <input id="auth-phone-input" type="tel" placeholder="9876543210" class="flex-1 px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl font-semibold focus:outline-hidden focus:border-emerald-500" />
                     </div>
                 </div>
                 <div>
-                    <label class="block font-bold text-slate-700 mb-1">Email Address</label>
+                    <label class="block font-bold text-slate-700 mb-1">Email Address *</label>
                     <input id="auth-email-input" type="email" placeholder="name@example.com" class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl font-semibold focus:outline-hidden focus:border-emerald-500" />
                 </div>
 
-                <!-- Provider Fields -->
-                <div id="provider-specific-fields" class="hidden space-y-3 pt-2 border-t border-slate-100">
-                    <div>
-                        <label class="block font-bold text-slate-700 mb-1">Business / Shop / Host Name</label>
-                        <input id="auth-business-input" type="text" placeholder="e.g. Metro Restroom Hub" class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl font-semibold" />
+                <!-- Provider Direct Payment & Banking Fields (Explicit Update 1) -->
+                <div id="provider-specific-fields" class="hidden space-y-3 pt-3 border-t-2 border-emerald-100 bg-emerald-50/50 p-3 rounded-2xl">
+                    <div class="flex items-center gap-1.5 text-emerald-800 font-extrabold text-[11px]">
+                        <span>💳</span>
+                        <span>Host Direct Payout Banking & QR Details</span>
                     </div>
+
                     <div>
-                        <label class="block font-bold text-slate-700 mb-1">UPI ID for Payouts</label>
-                        <input id="auth-upi-input" type="text" placeholder="yourname@okaxis" class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl font-semibold" />
+                        <label class="block font-bold text-slate-700 mb-1">Host UPI ID (VPA) for Direct User Payments *</label>
+                        <input id="auth-upi-input" type="text" placeholder="yourname@okaxis / 9899001122@upi" class="w-full px-3.5 py-2 bg-white border border-slate-200 rounded-xl font-bold text-emerald-700" />
+                    </div>
+
+                    <div>
+                        <label class="block font-bold text-slate-700 mb-1">Upload Your Payment QR Code Image *</label>
+                        <input type="file" accept="image/*" onchange="window.auth.uploadedQrImage = null; const f = event.target.files[0]; if(f){ const r = new FileReader(); r.onload = (e) => { window.auth.uploadedQrImage = e.target.result; document.getElementById('auth-qr-preview-img').src = e.target.result; document.getElementById('auth-qr-preview-img').classList.remove('hidden'); window.app.showToast('Payment QR Code attached!', 'success'); }; r.readAsDataURL(f); }" 
+                               class="w-full text-xs text-slate-500 file:mr-2 file:py-1.5 file:px-3 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-emerald-600 file:text-white hover:file:bg-emerald-700 cursor-pointer" />
+                        <img id="auth-qr-preview-img" src="" class="hidden w-20 h-20 rounded-xl border border-emerald-300 mt-2 object-contain bg-white p-1" />
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-2">
+                        <div>
+                            <label class="block font-bold text-slate-700 mb-1">Bank A/C Number *</label>
+                            <input id="auth-bank-acc" type="text" placeholder="918273645012" class="w-full px-3 py-1.5 bg-white border border-slate-200 rounded-xl font-mono text-xs" />
+                        </div>
+                        <div>
+                            <label class="block font-bold text-slate-700 mb-1">IFSC Code *</label>
+                            <input id="auth-bank-ifsc" type="text" placeholder="UTIB0000123" class="w-full px-3 py-1.5 bg-white border border-slate-200 rounded-xl font-mono text-xs" />
+                        </div>
                     </div>
                 </div>
 
@@ -419,7 +431,6 @@
     <!-- 2. TOILET DETAIL BOTTOM SHEET -->
     <div id="toilet-detail-modal" class="hidden fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-end sm:items-center justify-center p-0 sm:p-4">
         <div class="modal-content-container bg-white rounded-t-3xl sm:rounded-3xl max-w-lg w-full shadow-2xl border border-slate-100 overflow-hidden animate-drawer">
-            <!-- Dynamically populated -->
         </div>
     </div>
 
@@ -432,7 +443,7 @@
             </div>
             <div>
                 <p id="qr-target-toilet-name" class="font-bold text-white text-base">Facility Door</p>
-                <p id="qr-target-price" class="text-xs text-emerald-400 font-semibold mt-0.5">Entry Fee: ₹10</p>
+                <p id="qr-target-price" class="text-xs text-emerald-400 font-semibold mt-0.5">Direct Host Fee: ₹10</p>
             </div>
             <div class="scanner-box w-56 h-56 mx-auto bg-slate-950 border border-slate-700 flex items-center justify-center relative">
                 <div class="laser-line"></div>
@@ -461,70 +472,113 @@
                 <span class="text-[10px] text-emerald-400 mt-1">Hygiene Filter ON</span>
             </div>
             <button onclick="window.userFlow.finishToiletSession()" class="w-full py-3.5 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 text-slate-950 font-black rounded-2xl text-sm shadow-xl shadow-emerald-500/30 transition">
-                Finish Session & Pay →
+                Finish Session & Pay Directly →
             </button>
         </div>
     </div>
 
-    <!-- 5. PAYMENT CHECKOUT MODAL -->
+    <!-- 5. DIRECT HOST PAYMENT CHECKOUT MODAL -->
     <div id="payment-checkout-modal" class="hidden fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
         <div class="bg-white rounded-3xl p-6 max-w-md w-full shadow-2xl border border-slate-100 space-y-4 animate-drawer">
             <div class="flex items-center justify-between pb-3 border-b border-slate-100">
                 <div>
-                    <h3 class="text-base font-black text-slate-900 font-heading">Pay for Toilet Use</h3>
+                    <h3 class="text-base font-black text-slate-900 font-heading">Direct Host Payment</h3>
                     <p id="pay-toilet-name" class="text-xs text-slate-500 truncate max-w-[220px]">Washroom Name</p>
                 </div>
                 <button onclick="window.userFlow.closePaymentCheckoutModal()" class="w-7 h-7 rounded-full bg-slate-100 text-slate-600 text-xs font-bold">✕</button>
             </div>
             <div class="p-3.5 bg-slate-50 rounded-2xl border border-slate-100 space-y-1.5 text-xs">
                 <div class="flex justify-between text-slate-600">
-                    <span>Entry Fee</span>
+                    <span>Direct Entry Fee</span>
                     <span id="pay-base-price" class="font-bold text-slate-800">₹10.00</span>
                 </div>
                 <div class="pt-2 border-t border-slate-200 flex justify-between font-extrabold text-sm text-slate-900">
-                    <span>Total Amount</span>
-                    <span id="pay-total-amount" class="text-emerald-700">₹10.00</span>
+                    <span>Amount Going Directly to Host</span>
+                    <span id="pay-total-amount" class="text-emerald-700 font-black">₹10.00</span>
                 </div>
             </div>
-            <div class="text-center p-3 bg-emerald-50/50 rounded-2xl border border-emerald-100">
-                <p class="text-[11px] font-bold text-emerald-800 mb-2">Scan & Pay via UPI (GPay, PhonePe, Paytm)</p>
-                <div class="w-36 h-36 mx-auto bg-white p-2 rounded-xl shadow-2xs border border-emerald-200 flex items-center justify-center">
-                    <img id="pay-upi-qr-img" src="" alt="UPI QR" class="w-full h-full object-contain" />
+
+            <!-- Host Direct Payment QR Code (Explicit Update 1) -->
+            <div class="text-center p-3 bg-emerald-50/70 rounded-2xl border border-emerald-200">
+                <p class="text-xs font-extrabold text-emerald-900 mb-1">Scan Host's Direct Payment QR Code</p>
+                <p id="pay-host-upi-label" class="text-[10px] font-mono text-emerald-800 mb-2 font-bold">Host UPI: host@okaxis</p>
+                <div class="w-40 h-40 mx-auto bg-white p-2 rounded-2xl shadow-sm border border-emerald-300 flex items-center justify-center">
+                    <img id="pay-upi-qr-img" src="" alt="Host UPI QR Code" class="w-full h-full object-contain" />
                 </div>
+                <p class="text-[10px] text-slate-500 mt-2">Money is transferred directly & securely into host's account.</p>
             </div>
+
             <div class="space-y-2 pt-1">
-                <button onclick="window.userFlow.executePayment('UPI (GPay / PhonePe)')" class="w-full py-2.5 px-4 bg-slate-900 hover:bg-black text-white font-bold rounded-xl text-xs flex items-center justify-between transition">
-                    <span>⚡ Pay via UPI App (GPay / PhonePe)</span>
+                <button onclick="window.userFlow.executePayment('Direct UPI (GPay / PhonePe)')" class="w-full py-2.5 px-4 bg-slate-900 hover:bg-black text-white font-bold rounded-xl text-xs flex items-center justify-between transition">
+                    <span>⚡ Pay Direct via UPI App (GPay / PhonePe)</span>
                     <span>✓</span>
                 </button>
                 <button onclick="window.userFlow.executePayment('TOIGO Wallet')" class="w-full py-2.5 px-4 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl text-xs flex items-center justify-between transition">
                     <span>👛 Pay from TOIGO Wallet</span>
                     <span id="pay-wallet-balance" class="text-emerald-200 font-normal">₹150</span>
                 </button>
-                <button onclick="window.userFlow.executePayment('Cash at Counter')" class="w-full py-2 px-4 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl text-xs transition">
-                    💵 Pay Cash to Host
+                <button onclick="window.userFlow.executePayment('Cash to Host')" class="w-full py-2 px-4 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl text-xs transition">
+                    💵 Handed Cash Directly to Host
                 </button>
             </div>
         </div>
     </div>
 
-    <!-- 6. RATING FEEDBACK MODAL -->
+    <!-- 6. CITIZEN HYGIENE PHOTO REVIEW & FEEDBACK MODAL (Explicit Update 2) -->
     <div id="rating-feedback-modal" class="hidden fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
-        <div class="bg-white rounded-3xl p-6 max-w-sm w-full shadow-2xl border border-slate-100 text-center space-y-4 animate-scale">
-            <div class="w-14 h-14 bg-amber-100 text-amber-600 rounded-full flex items-center justify-center mx-auto text-2xl">⭐</div>
+        <div class="bg-white rounded-3xl p-6 max-w-md w-full max-h-[90vh] overflow-y-auto shadow-2xl border border-slate-100 text-center space-y-4 animate-scale">
+            <div class="w-14 h-14 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mx-auto text-2xl">
+                🧼
+            </div>
+
             <div>
-                <h3 class="text-base font-extrabold text-slate-900 font-heading">Rate Toilet Cleanliness</h3>
-                <p class="text-xs text-slate-500 mt-1">Help citizens and reward clean restrooms!</p>
+                <h3 class="text-base font-black text-slate-900 font-heading">Review Toilet Hygiene Condition</h3>
+                <p class="text-xs text-slate-500 mt-0.5">Rate hygiene & upload photo proof of toilet condition!</p>
             </div>
-            <div class="flex justify-center gap-2 text-3xl cursor-pointer text-amber-400">
-                <span onclick="window.userFlow.submitRating(5, 'Excellent clean and hygienic!')">★</span>
-                <span onclick="window.userFlow.submitRating(5, 'Excellent clean and hygienic!')">★</span>
-                <span onclick="window.userFlow.submitRating(5, 'Excellent clean and hygienic!')">★</span>
-                <span onclick="window.userFlow.submitRating(5, 'Excellent clean and hygienic!')">★</span>
-                <span onclick="window.userFlow.submitRating(5, 'Excellent clean and hygienic!')">★</span>
+
+            <!-- Star Cleanliness Selector -->
+            <div class="flex justify-center gap-2 text-3xl cursor-pointer">
+                <span onclick="window.userFlow.setReviewRating(1)" class="feedback-star-btn text-amber-400">★</span>
+                <span onclick="window.userFlow.setReviewRating(2)" class="feedback-star-btn text-amber-400">★</span>
+                <span onclick="window.userFlow.setReviewRating(3)" class="feedback-star-btn text-amber-400">★</span>
+                <span onclick="window.userFlow.setReviewRating(4)" class="feedback-star-btn text-amber-400">★</span>
+                <span onclick="window.userFlow.setReviewRating(5)" class="feedback-star-btn text-amber-400">★</span>
             </div>
-            <button onclick="window.userFlow.submitRating(5, 'Super clean!')" class="w-full py-2.5 bg-emerald-600 text-white font-bold rounded-xl text-xs shadow-md transition">
-                Submit 5-Star Clean Rating
+
+            <!-- Hygiene Condition Tag Selector -->
+            <div class="flex flex-wrap justify-center gap-1.5 text-xs">
+                <button type="button" onclick="window.userFlow.setHygieneTag('✨ Spotless Clean')" data-tag="✨ Spotless Clean" class="hygiene-tag-pill px-2.5 py-1 rounded-xl text-xs font-bold bg-emerald-600 text-white shadow-2xs">
+                    ✨ Spotless Clean
+                </button>
+                <button type="button" onclick="window.userFlow.setHygieneTag('🧼 Fresh & Sanitized')" data-tag="🧼 Fresh & Sanitized" class="hygiene-tag-pill px-2.5 py-1 rounded-xl text-xs font-bold bg-slate-100 text-slate-600">
+                    🧼 Fresh & Sanitized
+                </button>
+                <button type="button" onclick="window.userFlow.setHygieneTag('⚠️ Needs Attention')" data-tag="⚠️ Needs Attention" class="hygiene-tag-pill px-2.5 py-1 rounded-xl text-xs font-bold bg-slate-100 text-slate-600">
+                    ⚠️ Needs Attention
+                </button>
+                <button type="button" onclick="window.userFlow.setHygieneTag('💧 Water Problem')" data-tag="💧 Water Problem" class="hygiene-tag-pill px-2.5 py-1 rounded-xl text-xs font-bold bg-slate-100 text-slate-600">
+                    💧 Water Problem
+                </button>
+            </div>
+
+            <!-- Hygiene Condition Photo Upload (Explicit Update 2) -->
+            <div class="p-3.5 bg-slate-50 border-2 border-dashed border-emerald-300 rounded-2xl text-left space-y-2">
+                <div class="flex items-center justify-between">
+                    <span class="text-xs font-extrabold text-slate-800">📸 Upload Toilet Condition Photo</span>
+                    <span class="text-[10px] text-emerald-700 font-bold">Photo Proof</span>
+                </div>
+                <input type="file" accept="image/*" multiple onchange="window.userFlow.handleReviewPhotoUpload(event)" 
+                       class="w-full text-xs text-slate-500 file:mr-2 file:py-1.5 file:px-3 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-emerald-600 file:text-white hover:file:bg-emerald-700 cursor-pointer" />
+                
+                <!-- Photo Previews -->
+                <div id="review-photo-preview" class="flex gap-2 overflow-x-auto pt-1 no-scrollbar"></div>
+            </div>
+
+            <!-- Review Comment -->
+            <textarea id="review-comment-input" rows="2" placeholder="Write feedback about cleanliness, odor, water, locks..." class="w-full p-3 bg-slate-50 border border-slate-200 rounded-2xl text-xs font-semibold focus:outline-hidden focus:border-emerald-500"></textarea>
+
+            <button onclick="window.userFlow.submitRatingFeedback()" class="w-full py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-2xl text-xs shadow-md transition">
+                Publish Hygiene Review & Photo Proof 🚀
             </button>
         </div>
     </div>
@@ -535,7 +589,7 @@
             <div class="flex items-center justify-between pb-3 border-b border-slate-100">
                 <div>
                     <h3 class="text-base font-black text-slate-900 font-heading">Register New Restroom Listing</h3>
-                    <p class="text-xs text-slate-500">Earn per customer visit</p>
+                    <p class="text-xs text-slate-500">Provide direct payment QR & washroom details</p>
                 </div>
                 <button onclick="window.providerFlow.closeAddListingModal()" class="w-7 h-7 rounded-full bg-slate-100 text-slate-600 text-xs font-bold">✕</button>
             </div>
@@ -571,6 +625,15 @@
                         <input name="timings" type="text" value="06:00 AM - 11:00 PM" class="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl font-semibold" />
                     </div>
                 </div>
+
+                <!-- Custom Direct Payment QR Code for Listing -->
+                <div class="p-3 bg-emerald-50 rounded-2xl border border-emerald-200 space-y-2">
+                    <label class="block font-extrabold text-emerald-900">Direct Payment QR Code for This Washroom *</label>
+                    <input type="file" accept="image/*" onchange="window.providerFlow.handleListingQrUpload(event)" 
+                           class="w-full text-xs text-slate-500 file:mr-2 file:py-1.5 file:px-3 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-emerald-600 file:text-white hover:file:bg-emerald-700 cursor-pointer" />
+                    <img id="new-listing-qr-preview" src="" class="hidden w-20 h-20 rounded-xl border border-emerald-300 mt-2 object-contain bg-white p-1" />
+                </div>
+
                 <div>
                     <label class="block font-bold text-slate-700 mb-1">Address & Landmark *</label>
                     <input name="address" required type="text" placeholder="Shop 4, Main Market Road" class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl font-semibold mb-2" />
@@ -606,34 +669,6 @@
             <button onclick="window.print()" class="w-full py-2.5 bg-slate-900 hover:bg-black text-white rounded-xl text-xs font-bold transition">
                 🖨️ Print Door Sign (PDF)
             </button>
-        </div>
-    </div>
-
-    <!-- 9. PAYOUT MODAL -->
-    <div id="payout-modal" class="hidden fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
-        <div class="bg-white rounded-3xl p-6 max-w-sm w-full shadow-2xl border border-slate-100 space-y-4 animate-scale">
-            <div class="flex items-center justify-between pb-2 border-b border-slate-100">
-                <h3 class="text-base font-black text-slate-900 font-heading">Withdraw Host Earnings</h3>
-                <button onclick="window.providerFlow.closeWithdrawModal()" class="w-7 h-7 rounded-full bg-slate-100 text-slate-600 text-xs font-bold">✕</button>
-            </div>
-            <div class="p-3 bg-emerald-50 rounded-2xl text-center">
-                <p class="text-xs text-emerald-800 font-bold">Available Balance</p>
-                <p id="withdraw-max-amount" class="text-2xl font-black text-emerald-700 mt-0.5">₹0.00</p>
-            </div>
-            <div class="space-y-3 text-xs">
-                <div>
-                    <label class="block font-bold text-slate-700 mb-1">Amount (₹)</label>
-                    <input id="withdraw-amount-input" type="number" min="10" class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl font-bold" />
-                </div>
-                <div>
-                    <label class="block font-bold text-slate-700 mb-1">UPI ID (VPA)</label>
-                    <input id="withdraw-upi-input" type="text" placeholder="name@upi" class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl font-semibold" />
-                </div>
-                <button onclick="window.providerFlow.submitWithdrawRequest(document.getElementById('withdraw-amount-input').value, document.getElementById('withdraw-upi-input').value)" 
-                        class="w-full py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl text-xs shadow-md transition">
-                    Submit Withdrawal ⚡
-                </button>
-            </div>
         </div>
     </div>
 
