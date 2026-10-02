@@ -731,8 +731,7 @@
         </div>
     </div>
 
-    <!-- ================= 5. PROVIDER / HOST AUTH MODAL =================
-         (Completely separate login/registration flow for Restroom Hosts) -->
+    <!-- ================= 5. PROVIDER / HOST AUTH MODAL ================= -->
     <div id="provider-auth-modal"
         class="app-modal hidden fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
         <div class="bg-white rounded-3xl p-6 max-w-md w-full max-h-[92vh] overflow-y-auto shadow-2xl border border-slate-100 space-y-4 animate-scale">
@@ -765,12 +764,18 @@
             <!-- Host Login Form -->
             <form id="prov-login-form" onsubmit="window.app.submitProviderLogin(event)" class="space-y-3.5 text-xs">
                 <div>
-                    <label class="block font-bold text-slate-700 mb-1">Provider Email</label>
-                    <input id="prov-login-email" type="email" required placeholder="amit@restpoint.in"
+                    <label class="block font-bold text-slate-700 mb-1">Email or Mobile Number</label>
+                    <input id="prov-login-email" type="text" required placeholder="amit@restpoint.in or 9899001122"
                         class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl font-semibold focus:outline-hidden focus:border-indigo-500" />
                 </div>
                 <div>
-                    <label class="block font-bold text-slate-700 mb-1">Password</label>
+                    <div class="flex justify-between items-center mb-1">
+                        <label class="font-bold text-slate-700">Password</label>
+                        <button type="button" onclick="window.providerFlow.openProviderForgotPasswordModal()"
+                            class="text-[11px] font-bold text-indigo-600 hover:underline">
+                            Forgot Password?
+                        </button>
+                    </div>
                     <input id="prov-login-pass" type="password" required placeholder="••••••••"
                         class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl font-semibold focus:outline-hidden focus:border-indigo-500" />
                 </div>
@@ -778,56 +783,456 @@
                     class="w-full py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold shadow-md shadow-indigo-600/25 transition">
                     Host Dashboard Sign In →
                 </button>
+                <div class="pt-2 text-center text-xs text-slate-600">
+                    <span>New Restroom Owner?</span>
+                    <button type="button" onclick="window.app.openProviderAuthModal('register')"
+                        class="font-bold text-indigo-600 hover:underline ml-1">
+                        Create Host Account
+                    </button>
+                </div>
             </form>
 
-            <!-- Host Register Form -->
+            <!-- Host Register Form (Full Name, Email, Mobile, Password, Confirm Password) -->
             <form id="prov-register-form" onsubmit="window.app.submitProviderRegister(event)" class="hidden space-y-3 text-xs">
                 <div>
-                    <label class="block font-bold text-slate-700 mb-1">Owner Full Name *</label>
+                    <label class="block font-bold text-slate-700 mb-1">Full Name *</label>
                     <input id="prov-reg-name" type="text" required placeholder="Amit Verma"
-                        class="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl font-semibold" />
+                        class="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl font-semibold focus:outline-hidden focus:border-indigo-500" />
+                </div>
+                <div>
+                    <label class="block font-bold text-slate-700 mb-1">Email Address *</label>
+                    <input id="prov-reg-email" type="email" required placeholder="amit@restpoint.in"
+                        class="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl font-semibold focus:outline-hidden focus:border-indigo-500" />
+                </div>
+                <div>
+                    <label class="block font-bold text-slate-700 mb-1">Mobile Number (+91) *</label>
+                    <input id="prov-reg-phone" type="tel" maxlength="10" required placeholder="9899001122"
+                        class="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl font-mono focus:outline-hidden focus:border-indigo-500" />
                 </div>
                 <div class="grid grid-cols-2 gap-2">
-                    <div>
-                        <label class="block font-bold text-slate-700 mb-1">Email Address *</label>
-                        <input id="prov-reg-email" type="email" required placeholder="amit@restpoint.in"
-                            class="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl font-semibold" />
-                    </div>
                     <div>
                         <label class="block font-bold text-slate-700 mb-1">Password *</label>
                         <input id="prov-reg-pass" type="password" required minlength="6" placeholder="Min 6 chars"
-                            class="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl font-semibold" />
+                            class="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl font-semibold focus:outline-hidden focus:border-indigo-500" />
+                    </div>
+                    <div>
+                        <label class="block font-bold text-slate-700 mb-1">Confirm Password *</label>
+                        <input id="prov-reg-pass-confirm" type="password" required minlength="6" placeholder="Re-enter pass"
+                            class="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl font-semibold focus:outline-hidden focus:border-indigo-500" />
                     </div>
                 </div>
-                <div class="grid grid-cols-2 gap-2">
-                    <div>
-                        <label class="block font-bold text-slate-700 mb-1">Mobile (+91) *</label>
-                        <input id="prov-reg-phone" type="tel" maxlength="10" required placeholder="9899001122"
-                            class="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl font-mono" />
-                    </div>
-                    <div>
-                        <label class="block font-bold text-slate-700 mb-1">Business Name *</label>
-                        <input id="prov-reg-biz" type="text" required placeholder="SmartRest Hub"
-                            class="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl font-semibold" />
-                    </div>
+                <div>
+                    <label class="block font-bold text-slate-700 mb-1">Business / Sanitation Name (Optional)</label>
+                    <input id="prov-reg-biz" type="text" placeholder="SmartRest Sanitation Hub"
+                        class="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl font-semibold focus:outline-hidden focus:border-indigo-500" />
                 </div>
-                <div class="grid grid-cols-2 gap-2">
-                    <div>
-                        <label class="block font-bold text-slate-700 mb-1">Bank A/C No *</label>
-                        <input id="prov-reg-acc" type="text" required placeholder="918273645012"
-                            class="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl font-mono" />
-                    </div>
-                    <div>
-                        <label class="block font-bold text-slate-700 mb-1">IFSC Code *</label>
-                        <input id="prov-reg-ifsc" type="text" required maxlength="11" placeholder="UTIB0000123"
-                            class="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl font-mono uppercase" />
-                    </div>
+
+                <div class="p-2.5 bg-indigo-50/80 rounded-xl border border-indigo-200 text-[10px] text-indigo-900 font-semibold space-y-0.5">
+                    <p>🔒 <b>Dual Verification Required:</b></p>
+                    <p>1. Email Verification Code</p>
+                    <p>2. Mobile Phone OTP Verification</p>
                 </div>
+
                 <button type="submit"
                     class="w-full py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold shadow-md shadow-indigo-600/25 transition">
-                    Register Host Account →
+                    Continue to Email Verification (Step 1/2) →
+                </button>
+
+                <div class="pt-1 text-center text-xs text-slate-600">
+                    <span>Already have an account?</span>
+                    <button type="button" onclick="window.app.openProviderAuthModal('login')"
+                        class="font-bold text-indigo-600 hover:underline ml-1">
+                        Sign In
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- ================= 5A. PROVIDER EMAIL VERIFICATION MODAL ================= -->
+    <div id="prov-email-verify-modal"
+        class="app-modal hidden fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
+        <div class="bg-white rounded-3xl p-6 max-w-md w-full shadow-2xl border border-slate-100 text-center space-y-4 animate-scale">
+            <div class="w-14 h-14 bg-indigo-100 text-indigo-600 rounded-full flex items-center justify-center mx-auto text-2xl">
+                ✉️
+            </div>
+            <div>
+                <span class="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-indigo-100 text-indigo-800 uppercase">
+                    Step 1 of 2
+                </span>
+                <h3 class="text-base font-black text-slate-900 font-heading mt-1">Verify Host Email Address</h3>
+                <p class="text-xs text-slate-500 mt-1">
+                    We sent a 6-digit code to <b id="prov-verify-target-email" class="text-slate-800">your email</b>.
+                </p>
+            </div>
+
+            <div class="space-y-3">
+                <input id="prov-email-code-input" type="text" maxlength="6" placeholder="Enter 6-digit code"
+                    class="w-44 mx-auto text-center text-2xl font-mono font-black tracking-widest px-3 py-2 bg-slate-50 border-2 border-indigo-500 rounded-xl focus:outline-hidden" />
+
+                <button onclick="window.providerFlow.submitProviderEmailVerification()"
+                    class="w-full py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold shadow-md transition">
+                    Verify Email & Proceed to Mobile OTP →
+                </button>
+
+                <div class="flex items-center justify-between text-xs pt-1 px-1">
+                    <button type="button" onclick="window.providerFlow.resendProviderEmailCode()"
+                        class="text-indigo-700 font-bold hover:underline">
+                        Resend Email Code
+                    </button>
+                    <button type="button" onclick="window.app.closeAllModals()"
+                        class="text-slate-400 font-bold hover:underline">
+                        Cancel
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ================= 5B. PROVIDER MOBILE OTP VERIFICATION MODAL ================= -->
+    <div id="prov-mobile-otp-modal"
+        class="app-modal hidden fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
+        <div class="bg-white rounded-3xl p-6 max-w-md w-full shadow-2xl border border-slate-100 text-center space-y-4 animate-scale">
+            <div class="w-14 h-14 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mx-auto text-2xl">
+                📱
+            </div>
+            <div>
+                <span class="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800 uppercase">
+                    Step 2 of 2
+                </span>
+                <h3 class="text-base font-black text-slate-900 font-heading mt-1">Verify Host Mobile OTP</h3>
+                <p class="text-xs text-slate-500 mt-1">
+                    Enter the 4-digit OTP sent to <b id="prov-verify-target-phone" class="text-slate-800">+91 9899001122</b>.
+                </p>
+            </div>
+
+            <div class="space-y-3">
+                <input id="prov-mobile-otp-input" type="text" maxlength="4" placeholder="••••"
+                    class="w-36 mx-auto text-center text-3xl font-mono font-black tracking-widest px-3 py-2 bg-slate-50 border-2 border-emerald-500 rounded-xl focus:outline-hidden" />
+
+                <button onclick="window.providerFlow.submitProviderMobileVerification()"
+                    class="w-full py-3 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold shadow-md transition">
+                    Verify OTP & Enter Host Dashboard 🚀
+                </button>
+
+                <div class="flex items-center justify-between text-xs pt-1 px-1">
+                    <button type="button" onclick="window.providerFlow.resendProviderMobileOtp()"
+                        class="text-emerald-700 font-bold hover:underline">
+                        Resend Mobile OTP
+                    </button>
+                    <button type="button" onclick="window.app.closeAllModals()"
+                        class="text-slate-400 font-bold hover:underline">
+                        Cancel
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ================= 5C. PROVIDER FORGOT PASSWORD REQUEST MODAL ================= -->
+    <div id="prov-forgot-pass-modal"
+        class="app-modal hidden fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
+        <div class="bg-white rounded-3xl p-6 max-w-sm w-full shadow-2xl border border-slate-100 space-y-4 animate-scale">
+            <div class="flex items-center justify-between pb-2 border-b border-slate-100">
+                <div class="flex items-center gap-2">
+                    <span class="text-xl">🔑</span>
+                    <h3 class="text-sm font-black text-slate-900 font-heading">Host Password Recovery</h3>
+                </div>
+                <button onclick="window.app.closeAllModals()"
+                    class="w-7 h-7 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-600 flex items-center justify-center font-bold text-xs">✕</button>
+            </div>
+
+            <p class="text-xs text-slate-500">
+                Enter your registered Email or Mobile Number to receive a 6-digit password reset OTP.
+            </p>
+
+            <form onsubmit="window.providerFlow.submitProviderForgotPasswordRequest(event)" class="space-y-3.5 text-xs">
+                <div>
+                    <label class="block font-bold text-slate-700 mb-1">Registered Email or Mobile *</label>
+                    <input id="prov-forgot-identifier" type="text" required placeholder="amit@restpoint.in or 9899001122"
+                        class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl font-semibold focus:outline-hidden focus:border-indigo-500" />
+                </div>
+                <button type="submit"
+                    class="w-full py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold shadow-md transition">
+                    Send Password Reset OTP →
                 </button>
             </form>
+        </div>
+    </div>
+
+    <!-- ================= 5D. PROVIDER FORGOT PASSWORD OTP MODAL ================= -->
+    <div id="prov-forgot-otp-modal"
+        class="app-modal hidden fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
+        <div class="bg-white rounded-3xl p-6 max-w-sm w-full shadow-2xl border border-slate-100 text-center space-y-4 animate-scale">
+            <div class="w-12 h-12 bg-indigo-100 text-indigo-600 rounded-full flex items-center justify-center mx-auto text-xl">
+                🔐
+            </div>
+            <div>
+                <h3 class="text-base font-black text-slate-900 font-heading">Enter Reset OTP</h3>
+                <p class="text-xs text-slate-500 mt-1">
+                    OTP sent to <b id="prov-forgot-target-dest" class="text-slate-800">your destination</b>.
+                </p>
+            </div>
+
+            <div class="space-y-3">
+                <input id="prov-forgot-otp-input" type="text" maxlength="6" placeholder="Enter OTP"
+                    class="w-40 mx-auto text-center text-2xl font-mono font-black tracking-widest px-3 py-2 bg-slate-50 border-2 border-indigo-500 rounded-xl focus:outline-hidden" />
+
+                <button onclick="window.providerFlow.submitProviderForgotOtp()"
+                    class="w-full py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold shadow-md transition">
+                    Verify OTP →
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ================= 5E. PROVIDER RESET PASSWORD MODAL ================= -->
+    <div id="prov-reset-pass-modal"
+        class="app-modal hidden fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
+        <div class="bg-white rounded-3xl p-6 max-w-sm w-full shadow-2xl border border-slate-100 space-y-4 animate-scale">
+            <div class="flex items-center justify-between pb-2 border-b border-slate-100">
+                <h3 class="text-sm font-black text-slate-900 font-heading">Set New Password</h3>
+                <button onclick="window.app.closeAllModals()"
+                    class="w-7 h-7 rounded-full bg-slate-100 text-slate-600 text-xs">✕</button>
+            </div>
+
+            <form onsubmit="window.providerFlow.submitProviderResetPassword(event)" class="space-y-3 text-xs">
+                <div>
+                    <label class="block font-bold text-slate-700 mb-1">New Password *</label>
+                    <input id="prov-new-pass" type="password" required minlength="6" placeholder="Min 6 chars"
+                        class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl font-semibold focus:outline-hidden focus:border-indigo-500" />
+                </div>
+                <div>
+                    <label class="block font-bold text-slate-700 mb-1">Confirm New Password *</label>
+                    <input id="prov-new-pass-confirm" type="password" required minlength="6" placeholder="Re-enter new pass"
+                        class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl font-semibold focus:outline-hidden focus:border-indigo-500" />
+                </div>
+                <button type="submit"
+                    class="w-full py-3 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold shadow-md transition">
+                    Save New Password & Login →
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- ================= 5F. EDIT TOILET MODAL (ADMIN RE-VERIFICATION RULE) ================= -->
+    <div id="edit-toilet-modal"
+        class="app-modal hidden fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
+        <div class="bg-white rounded-3xl p-6 max-w-xl w-full max-h-[90vh] overflow-y-auto shadow-2xl border border-slate-100 space-y-4 animate-drawer">
+            <div class="flex items-center justify-between pb-3 border-b border-slate-100">
+                <div>
+                    <h3 class="text-base font-black text-slate-900 font-heading">Edit Restroom Details</h3>
+                    <p class="text-xs text-amber-700 bg-amber-50 px-2 py-0.5 rounded-md inline-block font-semibold mt-0.5">
+                        ⚠️ Editing approved restrooms will submit changes for Admin re-verification.
+                    </p>
+                </div>
+                <button onclick="window.providerFlow.closeEditToiletModal()"
+                    class="w-7 h-7 rounded-full bg-slate-100 text-slate-600 text-xs font-bold">✕</button>
+            </div>
+
+            <form onsubmit="event.preventDefault(); window.providerFlow.submitEditToilet();" class="space-y-4 text-xs">
+                <div>
+                    <label class="block font-bold text-slate-700 mb-1">Restroom Facility Name *</label>
+                    <input id="edit-toilet-name" required type="text" placeholder="Restroom Name"
+                        class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl font-semibold" />
+                </div>
+
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block font-bold text-slate-700 mb-1">Commode Type *</label>
+                        <select id="edit-toilet-commode" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl font-semibold">
+                            <option value="English / Western">English / Western Commode</option>
+                            <option value="Indian">Indian Squat Pan</option>
+                            <option value="Both (Indian & Western)">Both (Indian & Western)</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block font-bold text-slate-700 mb-1">Gender Availability</label>
+                        <select id="edit-toilet-gender" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl font-semibold">
+                            <option value="Unisex">Unisex (All)</option>
+                            <option value="Separate Men & Women">Separate Men & Women</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Pricing Free vs Paid -->
+                <div class="space-y-2">
+                    <label class="block font-bold text-slate-700 mb-1">Pricing Option *</label>
+                    <div class="flex gap-2">
+                        <button type="button" id="edit-pay-type-paid-btn" onclick="window.providerFlow.setPaymentType('paid', 'edit-')"
+                            class="flex-1 py-2.5 rounded-xl text-xs font-bold bg-indigo-600 text-white shadow-sm transition">
+                            💳 Paid Washroom
+                        </button>
+                        <button type="button" id="edit-pay-type-free-btn" onclick="window.providerFlow.setPaymentType('free', 'edit-')"
+                            class="flex-1 py-2.5 rounded-xl text-xs font-semibold bg-slate-100 text-slate-600 hover:bg-slate-200 transition">
+                            💧 Free Public Toilet
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Usage Fee Input -->
+                <div id="edit-paid-fee-container" class="space-y-2 p-3 bg-indigo-50/70 border border-indigo-200 rounded-2xl">
+                    <label class="block font-bold text-indigo-950">Payment Kitna Lagega? (₹ / Entry) *</label>
+                    <input id="edit-toilet-price" type="number" min="0" max="100" placeholder="10"
+                        class="w-full px-3.5 py-2 bg-white border border-slate-200 rounded-xl font-bold text-slate-900" />
+                </div>
+
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block font-bold text-slate-700 mb-1">Opening Time</label>
+                        <input id="edit-toilet-open-time" type="text" placeholder="06:00 AM"
+                            class="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl font-semibold" />
+                    </div>
+                    <div>
+                        <label class="block font-bold text-slate-700 mb-1">Closing Time</label>
+                        <input id="edit-toilet-close-time" type="text" placeholder="11:00 PM"
+                            class="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl font-semibold" />
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block font-bold text-slate-700 mb-1">Accessibility Info</label>
+                    <input id="edit-toilet-accessibility" type="text" placeholder="Ground Floor, Ramp Available"
+                        class="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl font-semibold" />
+                </div>
+
+                <!-- Facilities -->
+                <div>
+                    <label class="block font-bold text-slate-700 mb-1.5">Facilities Included</label>
+                    <div class="grid grid-cols-2 sm:grid-cols-3 gap-2 bg-slate-50 p-3 rounded-xl border border-slate-200">
+                        <label class="flex items-center gap-1.5 font-semibold text-slate-700">
+                            <input type="checkbox" id="edit-fac-soap" class="rounded-sm text-indigo-600"> Hand Soap
+                        </label>
+                        <label class="flex items-center gap-1.5 font-semibold text-slate-700">
+                            <input type="checkbox" id="edit-fac-water" class="rounded-sm text-indigo-600"> Running Water
+                        </label>
+                        <label class="flex items-center gap-1.5 font-semibold text-slate-700">
+                            <input type="checkbox" id="edit-fac-spray" class="rounded-sm text-indigo-600"> Jet Spray
+                        </label>
+                        <label class="flex items-center gap-1.5 font-semibold text-slate-700">
+                            <input type="checkbox" id="edit-fac-mirror" class="rounded-sm text-indigo-600"> Mirror
+                        </label>
+                        <label class="flex items-center gap-1.5 font-semibold text-slate-700">
+                            <input type="checkbox" id="edit-fac-wheelchair" class="rounded-sm text-indigo-600"> Wheelchair Accessible
+                        </label>
+                    </div>
+                </div>
+
+                <!-- Address & GPS Pinning -->
+                <div>
+                    <div class="flex items-center justify-between mb-1">
+                        <label class="font-bold text-slate-700">Address & Landmark *</label>
+                        <button type="button" onclick="window.providerFlow.useGpsForNewToilet('#edit-toilet-address')"
+                            class="text-[10px] font-bold text-emerald-700 bg-emerald-50 px-2 py-1 rounded-lg border border-emerald-200 flex items-center gap-1">
+                            <span>📍</span> Use Current GPS
+                        </button>
+                    </div>
+                    <input id="edit-toilet-address" required type="text" placeholder="Address"
+                        class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl font-semibold mb-2" />
+                    <div id="edit-picker-map-container" class="rounded-xl overflow-hidden border border-slate-200"></div>
+                </div>
+
+                <button type="submit"
+                    class="w-full py-3.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl text-xs shadow-md transition">
+                    Save Changes & Submit for Admin Verification 🚀
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- ================= 5G. MANAGE TOILET MODAL (QUICK OPERATIONAL CONTROLS) ================= -->
+    <div id="manage-toilet-modal"
+        class="app-modal hidden fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
+        <div class="bg-white rounded-3xl p-6 max-w-sm w-full shadow-2xl border border-slate-100 space-y-4 animate-scale">
+            <div class="flex items-center justify-between pb-2 border-b border-slate-100">
+                <div class="flex items-center gap-2">
+                    <span class="text-xl">⚙️</span>
+                    <div>
+                        <h3 class="text-sm font-black text-slate-900 font-heading">Manage Toilet Status</h3>
+                        <p id="manage-target-name" class="text-[11px] font-bold text-slate-500 truncate max-w-[200px]">SmartRest</p>
+                    </div>
+                </div>
+                <button onclick="window.providerFlow.closeManageToiletModal()"
+                    class="w-7 h-7 rounded-full bg-slate-100 text-slate-600 text-xs font-bold">✕</button>
+            </div>
+
+            <p id="manage-target-address" class="text-[11px] text-slate-400 truncate">Address</p>
+
+            <div class="space-y-3 text-xs">
+                <!-- Operational Availability Toggle -->
+                <div class="p-3 bg-slate-50 rounded-2xl border border-slate-200 space-y-2">
+                    <label class="block font-bold text-slate-800">Current Availability (Open / Closed)</label>
+                    <div class="flex gap-2">
+                        <label class="flex-1 p-2 bg-white rounded-xl border border-slate-200 flex items-center gap-1.5 cursor-pointer font-bold text-emerald-700">
+                            <input type="radio" name="manage_open_status" id="manage-status-open" value="open" checked>
+                            <span>🟢 Open Now</span>
+                        </label>
+                        <label class="flex-1 p-2 bg-white rounded-xl border border-slate-200 flex items-center gap-1.5 cursor-pointer font-bold text-slate-600">
+                            <input type="radio" name="manage_open_status" id="manage-status-closed" value="closed">
+                            <span>🔴 Closed</span>
+                        </label>
+                    </div>
+                </div>
+
+                <!-- Active / Inactive Public Visibility Switch -->
+                <div class="p-3 bg-slate-50 rounded-2xl border border-slate-200 flex items-center justify-between">
+                    <div>
+                        <p class="font-bold text-slate-800">Active Listing</p>
+                        <p class="text-[10px] text-slate-400">Temporarily hide from search</p>
+                    </div>
+                    <label class="relative inline-flex items-center cursor-pointer">
+                        <input type="checkbox" id="manage-active-toggle" class="sr-only peer" checked>
+                        <div class="w-11 h-6 bg-slate-300 peer-focus:outline-hidden rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-emerald-600"></div>
+                    </label>
+                </div>
+
+                <!-- Fee Adjustment -->
+                <div class="p-3 bg-slate-50 rounded-2xl border border-slate-200 space-y-1">
+                    <label class="block font-bold text-slate-800">Usage Fee (₹)</label>
+                    <input type="number" id="manage-fee-input" min="0" max="100" value="10"
+                        class="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl font-bold text-slate-900" />
+                </div>
+
+                <button onclick="window.providerFlow.submitManageToilet()"
+                    class="w-full py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl text-xs shadow-md transition">
+                    Save Operational Settings ✓
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ================= 5H. REMOVE TOILET CONFIRMATION MODAL ================= -->
+    <div id="remove-toilet-modal"
+        class="app-modal hidden fixed inset-0 z-50 bg-black/70 backdrop-blur-md flex items-center justify-center p-4">
+        <div class="bg-white rounded-3xl p-6 max-w-sm w-full shadow-2xl border border-slate-100 text-center space-y-4 animate-scale">
+            <div class="w-14 h-14 bg-red-100 text-red-600 rounded-full flex items-center justify-center mx-auto text-2xl">
+                🗑️
+            </div>
+
+            <div>
+                <h3 class="text-base font-black text-slate-900 font-heading">Remove Toilet Listing</h3>
+                <p class="text-xs text-slate-500 mt-1 font-semibold">
+                    Are you sure you want to remove this toilet?
+                </p>
+                <p id="remove-target-toilet-name" class="text-xs font-bold text-red-600 bg-red-50 p-2 rounded-xl mt-2 border border-red-200">
+                    Toilet Name
+                </p>
+            </div>
+
+            <p class="text-[10px] text-slate-400">
+                This toilet will be permanently removed and will immediately disappear from the public user map.
+            </p>
+
+            <div class="flex gap-2">
+                <button onclick="window.providerFlow.closeRemoveToiletModal()"
+                    class="flex-1 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl text-xs transition">
+                    Cancel
+                </button>
+                <button onclick="window.providerFlow.executeRemoveToilet()"
+                    class="flex-1 py-2.5 bg-red-600 hover:bg-red-700 text-white font-bold rounded-xl text-xs shadow-md transition">
+                    Remove
+                </button>
+            </div>
         </div>
     </div>
 

@@ -329,17 +329,23 @@ class ToigoDataStore {
     }
 
     // ================= PROVIDERS MANAGEMENT =================
-    findProviderByEmail(email) {
-        if (!email) return null;
-        const normalized = email.trim().toLowerCase();
-        return this.data.providers.find(p => p.email && p.email.toLowerCase() === normalized);
+    findProviderByEmailOrPhone(identifier) {
+        if (!identifier) return null;
+        const normalized = identifier.trim().toLowerCase();
+        const digits = identifier.replace(/\D/g, '');
+        return this.data.providers.find(p => 
+            (p.email && p.email.toLowerCase() === normalized) ||
+            (p.phone && p.phone.replace(/\D/g, '') === digits && digits.length >= 10)
+        );
     }
 
-    findProviderById(providerId) {
-        return this.data.providers.find(p => p.providerId === providerId);
+    findProviderByPhone(phone) {
+        if (!phone) return null;
+        const digits = phone.replace(/\D/g, '');
+        return this.data.providers.find(p => p.phone && p.phone.replace(/\D/g, '') === digits);
     }
 
-    createProvider({ name, email, password, phone, businessName, bankAccountNo, bankIfsc, bankName, upiId }) {
+    createProvider({ name, email, password, phone, businessName, bankAccountNo, bankIfsc, bankName, upiId, emailVerified = false, mobileVerified = false }) {
         const newProv = {
             providerId: 'prov-' + Date.now(),
             name: name.trim(),
@@ -349,7 +355,12 @@ class ToigoDataStore {
             businessName: businessName ? businessName.trim() : `${name}'s Restroom`,
             profileImage: `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(name)}`,
             authProvider: 'email',
-            verified: true,
+            emailVerified: emailVerified,
+            mobileVerified: mobileVerified,
+            verified: emailVerified && mobileVerified,
+            emailVerificationCode: Math.floor(100000 + Math.random() * 900000).toString(),
+            mobileOtp: Math.floor(1000 + Math.random() * 9000).toString(),
+            otpExpiresAt: Date.now() + 5 * 60 * 1000, // 5 mins
             bankAccountNo: bankAccountNo || '918273645012',
             bankIfsc: bankIfsc || 'UTIB0000123',
             bankName: bankName || 'Axis Bank',
@@ -361,6 +372,105 @@ class ToigoDataStore {
         this.data.providers.unshift(newProv);
         this.save();
         return newProv;
+    }
+
+    updateProviderToilet(providerId, toiletId, updateData) {
+        const toilet = this.getToiletById(toiletId);
+        if (!toilet) {
+            return { success: false, message: 'Toilet listing not found.' };
+        }
+        // Strict Ownership Security Check
+        if (toilet.providerId !== providerId) {
+            return { success: false, message: 'Access Denied: You do not own this toilet listing.' };
+        }
+
+        const wasApproved = toilet.status === 'APPROVED';
+
+        if (updateData.name) toilet.name = updateData.name.trim();
+        if (updateData.address) toilet.address = updateData.address.trim();
+        if (updateData.description !== undefined) toilet.description = updateData.description;
+        if (updateData.latitude) toilet.latitude = Number(updateData.latitude);
+        if (updateData.longitude) toilet.longitude = Number(updateData.longitude);
+        if (updateData.openingTime) toilet.openingTime = updateData.openingTime;
+        if (updateData.closingTime) toilet.closingTime = updateData.closingTime;
+        if (updateData.commodeType) toilet.commodeType = updateData.commodeType;
+        if (updateData.genderType) toilet.genderType = updateData.genderType;
+        if (updateData.facilities) toilet.facilities = updateData.facilities;
+        if (updateData.accessibility) toilet.accessibility = updateData.accessibility;
+        if (updateData.hygieneStatus) toilet.hygieneStatus = updateData.hygieneStatus;
+        if (updateData.price !== undefined) {
+            toilet.price = Number(updateData.price);
+            toilet.isFree = Number(updateData.price) === 0;
+        }
+        if (updateData.photos && updateData.photos.length > 0) toilet.photos = updateData.photos;
+
+        // Admin Re-Verification Rule: If an approved toilet has its details changed, it goes to PENDING
+        let requireReVerification = false;
+        if (wasApproved) {
+            toilet.status = 'PENDING';
+            toilet.rejectionReason = null;
+            toilet.needsReVerification = true;
+            requireReVerification = true;
+        }
+
+        toilet.updatedAt = new Date().toISOString();
+        this.save();
+
+        return {
+            success: true,
+            toilet: toilet,
+            requireReVerification: requireReVerification,
+            message: requireReVerification
+                ? 'Toilet updated! Submitted to Admin for re-verification (Status: PENDING).'
+                : 'Toilet details updated successfully.'
+        };
+    }
+
+    manageProviderToilet(providerId, toiletId, { isOpen, active, price, isFree, facilities }) {
+        const toilet = this.getToiletById(toiletId);
+        if (!toilet) {
+            return { success: false, message: 'Toilet listing not found.' };
+        }
+        // Strict Ownership Security Check
+        if (toilet.providerId !== providerId) {
+            return { success: false, message: 'Access Denied: You do not own this toilet listing.' };
+        }
+
+        if (isOpen !== undefined) toilet.isOpen = isOpen;
+        if (active !== undefined) toilet.active = active;
+        if (price !== undefined) {
+            toilet.price = Number(price);
+            toilet.isFree = Number(price) === 0 || isFree === true;
+        }
+        if (facilities) toilet.facilities = facilities;
+
+        toilet.updatedAt = new Date().toISOString();
+        this.save();
+
+        return {
+            success: true,
+            toilet: toilet,
+            message: `Toilet ${toilet.name} settings updated.`
+        };
+    }
+
+    removeProviderToilet(providerId, toiletId) {
+        const toilet = this.getToiletById(toiletId);
+        if (!toilet) {
+            return { success: false, message: 'Toilet listing not found.' };
+        }
+        // Strict Ownership Security Check
+        if (toilet.providerId !== providerId) {
+            return { success: false, message: 'Access Denied: You do not own this toilet listing.' };
+        }
+
+        this.data.toilets = this.data.toilets.filter(t => t.toiletId !== toiletId);
+        this.save();
+
+        return {
+            success: true,
+            message: 'Toilet removed successfully. It is no longer visible on TOIGO.'
+        };
     }
 
     toggleProviderStatus(providerId) {

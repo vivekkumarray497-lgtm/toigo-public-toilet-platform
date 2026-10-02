@@ -321,11 +321,21 @@ class ToigoMasterApp {
 
     submitProviderLogin(event) {
         event.preventDefault();
-        const email = document.getElementById('prov-login-email').value;
+        const identifier = document.getElementById('prov-login-email').value.trim();
         const pass = document.getElementById('prov-login-pass').value;
 
-        const res = window.auth.loginProvider(email, pass);
+        const res = window.auth.loginProvider(identifier, pass);
         if (!res.success) {
+            if (res.requireVerification) {
+                this.closeAllModals();
+                if (res.requireEmail) {
+                    window.providerFlow.openProviderEmailVerifyModal(res.provider.providerId);
+                } else if (res.requireMobile) {
+                    window.providerFlow.openProviderMobileOtpModal(res.provider.providerId);
+                }
+                this.showToast(res.message, 'info');
+                return;
+            }
             this.showToast(res.message, 'error');
             return;
         }
@@ -337,23 +347,21 @@ class ToigoMasterApp {
 
     submitProviderRegister(event) {
         event.preventDefault();
-        const name = document.getElementById('prov-reg-name').value;
-        const email = document.getElementById('prov-reg-email').value;
+        const name = document.getElementById('prov-reg-name').value.trim();
+        const email = document.getElementById('prov-reg-email').value.trim();
+        const mobile = document.getElementById('prov-reg-phone').value.trim();
         const password = document.getElementById('prov-reg-pass').value;
-        const phone = document.getElementById('prov-reg-phone').value;
-        const businessName = document.getElementById('prov-reg-biz').value;
-        const bankAccountNo = document.getElementById('prov-reg-acc').value;
-        const bankIfsc = document.getElementById('prov-reg-ifsc').value;
+        const confirmPassword = document.getElementById('prov-reg-pass-confirm')?.value || password;
 
-        const res = window.auth.registerProvider({ name, email, password, phone, businessName, bankAccountNo, bankIfsc });
+        const res = window.auth.registerProvider({ name, email, mobile, password, confirmPassword });
         if (!res.success) {
             this.showToast(res.message, 'error');
             return;
         }
 
         this.closeAllModals();
-        this.showToast(res.message, 'success');
-        this.setRoleMode('PROVIDER');
+        window.providerFlow.openProviderEmailVerifyModal(res.provider.providerId, res.emailVerificationCode);
+        this.showToast(`Step 1 of 2: Verification code sent to ${email} (Code: ${res.emailVerificationCode})`, 'info');
     }
 
     // ================= ADMIN AUTH MODAL =================
