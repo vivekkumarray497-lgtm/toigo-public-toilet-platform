@@ -1,12 +1,13 @@
 /**
- * TOIGO: Provider Flow Controller (Host Onboarding, Direct QR, Banking & Listings)
+ * TOIGO: Provider Flow Controller (Host Onboarding, GPS Location Picker, Direct QR, Banking & Listings)
  */
 
 class ProviderFlowController {
     constructor() {
         this.pickerMapInstance = null;
+        this.pickerMarker = null;
         this.newToiletCoords = { lat: 28.6315, lng: 77.2167 };
-        this.selectedAmenities = new Set(['Hand Soap', 'Jet Spray', 'Mirror']);
+        this.selectedAmenities = new Set(['Hand Soap', 'Jet Spray', 'Mirror', 'Running Water']);
         this.selectedPhotoUrl = 'https://images.unsplash.com/photo-1584622650111-993a426fbf0a?auto=format&fit=crop&w=600&q=80';
         this.uploadedListingQr = null;
     }
@@ -16,35 +17,33 @@ class ProviderFlowController {
     }
 
     renderProviderDashboard() {
-        // Enforce provider login
         const prov = window.auth.getCurrentUser();
-        if (!prov || prov.role !== 'provider') {
-            const dashContainer = document.getElementById('provider-dashboard-view');
-            if (dashContainer) {
-                dashContainer.innerHTML = `
-                    <div class="p-8 text-center bg-white rounded-3xl border border-slate-200 shadow-sm max-w-md mx-auto my-8 space-y-4">
-                        <div class="w-16 h-16 bg-indigo-50 text-indigo-600 rounded-2xl flex items-center justify-center mx-auto text-3xl shadow-sm">
-                            🏢
-                        </div>
-                        <h2 class="text-xl font-black text-slate-900">Sign In as Toilet Host</h2>
-                        <p class="text-xs text-slate-500">Provide your washroom details, direct payment QR code, and bank account to start earning money.</p>
-                        <button onclick="window.auth.requireLogin('provider', () => window.providerFlow.renderProviderDashboard())" class="w-full py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold shadow-md transition">
-                            Host Login / Register Now →
-                        </button>
-                    </div>
-                `;
-            }
-            return;
-        }
-
         const dashContainer = document.getElementById('provider-dashboard-view');
         if (!dashContainer) return;
+
+        if (!prov || prov.role !== 'provider') {
+            dashContainer.innerHTML = `
+                <div class="p-8 text-center bg-white rounded-3xl border border-slate-200 shadow-sm max-w-md mx-auto my-8 space-y-4">
+                    <div class="w-16 h-16 bg-indigo-50 text-indigo-600 rounded-2xl flex items-center justify-center mx-auto text-3xl shadow-sm">
+                        🏢
+                    </div>
+                    <h2 class="text-xl font-black text-slate-900">Sign In as Toilet Host</h2>
+                    <p class="text-xs text-slate-500">Provide your washroom details, direct payment QR code, and bank account to start earning money.</p>
+                    <button onclick="window.auth.requireLogin('provider', () => window.providerFlow.renderProviderDashboard())" class="w-full py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold shadow-md transition">
+                        Host Login / Register Now →
+                    </button>
+                </div>
+            `;
+            return;
+        }
 
         const toilets = window.db.getToiletsByProvider(prov.id);
         const myBookings = window.db.data.bookings.filter(b => b.providerId === prov.id);
         const totalVisits = myBookings.length;
         const totalEarnings = (prov.totalEarned || 0) + myBookings.reduce((sum, b) => sum + (b.amount || 0), 0);
         const walletBal = prov.walletBalance || totalEarnings;
+
+        const isVerified = prov.status === 'verified';
 
         const metricsHtml = `
             <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-6">
@@ -72,7 +71,7 @@ class ProviderFlowController {
                         <p class="text-[10px] text-slate-500">Across ${toilets.length} registered locations</p>
                     </div>
                     <div class="text-[10px] text-emerald-600 font-bold">
-                        ✓ 100% Direct Payouts Active
+                        ✓ Direct Payouts Active
                     </div>
                 </div>
 
@@ -84,7 +83,7 @@ class ProviderFlowController {
                     <div class="my-2">
                         <p class="text-xs font-bold text-slate-900">${prov.bankHolderName || prov.name}</p>
                         <p class="text-[10px] text-slate-500 font-mono mt-0.5">A/C: •••• ${prov.bankAccountNo ? prov.bankAccountNo.slice(-4) : '5012'}</p>
-                        <p class="text-[10px] text-slate-400 font-mono">IFSC: ${prov.bankIfsc || 'UTIB0000123'}</p>
+                        <p class="text-[10px] text-emerald-700 font-bold">${prov.bankName || 'Verified Bank'} (${prov.bankIfsc || 'UTIB0000123'})</p>
                     </div>
                     <button onclick="window.providerFlow.openAddListingModal()" class="w-full py-1.5 bg-indigo-50 text-indigo-700 hover:bg-indigo-100 rounded-xl text-xs font-bold transition">
                         + Add Another Washroom
@@ -152,9 +151,11 @@ class ProviderFlowController {
                     <div>
                         <div class="flex items-center gap-2">
                             <h1 class="text-xl sm:text-2xl font-black text-slate-900 font-heading">${prov.businessName || prov.name}</h1>
-                            <span class="px-2 py-0.5 bg-emerald-100 text-emerald-800 rounded-full text-[10px] font-bold">Verified Host Partner</span>
+                            <span class="px-2 py-0.5 bg-emerald-100 text-emerald-800 rounded-full text-[10px] font-bold">
+                                ${isVerified ? '✓ Verified Host Partner' : '⏳ Verification Pending'}
+                            </span>
                         </div>
-                        <p class="text-xs text-slate-500 mt-0.5">Direct UPI Account: <span class="font-mono font-semibold text-emerald-700">${prov.upiId || 'host@okaxis'}</span></p>
+                        <p class="text-xs text-slate-500 mt-0.5">Direct UPI ID: <span class="font-mono font-semibold text-emerald-700">${prov.upiId || 'host@okaxis'}</span></p>
                     </div>
                     <button onclick="window.providerFlow.openAddListingModal()" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold shadow-md transition">
                         + Add New Restroom Listing
@@ -179,33 +180,23 @@ class ProviderFlowController {
         if (!t) return;
         const newStatus = t.status === 'open' ? 'cleaning' : 'open';
         window.db.updateToilet(toiletId, { status: newStatus });
-        window.app.showToast(`Toilet marked as ${newStatus.toUpperCase()}`, 'info');
+        window.app.showToast(`Restroom marked as "${newStatus.toUpperCase()}"`, 'info');
         this.renderProviderDashboard();
-        window.userFlow?.applyFilters();
     }
 
+    // Open Add Toilet Listing Modal
     openAddListingModal() {
-        // Enforce login
-        if (!window.auth.isLoggedIn()) {
-            window.auth.requireLogin('provider', () => this.openAddListingModal());
-            return;
-        }
-
         const modal = document.getElementById('add-toilet-modal');
         if (!modal) return;
+
+        this.uploadedListingQr = null;
+        const qrPreview = document.getElementById('new-listing-qr-preview');
+        if (qrPreview) qrPreview.classList.add('hidden');
+
         modal.classList.remove('hidden');
 
         setTimeout(() => {
-            const userCoords = window.toigoMap.userCoords;
-            this.newToiletCoords = { ...userCoords };
-            
-            const pickerContainer = document.getElementById('picker-map-container');
-            if (pickerContainer) {
-                pickerContainer.innerHTML = '<div id="picker-map" class="w-full h-40 rounded-xl"></div>';
-                this.pickerMapInstance = window.toigoMap.initPickerMap('picker-map', userCoords, (lat, lng) => {
-                    this.newToiletCoords = { lat, lng };
-                });
-            }
+            this.initPickerMap();
         }, 200);
     }
 
@@ -214,19 +205,77 @@ class ProviderFlowController {
         if (modal) modal.classList.add('hidden');
     }
 
-    toggleAmenitySelection(amenityName) {
-        if (this.selectedAmenities.has(amenityName)) {
-            this.selectedAmenities.delete(amenityName);
-        } else {
-            this.selectedAmenities.add(amenityName);
+    // Interactive Leaflet Picker Map
+    initPickerMap() {
+        const container = document.getElementById('picker-map-container');
+        if (!container) return;
+
+        container.innerHTML = '<div id="picker-map" style="height: 180px; width: 100%; border-radius: 12px;"></div>';
+
+        const lat = window.toigoMap.userCoords.lat || 28.6315;
+        const lng = window.toigoMap.userCoords.lng || 77.2167;
+        this.newToiletCoords = { lat, lng };
+
+        if (this.pickerMapInstance) {
+            this.pickerMapInstance.remove();
+            this.pickerMapInstance = null;
         }
+
+        this.pickerMapInstance = L.map('picker-map', { zoomControl: true }).setView([lat, lng], 16);
+
+        L.tileLayer('https://{s}.google.com/vt/lyrs=m&x={x}&y={y}&z={z}', {
+            maxZoom: 20,
+            subdomains: ['mt0', 'mt1', 'mt2', 'mt3']
+        }).addTo(this.pickerMapInstance);
+
+        this.pickerMarker = L.marker([lat, lng], { draggable: true }).addTo(this.pickerMapInstance);
+        this.pickerMarker.bindPopup('Drag pin to exact restroom door entrance').openPopup();
+
+        this.pickerMarker.on('dragend', (e) => {
+            const position = e.target.getLatLng();
+            this.newToiletCoords = {
+                lat: Number(position.lat.toFixed(6)),
+                lng: Number(position.lng.toFixed(6))
+            };
+            window.app.showToast(`Restroom coordinates set: ${this.newToiletCoords.lat}, ${this.newToiletCoords.lng}`, 'info');
+        });
+
+        this.pickerMapInstance.on('click', (e) => {
+            this.pickerMarker.setLatLng(e.latlng);
+            this.newToiletCoords = {
+                lat: Number(e.latlng.lat.toFixed(6)),
+                lng: Number(e.latlng.lng.toFixed(6))
+            };
+        });
     }
 
-    selectPresetPhoto(url) {
-        this.selectedPhotoUrl = url;
+    // GPS Current Location for New Restroom
+    useCurrentGpsForRestroom() {
+        if (!navigator.geolocation) {
+            window.app.showToast('Geolocation is not supported by your browser.', 'error');
+            return;
+        }
+
+        window.app.showToast('Acquiring precise GPS location...', 'info');
+        navigator.geolocation.getCurrentPosition(
+            (pos) => {
+                const lat = Number(pos.coords.latitude.toFixed(6));
+                const lng = Number(pos.coords.longitude.toFixed(6));
+                this.newToiletCoords = { lat, lng };
+
+                if (this.pickerMapInstance && this.pickerMarker) {
+                    this.pickerMapInstance.setView([lat, lng], 17);
+                    this.pickerMarker.setLatLng([lat, lng]);
+                }
+                window.app.showToast('GPS Location acquired accurately!', 'success');
+            },
+            (err) => {
+                window.app.showToast('Could not fetch GPS. Please drag pin on the map.', 'error');
+            },
+            { enableHighAccuracy: true, timeout: 10000 }
+        );
     }
 
-    // Host QR Code File Upload in New Listing
     handleListingQrUpload(event) {
         const file = event.target.files[0];
         if (!file) return;
@@ -234,12 +283,12 @@ class ProviderFlowController {
         const reader = new FileReader();
         reader.onload = (e) => {
             this.uploadedListingQr = e.target.result;
-            const previewEl = document.getElementById('new-listing-qr-preview');
-            if (previewEl) {
-                previewEl.src = this.uploadedListingQr;
-                previewEl.classList.remove('hidden');
+            const preview = document.getElementById('new-listing-qr-preview');
+            if (preview) {
+                preview.src = e.target.result;
+                preview.classList.remove('hidden');
             }
-            window.app.showToast('Custom Payment QR Code uploaded successfully!', 'success');
+            window.app.showToast('Washroom Payment QR code attached!', 'success');
         };
         reader.readAsDataURL(file);
     }
@@ -248,34 +297,46 @@ class ProviderFlowController {
         const prov = window.auth.getCurrentUser();
         if (!prov) return;
 
-        const upi = formData.upiId || prov.upiId || 'host@okaxis';
-        const qrImg = this.uploadedListingQr || prov.qrCodeImage || `https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent('upi://pay?pa=' + upi + '&pn=' + encodeURIComponent(formData.name) + '&am=' + (formData.price || 10) + '&cu=INR')}`;
+        if (!formData.name || formData.name.trim().length < 3) {
+            window.app.showToast('Please enter a valid Restroom Name.', 'error');
+            return;
+        }
+
+        if (!formData.address || formData.address.trim().length < 5) {
+            window.app.showToast('Please enter a complete address with landmark.', 'error');
+            return;
+        }
+
+        const price = Number(formData.price || 10);
+        const upiId = formData.upiId || prov.upiId || 'host@okaxis';
+        const qrImage = this.uploadedListingQr || prov.qrCodeImage;
 
         const newToilet = window.db.addToilet({
-            name: formData.name || 'Clean Public Restroom',
+            name: formData.name.trim(),
             providerId: prov.id,
             providerName: prov.businessName || prov.name,
-            phone: formData.phone || prov.phone,
-            upiId: upi,
-            qrCodeImage: qrImg,
-            address: formData.address || 'Central City Road',
+            phone: prov.phone,
+            upiId: upiId,
+            qrCodeImage: qrImage,
+            address: formData.address.trim(),
             city: 'New Delhi',
             lat: this.newToiletCoords.lat,
             lng: this.newToiletCoords.lng,
             type: formData.type || 'English / Western',
-            genderType: formData.genderType || 'Unisex',
-            price: Number(formData.price || 10),
-            isFree: Number(formData.price) === 0,
-            amenities: Array.from(this.selectedAmenities),
+            genderType: formData.genderType || 'Unisex & Separate Men/Women',
+            price: price,
+            isFree: price === 0,
             timings: formData.timings || '06:00 AM - 11:00 PM',
-            description: 'Clean, sanitized and verified washroom facility.',
-            images: [this.selectedPhotoUrl]
+            amenities: Array.from(this.selectedAmenities),
+            images: [this.selectedPhotoUrl],
+            description: formData.description || 'Clean, sanitized and verified restroom facility.'
         });
 
         this.closeAddListingModal();
-        window.app.showToast('Restroom listing published! Users can now pay directly to your QR.', 'success');
+        window.app.showToast(`"${newToilet.name}" published to TOIGO Map!`, 'success');
+
         this.renderProviderDashboard();
-        window.userFlow?.applyFilters();
+        window.toigoMap.renderToiletMarkers();
     }
 
     openQrPosterModal(toiletId) {
@@ -285,14 +346,14 @@ class ProviderFlowController {
         const modal = document.getElementById('qr-poster-modal');
         if (!modal) return;
 
-        const upiLink = `upi://pay?pa=${encodeURIComponent(toilet.upiId || 'host@okaxis')}&pn=${encodeURIComponent(toilet.name)}&am=${toilet.price}&cu=INR`;
-        const qrUrl = toilet.qrCodeImage || `https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent(upiLink)}`;
-
         modal.querySelector('#poster-toilet-name').innerText = toilet.name;
-        modal.querySelector('#poster-toilet-price').innerText = toilet.price === 0 ? 'FREE ADMISSION' : `₹${toilet.price} PER ENTRY`;
-        modal.querySelector('#poster-qr-img').src = qrUrl;
-        modal.querySelector('#poster-toilet-address').innerText = toilet.address;
-        modal.querySelector('#poster-toilet-type').innerText = `${toilet.type} • ${toilet.genderType}`;
+        modal.querySelector('#poster-toilet-type').innerText = toilet.type;
+        modal.querySelector('#poster-toilet-price').innerText = toilet.price === 0 ? 'FREE COMMUNITY RESTROOM' : `₹${toilet.price} PER USE`;
+        modal.querySelector('#poster-toilet-address').innerText = `📍 ${toilet.address}`;
+
+        const qrImg = modal.querySelector('#poster-qr-img');
+        const upiLink = `upi://pay?pa=${encodeURIComponent(toilet.upiId || 'host@okaxis')}&pn=${encodeURIComponent(toilet.name)}&am=${toilet.price}&cu=INR`;
+        qrImg.src = toilet.qrCodeImage || `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(upiLink)}`;
 
         modal.classList.remove('hidden');
     }

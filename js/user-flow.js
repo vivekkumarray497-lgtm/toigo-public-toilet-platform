@@ -1,5 +1,6 @@
 /**
- * TOIGO: User Flow Controller (Find, Use, Direct Host Pay & Hygiene Photo Reviews)
+ * TOIGO: User Flow Controller (Find, Use, Direct Host Pay, Report Issues & Hygiene Photo Reviews)
+ * Strictly enforces login on protected actions while allowing guests to browse the public directory.
  */
 
 class UserFlowController {
@@ -9,8 +10,10 @@ class UserFlowController {
         this.usageTimerInterval = null;
         this.usageSeconds = 0;
         this.uploadedReviewPhotos = [];
+        this.uploadedReportPhoto = null;
         this.selectedRatingStars = 5;
         this.selectedHygieneTag = '✨ Spotless Clean';
+        this.selectedReportCategory = 'Poor Hygiene';
         this.activeFilters = {
             query: '',
             type: 'all',
@@ -98,8 +101,8 @@ class UserFlowController {
                         🔍
                     </div>
                     <h3 class="font-bold text-slate-800 text-xs mb-1">No Toilets Found Nearby</h3>
-                    <p class="text-[11px] text-slate-500 mb-3">Try clearing search or filters.</p>
-                    <button onclick="window.userFlow.resetFilters()" class="px-3 py-1.5 bg-emerald-600 text-white rounded-xl text-xs font-semibold">
+                    <p class="text-[11px] text-slate-400 mb-3">Try adjusting your filters or location search.</p>
+                    <button onclick="window.userFlow.resetFilters()" class="px-3 py-1.5 bg-slate-900 text-white text-xs font-bold rounded-xl">
                         Reset Filters
                     </button>
                 </div>
@@ -109,44 +112,29 @@ class UserFlowController {
 
         const cardsHtml = list.map(t => {
             const dist = window.db.calculateDistance(userLat, userLng, t.lat, t.lng);
-            const walkingMinutes = Math.max(1, Math.round(dist * 12));
             const isFree = t.price === 0 || t.isFree;
-            const priceTag = isFree ? '<span class="text-emerald-600 font-black">FREE</span>' : `<span class="font-black text-slate-900">₹${t.price}</span>`;
-            
-            let typeColor = 'bg-emerald-50 text-emerald-700 border-emerald-200';
-            if (t.type === 'Indian') typeColor = 'bg-amber-50 text-amber-700 border-amber-200';
-            if (t.type.includes('Both')) typeColor = 'bg-indigo-50 text-indigo-700 border-indigo-200';
-
-            const imgUrl = t.images && t.images[0] ? t.images[0] : 'https://images.unsplash.com/photo-1584622650111-993a426fbf0a?auto=format&fit=crop&w=400&q=80';
+            const priceTag = isFree ? '<span class="font-bold text-emerald-700 bg-emerald-100 px-2 py-0.5 rounded-md text-[10px]">FREE</span>' : `<span class="font-black text-slate-900">₹${t.price}</span>`;
+            const walkingMinutes = Math.max(1, Math.round(dist * 12));
 
             return `
                 <div onclick="window.userFlow.selectToilet('${t.id}')" 
-                     class="toilet-card group cursor-pointer bg-white rounded-2xl p-3 border border-slate-100 shadow-2xs hover:shadow-lg hover:border-emerald-300 transition-all duration-300 flex flex-col justify-between">
+                     class="bg-white/95 hover:bg-white rounded-2xl p-3 border border-slate-200/90 shadow-2xs hover:shadow-md transition cursor-pointer flex flex-col justify-between">
                     
-                    <div class="flex gap-2.5">
-                        <div class="relative w-20 h-20 rounded-xl overflow-hidden bg-slate-100 flex-shrink-0">
-                            <img src="${imgUrl}" alt="${t.name}" class="w-full h-full object-cover group-hover:scale-105 transition duration-500" />
-                            <div class="absolute bottom-1 right-1 bg-black/70 backdrop-blur-xs text-white text-[9px] font-bold px-1.5 py-0.5 rounded">
-                                ★ ${t.rating}
-                            </div>
-                        </div>
-
+                    <div class="flex items-start justify-between gap-2">
                         <div class="flex-1 min-w-0">
-                            <h4 class="font-bold text-slate-900 text-xs truncate group-hover:text-emerald-700 transition">
-                                ${t.name}
-                            </h4>
-                            <p class="text-[11px] text-slate-500 line-clamp-1 mt-0.5">
-                                📍 ${t.address}
-                            </p>
-
-                            <div class="flex items-center gap-1 mt-1.5">
-                                <span class="text-[9px] px-1.5 py-0.5 rounded border font-medium ${typeColor}">
+                            <div class="flex items-center gap-1.5 mb-1">
+                                <span class="px-2 py-0.5 rounded-md text-[9px] font-extrabold ${t.type === 'Indian' ? 'bg-amber-100 text-amber-900' : 'bg-emerald-100 text-emerald-900'}">
                                     ${t.type}
                                 </span>
-                                <span class="text-[9px] px-1.5 py-0.5 rounded bg-emerald-50 text-emerald-800 font-bold">
-                                    ${t.cleanlinessScore || '98%'} Clean
-                                </span>
+                                <span class="text-[10px] text-slate-400 font-medium">● Open</span>
                             </div>
+                            <h4 class="font-bold text-xs text-slate-900 truncate leading-tight">${t.name}</h4>
+                            <p class="text-[10px] text-slate-500 truncate mt-0.5">${t.address}</p>
+                        </div>
+                        <div class="text-right flex-shrink-0">
+                            <span class="inline-flex items-center gap-0.5 text-xs font-bold text-amber-500 bg-amber-50 px-1.5 py-0.5 rounded-md">
+                                ★ ${t.rating}
+                            </span>
                         </div>
                     </div>
 
@@ -158,7 +146,7 @@ class UserFlowController {
                         <div class="flex items-center gap-2">
                             <span class="text-xs">${priceTag}</span>
                             <button class="px-2.5 py-1 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-bold shadow-xs transition">
-                                Use →
+                                View →
                             </button>
                         </div>
                     </div>
@@ -267,11 +255,18 @@ class UserFlowController {
 
                 <div class="p-5 space-y-4">
                     <div>
-                        <div class="flex items-center gap-2 mb-1">
-                            <span class="px-2.5 py-0.5 rounded-full text-[11px] font-bold ${toilet.type === 'Indian' ? 'bg-amber-100 text-amber-800' : 'bg-emerald-100 text-emerald-800'}">
-                                ${toilet.type}
-                            </span>
-                            <span class="px-2 py-0.5 rounded-full text-[11px] font-bold bg-blue-100 text-blue-800">🛡️ Verified Host</span>
+                        <div class="flex items-center justify-between mb-1">
+                            <div class="flex items-center gap-2">
+                                <span class="px-2.5 py-0.5 rounded-full text-[11px] font-bold ${toilet.type === 'Indian' ? 'bg-amber-100 text-amber-800' : 'bg-emerald-100 text-emerald-800'}">
+                                    ${toilet.type}
+                                </span>
+                                <span class="px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-blue-100 text-blue-800">🛡️ Verified Host</span>
+                            </div>
+
+                            <!-- Report issue button (Protected Action) -->
+                            <button onclick="window.userFlow.openReportModal('${toilet.id}')" class="text-xs text-red-500 hover:text-red-700 font-bold flex items-center gap-1">
+                                🚩 Report Problem
+                            </button>
                         </div>
                         <h2 class="text-xl font-black text-slate-900 font-heading">${toilet.name}</h2>
                         <p class="text-xs text-slate-600 mt-1 flex items-start gap-1">
@@ -332,7 +327,7 @@ class UserFlowController {
                         </div>
                     </div>
 
-                    <!-- Action Buttons -->
+                    <!-- Action Buttons (Protected Actions) -->
                     <div class="pt-2 flex gap-2">
                         <button onclick="window.userFlow.openGoogleMapsRoute(${toilet.lat}, ${toilet.lng})" 
                                 class="py-3 px-4 bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold rounded-2xl text-xs flex items-center justify-center gap-1 transition">
@@ -359,7 +354,15 @@ class UserFlowController {
         window.toigoMap.clearRoute();
     }
 
+    // Google Maps Navigation - Protected Action (Requires verified login)
     openGoogleMapsRoute(lat, lng) {
+        if (!window.auth.isLoggedIn()) {
+            this.closeToiletDetailModal();
+            window.auth.requireLogin('user', () => {
+                window.open(`https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}`, '_blank');
+            });
+            return;
+        }
         window.open(`https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}`, '_blank');
     }
 
@@ -368,7 +371,6 @@ class UserFlowController {
         const toilet = window.db.getToiletById(toiletId);
         if (!toilet) return;
 
-        // Strictly enforce login for users
         if (!window.auth.isLoggedIn()) {
             this.closeToiletDetailModal();
             window.auth.requireLogin('user', () => {
@@ -516,6 +518,12 @@ class UserFlowController {
 
     // Rating & Hygiene Photo Feedback Modal
     openRatingModal(toiletId, bookingId = null) {
+        // Enforce user login for submitting reviews
+        if (!window.auth.isLoggedIn()) {
+            window.auth.requireLogin('user', () => this.openRatingModal(toiletId, bookingId));
+            return;
+        }
+
         const ratingModal = document.getElementById('rating-feedback-modal');
         if (!ratingModal) return;
 
@@ -525,7 +533,6 @@ class UserFlowController {
         this.selectedRatingStars = 5;
         this.selectedHygieneTag = '✨ Spotless Clean';
 
-        // Reset photo preview container
         const previewContainer = document.getElementById('review-photo-preview');
         if (previewContainer) previewContainer.innerHTML = '';
 
@@ -561,7 +568,6 @@ class UserFlowController {
         });
     }
 
-    // Handle User Hygiene Photo Upload
     handleReviewPhotoUpload(event) {
         const files = event.target.files;
         if (!files || files.length === 0) return;
@@ -596,7 +602,7 @@ class UserFlowController {
 
         const toiletId = ratingModal.dataset.toiletId;
         const comment = document.getElementById('review-comment-input')?.value.trim() || 'Hygienic and maintained restroom.';
-        const user = window.auth.getCurrentUser() || { name: 'Verified Citizen', avatar: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=150&q=80' };
+        const user = window.auth.getCurrentUser() || { name: 'Verified Citizen' };
 
         window.db.addReview({
             toiletId,
@@ -613,6 +619,89 @@ class UserFlowController {
         window.app.showToast('Hygiene review & photo published! Thank you 🌟', 'success');
 
         this.applyFilters();
+    }
+
+    // ================= REPORT TOILET ISSUE SYSTEM =================
+    openReportModal(toiletId) {
+        if (!window.auth.isLoggedIn()) {
+            this.closeToiletDetailModal();
+            window.auth.requireLogin('user', () => this.openReportModal(toiletId));
+            return;
+        }
+
+        const toilet = window.db.getToiletById(toiletId);
+        if (!toilet) return;
+
+        const modal = document.getElementById('report-toilet-modal');
+        if (!modal) return;
+
+        modal.dataset.toiletId = toiletId;
+        document.getElementById('report-toilet-name-label').innerText = toilet.name;
+        document.getElementById('report-toilet-address-label').innerText = toilet.address;
+        document.getElementById('report-desc-input').value = '';
+        this.uploadedReportPhoto = null;
+        document.getElementById('report-photo-preview-img').classList.add('hidden');
+
+        modal.classList.remove('hidden');
+    }
+
+    closeReportModal() {
+        const modal = document.getElementById('report-toilet-modal');
+        if (modal) modal.classList.add('hidden');
+    }
+
+    setReportCategory(category) {
+        this.selectedReportCategory = category;
+        document.querySelectorAll('.report-category-pill').forEach(btn => {
+            if (btn.dataset.category === category) {
+                btn.className = 'report-category-pill px-3 py-1.5 rounded-xl text-xs font-bold bg-red-600 text-white shadow-xs transition';
+            } else {
+                btn.className = 'report-category-pill px-3 py-1.5 rounded-xl text-xs font-bold bg-slate-100 text-slate-700 hover:bg-slate-200 transition';
+            }
+        });
+    }
+
+    handleReportPhotoUpload(event) {
+        const file = event.target.files[0];
+        if (!file) return;
+
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            this.uploadedReportPhoto = e.target.result;
+            const imgEl = document.getElementById('report-photo-preview-img');
+            if (imgEl) {
+                imgEl.src = e.target.result;
+                imgEl.classList.remove('hidden');
+            }
+            window.app.showToast('Report photo attached!', 'info');
+        };
+        reader.readAsDataURL(file);
+    }
+
+    submitToiletReport() {
+        const modal = document.getElementById('report-toilet-modal');
+        if (!modal) return;
+
+        const toiletId = modal.dataset.toiletId;
+        const description = document.getElementById('report-desc-input').value.trim();
+        const user = window.auth.getCurrentUser();
+
+        if (!description) {
+            window.app.showToast('Please describe the issue or problem.', 'error');
+            return;
+        }
+
+        window.db.addReport({
+            toiletId,
+            userId: user?.id,
+            userName: user?.name,
+            category: this.selectedReportCategory,
+            description,
+            photo: this.uploadedReportPhoto
+        });
+
+        this.closeReportModal();
+        window.app.showToast('Issue reported successfully. Admin & Host will inspect immediately.', 'success');
     }
 }
 

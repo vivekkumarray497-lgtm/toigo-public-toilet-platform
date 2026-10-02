@@ -65,7 +65,7 @@
 
             <!-- Top Action Controls -->
             <div class="flex items-center gap-2">
-                <!-- 🚨 1-Click SOS Emergency Button (Only for Citizen / Guest) -->
+                <!-- 🚨 1-Click SOS Emergency Button -->
                 <button id="header-sos-btn" onclick="window.app.triggerEmergencySOS()" 
                         class="px-3 py-1.5 bg-gradient-to-r from-red-500 to-rose-600 hover:from-red-600 hover:to-rose-700 text-white rounded-xl text-xs font-extrabold shadow-md shadow-red-500/20 flex items-center gap-1.5 transition active:scale-95">
                     <span class="w-2 h-2 rounded-full bg-white animate-ping"></span>
@@ -94,7 +94,7 @@
                         <span class="text-emerald-300">Choose Your Option</span>
                     </h1>
                     <p class="text-xs text-slate-200 mt-2 max-w-md">
-                        Separate dedicated portals for Citizens and Restroom Hosts with direct UPI payments & live photo reviews.
+                        Verified Indian & Western washrooms with live GPS, direct host payouts, door QR unlock & citizen hygiene photos.
                     </p>
                 </div>
             </div>
@@ -120,11 +120,11 @@
                         <div>
                             <h2 class="text-xl font-black text-slate-900 font-heading">1. Use Toilet (Citizen Portal)</h2>
                             <p class="text-xs text-slate-600 mt-1 leading-relaxed">
-                                Sign in as Citizen. Access Google Maps, find Indian/Western washrooms, scan door QR, pay directly, and upload hygiene photos.
+                                Sign in as Citizen with Mobile/Email OTP. Find nearby Indian & Western washrooms, scan door QR, pay directly to host, and upload hygiene condition photos.
                             </p>
                         </div>
                         <div class="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between text-xs font-bold text-emerald-600">
-                            <span>Open Citizen App →</span>
+                            <span>Open Citizen Portal →</span>
                             <span class="w-7 h-7 rounded-full bg-emerald-50 flex items-center justify-center text-emerald-700">→</span>
                         </div>
                     </div>
@@ -143,7 +143,7 @@
                         <div>
                             <h2 class="text-xl font-black text-slate-900 font-heading">2. Provide Toilet (Host Portal)</h2>
                             <p class="text-xs text-slate-600 mt-1 leading-relaxed">
-                                Sign in as Host. Upload your Bank & direct UPI QR code, manage washrooms, generate door posters, and earn money directly.
+                                Register as Toilet Host. Provide verified bank details & UPI QR code, manage restrooms, set timings, generate door signs, and receive direct customer payments.
                             </p>
                         </div>
                         <div class="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between text-xs font-bold text-indigo-600">
@@ -162,7 +162,7 @@
                     </div>
                     <div>
                         <h4 class="font-bold text-xs sm:text-sm text-white">Founder & Super Admin Portal</h4>
-                        <p class="text-[11px] text-slate-300">Master authority over all Users, Hosts, Banking & Listings.</p>
+                        <p class="text-[11px] text-slate-300">Master authority over all Users, Hosts, Banking, Reports & Listings.</p>
                     </div>
                 </div>
                 <button onclick="window.app.selectLandingRole('admin')" class="px-4 py-2 bg-gradient-to-r from-amber-400 to-amber-500 hover:from-amber-500 text-slate-950 font-black rounded-xl text-xs shadow-md transition whitespace-nowrap">
@@ -249,53 +249,54 @@
             <div class="flex items-center justify-between">
                 <div>
                     <h2 class="text-xl font-black text-slate-900 font-heading">My Washroom Visits</h2>
-                    <p class="text-xs text-slate-500">History of completed visits & direct receipts</p>
+                    <p class="text-xs text-slate-500">Your past toilet visits, digital receipts & direct payments</p>
                 </div>
-                <button onclick="window.app.switchUserTab('map')" class="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold">
+                <button onclick="window.app.switchUserTab('map')" class="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 rounded-xl text-xs font-bold transition">
                     ← Back to Map
                 </button>
             </div>
-            <div id="user-history-list" class="space-y-3"></div>
+
+            <div id="user-history-list" class="space-y-2.5"></div>
         </section>
 
         <!-- 2C. User Profile Screen -->
-        <section id="view-user-profile" class="app-view hidden p-4 sm:p-6 space-y-4 animate-scale">
-            <div class="bg-white rounded-3xl p-6 border border-slate-200 shadow-sm text-center space-y-4">
-                <div class="w-20 h-20 mx-auto rounded-full bg-emerald-600 text-white font-black text-2xl flex items-center justify-center shadow-lg shadow-emerald-600/30" id="user-profile-avatar">
+        <section id="view-user-profile" class="app-view hidden p-4 sm:p-6 space-y-4 animate-scale pb-12">
+            <div class="bg-white rounded-3xl p-6 border border-slate-200/90 shadow-sm text-center space-y-4">
+                <div id="user-profile-avatar" class="w-20 h-20 mx-auto rounded-full bg-gradient-to-tr from-emerald-600 to-teal-500 text-white font-black text-2xl flex items-center justify-center shadow-lg shadow-emerald-500/25">
                     U
                 </div>
                 <div>
                     <h2 class="text-xl font-black text-slate-900" id="user-profile-name">Rahul Sharma</h2>
-                    <p class="text-xs text-slate-500" id="user-profile-email">rahul.sharma@example.com</p>
-                    <span class="inline-block mt-2 px-3 py-0.5 rounded-full text-xs font-bold bg-emerald-100 text-emerald-800">🚻 Citizen User Account</span>
+                    <p class="text-xs text-slate-500 mt-0.5 font-mono" id="user-profile-email">+91 9876543210</p>
+                    <p class="text-[11px] font-bold text-emerald-700 mt-0.5" id="user-profile-gender">Gender: Male</p>
+                    <span class="inline-block mt-2 px-3 py-0.5 rounded-full text-xs font-bold bg-emerald-100 text-emerald-800">
+                        Verified Citizen Account
+                    </span>
                 </div>
-                <div class="p-4 bg-emerald-50 rounded-2xl border border-emerald-100 flex items-center justify-between text-left">
-                    <div>
-                        <p class="text-xs text-emerald-800 font-bold">TOIGO Wallet Balance</p>
-                        <p class="text-2xl font-black text-emerald-700" id="user-profile-wallet">₹150.00</p>
-                    </div>
-                    <button onclick="window.app.showToast('Wallet recharged with ₹100!', 'success'); if(window.db.data.currentUser){window.db.data.currentUser.walletBalance += 100; window.db.save();} window.app.renderUserProfile();" class="px-3 py-1.5 bg-emerald-600 text-white rounded-xl text-xs font-bold shadow-xs">
-                        + Add ₹100
-                    </button>
+
+                <div class="p-4 bg-slate-50 rounded-2xl border border-slate-100 flex items-center justify-between">
+                    <span class="text-xs font-bold text-slate-600">TOIGO Wallet Balance</span>
+                    <span class="text-lg font-black text-emerald-600" id="user-profile-wallet">₹150.00</span>
                 </div>
+
                 <div class="pt-2">
                     <button onclick="window.app.logout()" class="w-full py-3 bg-red-50 hover:bg-red-100 text-red-600 font-bold rounded-2xl text-xs transition">
-                        🚪 Sign Out
+                        🚪 Sign Out of Account
                     </button>
                 </div>
             </div>
         </section>
 
         <!-- =========================================================================
-             VIEW GROUP 3: PROVIDER / HOST DEDICATED APP (ONLY HOST INTERFACE)
+             VIEW GROUP 3: RESTROOM PROVIDER / HOST (ONLY HOST INTERFACE)
              ========================================================================= -->
         
-        <!-- 3A. Host Restroom Dashboard -->
+        <!-- 3A. Provider Dashboard -->
         <section id="view-provider-dashboard" class="app-view hidden flex-1 animate-scale pb-12">
             <div id="provider-dashboard-view"></div>
         </section>
 
-        <!-- 3B. Host Direct Earnings & Banking -->
+        <!-- 3B. Provider Earnings -->
         <section id="view-provider-earnings" class="app-view hidden p-4 sm:p-6 space-y-4 animate-scale pb-12">
             <div class="flex items-center justify-between pb-2 border-b border-slate-200">
                 <h2 class="text-xl font-black text-slate-900 font-heading">Host Direct Revenue & Banking</h2>
@@ -398,11 +399,11 @@
                 </button>
                 <button onclick="window.app.selectLandingRole('user')" class="nav-tab-item flex flex-col items-center justify-center text-emerald-600 font-bold transition">
                     <span class="text-lg">🚻</span>
-                    <span class="text-[10px] mt-0.5">Citizen Portal</span>
+                    <span class="text-[10px] font-bold mt-0.5">Citizen Portal</span>
                 </button>
                 <button onclick="window.app.selectLandingRole('provider')" class="nav-tab-item flex flex-col items-center justify-center text-indigo-600 font-bold transition">
                     <span class="text-lg">🏢</span>
-                    <span class="text-[10px] mt-0.5">Host Portal</span>
+                    <span class="text-[10px] font-bold mt-0.5">Host Portal</span>
                 </button>
             </div>
         </nav>
@@ -412,96 +413,227 @@
          ALL INTERACTIVE MODALS
          ========================================================================= -->
 
-    <!-- 1. MANDATORY SIGN IN / REGISTER MODAL -->
+    <!-- 1. AUTHENTICATION MODAL (STRICT VALIDATIONS & SEPARATE FLOWS) -->
     <div id="auth-modal" class="hidden fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
-        <div class="bg-white rounded-3xl p-6 max-w-md w-full max-h-[90vh] overflow-y-auto shadow-2xl border border-slate-100 animate-drawer">
+        <div class="bg-white rounded-3xl p-6 max-w-md w-full max-h-[92vh] overflow-y-auto shadow-2xl border border-slate-100 animate-drawer">
+            
             <div class="flex items-center justify-between pb-3 border-b border-slate-100">
                 <div>
                     <h3 class="text-base font-black text-slate-900 font-heading">Sign In / Register</h3>
-                    <p class="text-xs text-slate-500">Access your dedicated portal</p>
+                    <p class="text-xs text-slate-500">Secure OTP-verified access to TOIGO</p>
                 </div>
                 <button onclick="window.app.closeAuthModal()" class="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-600 flex items-center justify-center font-bold text-xs">✕</button>
             </div>
 
+            <!-- Role Selector Tabs -->
             <div class="flex bg-slate-100 p-1 rounded-xl my-4 text-xs font-bold">
-                <button onclick="window.app.switchAuthTab('user')" data-role="user" class="auth-tab-btn flex-1 py-2 text-xs font-bold rounded-lg bg-emerald-600 text-white shadow-sm transition">
+                <button onclick="window.app.switchAuthRoleTab('user')" data-role="user" class="auth-role-tab-btn flex-1 py-2 text-xs font-bold rounded-lg bg-emerald-600 text-white shadow-sm transition">
                     🚻 Citizen User
                 </button>
-                <button onclick="window.app.switchAuthTab('provider')" data-role="provider" class="auth-tab-btn flex-1 py-2 text-xs font-bold rounded-lg text-slate-500 hover:text-slate-900 transition">
+                <button onclick="window.app.switchAuthRoleTab('provider')" data-role="provider" class="auth-role-tab-btn flex-1 py-2 text-xs font-bold rounded-lg text-slate-500 hover:text-slate-900 transition">
                     🏢 Toilet Host
                 </button>
-                <button onclick="window.app.switchAuthTab('admin')" data-role="admin" class="auth-tab-btn flex-1 py-2 text-xs font-bold rounded-lg text-slate-500 hover:text-slate-900 transition">
+                <button onclick="window.app.switchAuthRoleTab('admin')" data-role="admin" class="auth-role-tab-btn flex-1 py-2 text-xs font-bold rounded-lg text-slate-500 hover:text-slate-900 transition">
                     👑 Founder
                 </button>
             </div>
 
-            <div id="auth-step-credentials" class="space-y-3 text-xs">
-                <div>
-                    <label class="block font-bold text-slate-700 mb-1">Your Full Name *</label>
-                    <input id="auth-name-input" type="text" placeholder="e.g. Rahul Sharma" class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl font-semibold focus:outline-hidden focus:border-emerald-500" />
-                </div>
-                <div>
-                    <label class="block font-bold text-slate-700 mb-1">Mobile Phone Number *</label>
-                    <div class="flex gap-2">
-                        <span class="px-3 py-2.5 bg-slate-100 border border-slate-200 rounded-xl font-bold text-slate-600">+91</span>
-                        <input id="auth-phone-input" type="tel" placeholder="9876543210" class="flex-1 px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl font-semibold focus:outline-hidden focus:border-emerald-500" />
-                    </div>
-                </div>
-                <div>
-                    <label class="block font-bold text-slate-700 mb-1">Email Address *</label>
-                    <input id="auth-email-input" type="email" placeholder="name@example.com" class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl font-semibold focus:outline-hidden focus:border-emerald-500" />
-                </div>
-
-                <!-- Host Direct Banking & Payment QR Fields -->
-                <div id="provider-specific-fields" class="hidden space-y-3 pt-3 border-t-2 border-emerald-100 bg-emerald-50/50 p-3 rounded-2xl">
-                    <div class="flex items-center gap-1.5 text-emerald-800 font-extrabold text-[11px]">
-                        <span>💳</span>
-                        <span>Host Direct Payout Banking & QR Details</span>
+            <!-- STEP 1: CREDENTIALS INPUT -->
+            <div id="auth-step-input" class="space-y-4">
+                
+                <!-- 1A: CITIZEN USER SECTION -->
+                <div id="auth-user-section" class="space-y-4">
+                    <div class="flex items-center justify-between bg-slate-50 p-1 rounded-xl border border-slate-200">
+                        <button id="tab-user-method-mobile" type="button" onclick="window.app.switchUserAuthMethod('mobile')" 
+                                class="px-3 py-1.5 text-xs font-bold rounded-lg bg-white text-emerald-700 shadow-xs border border-slate-200 transition">
+                            📱 Continue with Mobile
+                        </button>
+                        <button id="tab-user-method-email" type="button" onclick="window.app.switchUserAuthMethod('email')" 
+                                class="px-3 py-1.5 text-xs font-semibold text-slate-500 hover:text-slate-800 transition">
+                            ✉️ Continue with Email
+                        </button>
                     </div>
 
-                    <div>
-                        <label class="block font-bold text-slate-700 mb-1">Host UPI ID (VPA) for Direct Payments *</label>
-                        <input id="auth-upi-input" type="text" placeholder="yourname@okaxis / 9899001122@upi" class="w-full px-3.5 py-2 bg-white border border-slate-200 rounded-xl font-bold text-emerald-700" />
-                    </div>
-
-                    <div>
-                        <label class="block font-bold text-slate-700 mb-1">Upload Your Payment QR Code Image *</label>
-                        <input type="file" accept="image/*" onchange="window.auth.uploadedQrImage = null; const f = event.target.files[0]; if(f){ const r = new FileReader(); r.onload = (e) => { window.auth.uploadedQrImage = e.target.result; document.getElementById('auth-qr-preview-img').src = e.target.result; document.getElementById('auth-qr-preview-img').classList.remove('hidden'); window.app.showToast('Payment QR Code attached!', 'success'); }; r.readAsDataURL(f); }" 
-                               class="w-full text-xs text-slate-500 file:mr-2 file:py-1.5 file:px-3 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-emerald-600 file:text-white hover:file:bg-emerald-700 cursor-pointer" />
-                        <img id="auth-qr-preview-img" src="" class="hidden w-20 h-20 rounded-xl border border-emerald-300 mt-2 object-contain bg-white p-1" />
-                    </div>
-
-                    <div class="grid grid-cols-2 gap-2">
+                    <!-- Mobile Input Box -->
+                    <div id="user-auth-mobile-box" class="space-y-3 text-xs">
                         <div>
-                            <label class="block font-bold text-slate-700 mb-1">Bank A/C Number *</label>
-                            <input id="auth-bank-acc" type="text" placeholder="918273645012" class="w-full px-3 py-1.5 bg-white border border-slate-200 rounded-xl font-mono text-xs" />
-                        </div>
-                        <div>
-                            <label class="block font-bold text-slate-700 mb-1">IFSC Code *</label>
-                            <input id="auth-bank-ifsc" type="text" placeholder="UTIB0000123" class="w-full px-3 py-1.5 bg-white border border-slate-200 rounded-xl font-mono text-xs" />
+                            <label class="block font-bold text-slate-700 mb-1">Mobile Phone Number *</label>
+                            <div class="flex gap-2">
+                                <span class="px-3.5 py-2.5 bg-slate-100 border border-slate-200 rounded-xl font-bold text-slate-600 text-sm flex items-center">+91</span>
+                                <input id="user-mobile-input" type="tel" maxlength="10" placeholder="9876543210" 
+                                       class="flex-1 px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl font-mono text-sm font-semibold focus:outline-hidden focus:border-emerald-500" />
+                            </div>
+                            <p class="text-[10px] text-slate-400 mt-1">We will send a 4-digit verification code</p>
                         </div>
                     </div>
+
+                    <!-- Email Input Box -->
+                    <div id="user-auth-email-box" class="hidden space-y-3 text-xs">
+                        <div>
+                            <label class="block font-bold text-slate-700 mb-1">Email Address *</label>
+                            <input id="user-email-input" type="email" placeholder="rahul@example.com" 
+                                   class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl font-semibold focus:outline-hidden focus:border-emerald-500" />
+                            <p class="text-[10px] text-slate-400 mt-1">No password needed. Login securely via Email OTP</p>
+                        </div>
+                    </div>
+
+                    <button onclick="window.app.submitAuthSendOtp()" class="w-full py-3 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold shadow-md shadow-emerald-600/25 transition">
+                        Send Verification OTP →
+                    </button>
+
+                    <!-- Google Sign-In Option -->
+                    <div class="pt-2 border-t border-slate-100 text-center">
+                        <button onclick="window.app.handleGoogleLogin()" type="button" class="w-full py-2.5 px-3 bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-xl text-xs font-bold text-slate-700 flex items-center justify-center gap-2 transition">
+                            <svg class="w-4 h-4" viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"/></svg>
+                            <span>Continue with Google</span>
+                        </button>
+                    </div>
                 </div>
 
-                <div id="admin-specific-notice" class="hidden p-3 bg-amber-50 border border-amber-200 rounded-xl text-[11px] text-amber-900">
-                    👑 <b>Founder Mode Active:</b> You will receive complete master control over users, hosts, finances & listings.
+                <!-- 1B: PROVIDER / HOST SECTION -->
+                <div id="auth-provider-section" class="hidden space-y-3">
+                    <div class="flex items-center justify-between bg-slate-50 p-1 rounded-xl border border-slate-200">
+                        <button id="tab-prov-mode-register" type="button" onclick="window.app.switchProviderAuthMode('register')" 
+                                class="px-3 py-1.5 text-xs font-bold rounded-lg bg-white text-indigo-700 shadow-xs border border-slate-200 transition">
+                            1. Create Host Account
+                        </button>
+                        <button id="tab-prov-mode-login" type="button" onclick="window.app.switchProviderAuthMode('login')" 
+                                class="px-3 py-1.5 text-xs font-semibold text-slate-500 hover:text-slate-800 transition">
+                            2. Host Login
+                        </button>
+                    </div>
+
+                    <!-- Provider Registration Fields -->
+                    <div id="provider-register-fields" class="space-y-3 text-xs">
+                        <div>
+                            <label class="block font-bold text-slate-700 mb-1">Host Owner Name *</label>
+                            <input id="prov-reg-name" type="text" placeholder="e.g. Amit Verma" class="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl font-semibold" />
+                        </div>
+                        <div class="grid grid-cols-2 gap-2">
+                            <div>
+                                <label class="block font-bold text-slate-700 mb-1">Mobile (+91) *</label>
+                                <input id="prov-reg-phone" type="tel" maxlength="10" placeholder="9899001122" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl font-mono" />
+                            </div>
+                            <div>
+                                <label class="block font-bold text-slate-700 mb-1">Email Address *</label>
+                                <input id="prov-reg-email" type="email" placeholder="amit@restpoint.in" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl font-semibold" />
+                            </div>
+                        </div>
+                        <div>
+                            <label class="block font-bold text-slate-700 mb-1">Restroom / Business Facility Name *</label>
+                            <input id="prov-reg-biz-name" type="text" placeholder="e.g. SmartRest Commercial Hub" class="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl font-semibold" />
+                        </div>
+                        <div>
+                            <label class="block font-bold text-slate-700 mb-1">Address & Landmark *</label>
+                            <input id="prov-reg-address" type="text" placeholder="Block A, Connaught Place, New Delhi" class="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl font-semibold" />
+                        </div>
+
+                        <!-- Direct Bank & IFSC Section -->
+                        <div class="p-3 bg-indigo-50/70 border border-indigo-200 rounded-2xl space-y-2">
+                            <div class="flex items-center justify-between">
+                                <span class="font-extrabold text-indigo-950">🏦 Host Direct Bank & UPI Verification</span>
+                                <span class="text-[10px] font-bold text-indigo-700">100% Direct Payout</span>
+                            </div>
+                            <div>
+                                <label class="block font-bold text-slate-700 mb-1">Host UPI ID for Direct Customer Pay *</label>
+                                <input id="prov-reg-upi" type="text" placeholder="amit.verma@okaxis" class="w-full px-3 py-1.5 bg-white border border-slate-200 rounded-xl font-mono text-emerald-700 font-bold" />
+                            </div>
+                            <div class="grid grid-cols-2 gap-2">
+                                <div>
+                                    <label class="block font-bold text-slate-700 mb-1">Bank A/C Number *</label>
+                                    <input id="prov-reg-acc" type="text" placeholder="918273645012" class="w-full px-3 py-1.5 bg-white border border-slate-200 rounded-xl font-mono" />
+                                </div>
+                                <div>
+                                    <label class="block font-bold text-slate-700 mb-1">IFSC Code *</label>
+                                    <input id="prov-reg-ifsc" type="text" maxlength="11" placeholder="UTIB0000123" class="w-full px-3 py-1.5 bg-white border border-slate-200 rounded-xl font-mono uppercase" />
+                                </div>
+                            </div>
+                            <div id="prov-reg-bank-detected" class="text-[10px] text-slate-500 pt-0.5">
+                                Bank name auto-resolves from IFSC
+                            </div>
+                        </div>
+
+                        <button onclick="window.app.submitAuthSendOtp()" class="w-full py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold shadow-md shadow-indigo-600/25 transition">
+                            Verify Mobile OTP & Register Host →
+                        </button>
+                    </div>
+
+                    <!-- Provider Simple Login Fields -->
+                    <div id="provider-login-fields" class="hidden space-y-3 text-xs">
+                        <div>
+                            <label class="block font-bold text-slate-700 mb-1">Registered Host Mobile or Email *</label>
+                            <input id="prov-login-input" type="text" placeholder="9899001122 or amit.verma@restpoint.in" class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl font-semibold" />
+                        </div>
+                        <button onclick="window.app.submitAuthSendOtp()" class="w-full py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold shadow-md shadow-indigo-600/25 transition">
+                            Send Host OTP →
+                        </button>
+                    </div>
                 </div>
 
-                <button onclick="window.app.submitAuthStep1()" class="w-full py-3 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold shadow-md shadow-emerald-600/25 transition mt-2">
-                    Send Verification OTP →
+                <!-- 1C: ADMIN FOUNDER SECTION -->
+                <div id="auth-admin-section" class="hidden space-y-3 text-xs text-center">
+                    <div class="w-12 h-12 bg-amber-100 text-amber-800 rounded-full flex items-center justify-center mx-auto text-xl">👑</div>
+                    <h4 class="font-bold text-slate-900 text-sm">Founder & Super Admin Portal</h4>
+                    <p class="text-slate-500">Access exclusive master management tools for Vivek.</p>
+                    <button onclick="window.app.selectLandingRole('admin'); window.app.closeAuthModal();" class="w-full py-3 bg-amber-500 hover:bg-amber-600 text-slate-950 font-black rounded-xl text-xs shadow-md transition">
+                        Open Founder Master Terminal ⚡
+                    </button>
+                </div>
+            </div>
+
+            <!-- STEP 2: OTP VERIFICATION SCREEN -->
+            <div id="auth-step-otp" class="hidden space-y-4 text-center py-2">
+                <div class="w-14 h-14 bg-emerald-100 text-emerald-700 rounded-full flex items-center justify-center mx-auto text-2xl">🔐</div>
+                <div>
+                    <h4 class="font-bold text-slate-900 text-base">Enter 4-Digit OTP</h4>
+                    <p id="otp-sent-to-label" class="text-xs text-slate-500 mt-1 font-medium">OTP sent to your number</p>
+                </div>
+
+                <input id="auth-otp-input" type="text" maxlength="4" placeholder="••••" 
+                       class="w-36 mx-auto text-center text-3xl font-mono font-black tracking-widest px-3 py-2.5 bg-slate-50 border-2 border-emerald-500 rounded-2xl focus:outline-hidden" />
+
+                <div class="flex items-center justify-center gap-2 text-xs text-slate-500">
+                    <span id="auth-otp-timer-label">Resend available in 60s</span>
+                    <button id="auth-resend-otp-btn" disabled onclick="window.app.resendOtp()" class="text-slate-400 font-bold">Resend OTP</button>
+                </div>
+
+                <button onclick="window.app.submitVerifyOtp()" class="w-full py-3.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold shadow-md transition">
+                    Verify & Continue →
                 </button>
             </div>
 
-            <div id="auth-step-otp" class="hidden space-y-4 text-center py-2">
-                <div class="w-12 h-12 bg-emerald-100 text-emerald-700 rounded-full flex items-center justify-center mx-auto text-xl">🔐</div>
-                <div>
-                    <h4 class="font-bold text-slate-900 text-sm">Enter 4-Digit OTP</h4>
-                    <p id="otp-sent-to-label" class="text-xs text-slate-500 mt-1">OTP sent to your mobile</p>
+            <!-- STEP 3: FIRST-TIME CITIZEN PROFILE COMPLETION (NAME + GENDER) -->
+            <div id="auth-step-profile-completion" class="hidden space-y-4 py-2">
+                <div class="text-center">
+                    <div class="w-14 h-14 bg-emerald-100 text-emerald-700 rounded-full flex items-center justify-center mx-auto text-2xl mb-2">👤</div>
+                    <h4 class="font-black text-slate-900 text-base font-heading">Complete Your Profile</h4>
+                    <p class="text-xs text-slate-500">First-time setup: please enter your details to continue</p>
                 </div>
-                <input id="auth-otp-input" type="text" maxlength="4" placeholder="••••" 
-                       class="w-36 mx-auto text-center text-2xl font-mono font-bold tracking-widest px-3 py-2 bg-slate-50 border-2 border-emerald-500 rounded-xl focus:outline-hidden" />
-                <button onclick="window.app.submitAuthStep2()" class="w-full py-3 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold shadow-md transition">
-                    Verify & Continue
+
+                <div class="space-y-3 text-xs">
+                    <div>
+                        <label class="block font-bold text-slate-700 mb-1">Full Name *</label>
+                        <input id="profile-name-input" type="text" placeholder="e.g. Rahul Sharma" class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl font-semibold focus:outline-hidden focus:border-emerald-500" />
+                    </div>
+
+                    <div>
+                        <label class="block font-bold text-slate-700 mb-1">Gender *</label>
+                        <div class="flex gap-2">
+                            <button type="button" onclick="window.app.selectGender('Male')" data-gender="Male" class="gender-pill-btn flex-1 py-2 rounded-xl text-xs font-bold bg-emerald-600 text-white shadow-xs transition">
+                                👨 Male
+                            </button>
+                            <button type="button" onclick="window.app.selectGender('Female')" data-gender="Female" class="gender-pill-btn flex-1 py-2 rounded-xl text-xs font-semibold bg-slate-100 text-slate-600 hover:bg-slate-200 transition">
+                                👩 Female
+                            </button>
+                            <button type="button" onclick="window.app.selectGender('Other')" data-gender="Other" class="gender-pill-btn flex-1 py-2 rounded-xl text-xs font-semibold bg-slate-100 text-slate-600 hover:bg-slate-200 transition">
+                                ⚧️ Other
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <button onclick="window.app.submitProfileCompletion()" class="w-full py-3.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold shadow-md transition">
+                    Start Using TOIGO 🚀
                 </button>
             </div>
         </div>
@@ -655,7 +787,64 @@
         </div>
     </div>
 
-    <!-- 7. ADD TOILET LISTING MODAL (HOST ONLY) -->
+    <!-- 7. CITIZEN TOILET REPORT PROBLEM MODAL -->
+    <div id="report-toilet-modal" class="hidden fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
+        <div class="bg-white rounded-3xl p-6 max-w-md w-full shadow-2xl border border-slate-100 space-y-4 animate-scale">
+            <div class="flex items-center justify-between pb-3 border-b border-slate-100">
+                <div>
+                    <h3 class="text-base font-black text-slate-900 font-heading">Report Toilet Issue</h3>
+                    <p id="report-toilet-name-label" class="text-xs text-slate-500 font-bold truncate">Toilet Name</p>
+                    <p id="report-toilet-address-label" class="text-[10px] text-slate-400 truncate">Address</p>
+                </div>
+                <button onclick="window.userFlow.closeReportModal()" class="w-8 h-8 rounded-full bg-slate-100 text-slate-600 flex items-center justify-center text-xs font-bold">✕</button>
+            </div>
+
+            <div class="space-y-3 text-xs">
+                <div>
+                    <label class="block font-bold text-slate-700 mb-1.5">Select Issue Category *</label>
+                    <div class="flex flex-wrap gap-1.5">
+                        <button type="button" onclick="window.userFlow.setReportCategory('Poor Hygiene')" data-category="Poor Hygiene" class="report-category-pill px-3 py-1.5 rounded-xl text-xs font-bold bg-red-600 text-white shadow-xs">
+                            🧼 Poor Hygiene
+                        </button>
+                        <button type="button" onclick="window.userFlow.setReportCategory('Toilet Closed')" data-category="Toilet Closed" class="report-category-pill px-3 py-1.5 rounded-xl text-xs font-bold bg-slate-100 text-slate-700">
+                            🔒 Toilet Closed
+                        </button>
+                        <button type="button" onclick="window.userFlow.setReportCategory('Water Not Available')" data-category="Water Not Available" class="report-category-pill px-3 py-1.5 rounded-xl text-xs font-bold bg-slate-100 text-slate-700">
+                            💧 Water Problem
+                        </button>
+                        <button type="button" onclick="window.userFlow.setReportCategory('Damaged Facilities')" data-category="Damaged Facilities" class="report-category-pill px-3 py-1.5 rounded-xl text-xs font-bold bg-slate-100 text-slate-700">
+                            ⚠️ Damaged Facilities
+                        </button>
+                        <button type="button" onclick="window.userFlow.setReportCategory('Wrong Location')" data-category="Wrong Location" class="report-category-pill px-3 py-1.5 rounded-xl text-xs font-bold bg-slate-100 text-slate-700">
+                            📍 Wrong Location
+                        </button>
+                        <button type="button" onclick="window.userFlow.setReportCategory('Other')" data-category="Other" class="report-category-pill px-3 py-1.5 rounded-xl text-xs font-bold bg-slate-100 text-slate-700">
+                            ❓ Other
+                        </button>
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block font-bold text-slate-700 mb-1">Describe the Problem *</label>
+                    <textarea id="report-desc-input" rows="3" placeholder="Explain what is broken, unclean or missing..." 
+                              class="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl font-medium focus:outline-hidden focus:border-red-500"></textarea>
+                </div>
+
+                <div class="p-3 bg-slate-50 border border-slate-200 rounded-xl space-y-1.5">
+                    <label class="block font-bold text-slate-700">Optional Photo Proof</label>
+                    <input type="file" accept="image/*" onchange="window.userFlow.handleReportPhotoUpload(event)" 
+                           class="w-full text-xs text-slate-500 file:mr-2 file:py-1 file:px-2.5 file:rounded-lg file:border-0 file:text-xs file:font-bold file:bg-slate-800 file:text-white cursor-pointer" />
+                    <img id="report-photo-preview-img" src="" class="hidden w-16 h-16 rounded-lg object-cover border border-slate-300 mt-1" />
+                </div>
+
+                <button onclick="window.userFlow.submitToiletReport()" class="w-full py-3 bg-red-600 hover:bg-red-700 text-white font-bold rounded-xl text-xs shadow-md transition">
+                    Submit Issue Report 🚩
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 8. ADD TOILET LISTING MODAL (HOST ONLY) -->
     <div id="add-toilet-modal" class="hidden fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
         <div class="bg-white rounded-3xl p-6 max-w-xl w-full max-h-[90vh] overflow-y-auto shadow-2xl border border-slate-100 space-y-4 animate-drawer">
             <div class="flex items-center justify-between pb-3 border-b border-slate-100">
@@ -706,7 +895,12 @@
                 </div>
 
                 <div>
-                    <label class="block font-bold text-slate-700 mb-1">Address & Landmark *</label>
+                    <div class="flex items-center justify-between mb-1">
+                        <label class="font-bold text-slate-700">Address & Landmark *</label>
+                        <button type="button" onclick="window.providerFlow.useCurrentGpsForRestroom()" class="text-[10px] font-bold text-emerald-700 bg-emerald-50 px-2 py-1 rounded-lg border border-emerald-200 flex items-center gap-1">
+                            <span>📍</span> Use Current GPS Location
+                        </button>
+                    </div>
                     <input name="address" required type="text" placeholder="Shop 4, Main Market Road" class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl font-semibold mb-2" />
                     <div id="picker-map-container" class="rounded-xl overflow-hidden border border-slate-200"></div>
                 </div>
@@ -717,7 +911,7 @@
         </div>
     </div>
 
-    <!-- 8. DOOR QR POSTER (HOST ONLY) -->
+    <!-- 9. DOOR QR POSTER (HOST ONLY) -->
     <div id="qr-poster-modal" class="hidden fixed inset-0 z-50 bg-black/70 backdrop-blur-xs flex items-center justify-center p-4">
         <div class="bg-white rounded-3xl p-6 max-w-sm w-full shadow-2xl border border-slate-100 text-center space-y-4 animate-scale">
             <div class="flex items-center justify-between pb-2 border-b border-slate-100">

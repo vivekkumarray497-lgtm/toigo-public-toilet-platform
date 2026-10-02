@@ -1,11 +1,18 @@
 /**
- * TOIGO: Strict Role Architecture & Dedicated Interface Orchestrator
+ * TOIGO: Master Application Orchestrator
+ * Seamless role routing, OTP lifecycle, first-time user profile onboarding & IFSC bank auto-detection.
  */
 
 class ToigoApp {
     constructor() {
         this.currentView = 'landing';
         this.authCallback = null;
+        this.activeAuthRole = 'user'; // 'user' | 'provider' | 'admin'
+        this.activeUserAuthMethod = 'mobile'; // 'mobile' | 'email' | 'google'
+        this.activeProviderAuthMode = 'register'; // 'register' | 'login'
+        this.selectedGender = 'Male';
+        this.resendCountdownInterval = null;
+        this.resendSecondsLeft = 60;
     }
 
     init() {
@@ -19,12 +26,12 @@ class ToigoApp {
         }
 
         window.userFlow.init();
+        this.bindBankIfscAutoDetect();
     }
 
     // Set complete app layout based on logged-in role
     setAppRoleMode(role) {
         const user = window.auth.getCurrentUser();
-        const appContainer = document.getElementById('app-main-content');
 
         // Hide all views first
         document.querySelectorAll('.app-view').forEach(el => el.classList.add('hidden'));
@@ -44,16 +51,16 @@ class ToigoApp {
 
             if (headerRolePill) {
                 headerRolePill.className = 'px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200';
-                headerRolePill.innerText = '🚻 Citizen User';
+                headerRolePill.innerText = `🚻 ${user.name || 'Citizen'}`;
             }
             if (headerSosBtn) headerSosBtn.classList.remove('hidden');
 
             if (headerAuthActions) {
                 headerAuthActions.innerHTML = `
                     <button onclick="window.app.switchUserTab('profile')" class="flex items-center gap-1.5 p-1 pl-2 bg-slate-100 hover:bg-slate-200 rounded-full border border-slate-200 transition">
-                        <span class="text-xs font-bold text-slate-800 max-w-[80px] truncate">${user.name}</span>
+                        <span class="text-xs font-bold text-slate-800 max-w-[80px] truncate">${user.name || 'Citizen'}</span>
                         <div class="w-6 h-6 rounded-full bg-emerald-600 text-white text-[10px] font-bold flex items-center justify-center">
-                            ${user.name[0]}
+                            ${(user.name || 'U')[0]}
                         </div>
                     </button>
                 `;
@@ -72,7 +79,7 @@ class ToigoApp {
                 headerRolePill.className = 'px-2 py-0.5 rounded-full text-[10px] font-bold bg-indigo-50 text-indigo-700 border border-indigo-200';
                 headerRolePill.innerText = '🏢 Host Partner';
             }
-            if (headerSosBtn) headerSosBtn.classList.add('hidden'); // Host doesn't need consumer SOS
+            if (headerSosBtn) headerSosBtn.classList.add('hidden');
 
             if (headerAuthActions) {
                 headerAuthActions.innerHTML = `
@@ -202,15 +209,17 @@ class ToigoApp {
     }
 
     renderUserProfile() {
-        const user = window.auth.getCurrentUser() || { name: 'Citizen', email: 'user@toigo.app', walletBalance: 100 };
+        const user = window.auth.getCurrentUser() || { name: 'Citizen', gender: 'Not Specified', email: 'user@toigo.app', walletBalance: 100 };
         const avatarEl = document.getElementById('user-profile-avatar');
         const nameEl = document.getElementById('user-profile-name');
         const emailEl = document.getElementById('user-profile-email');
+        const genderEl = document.getElementById('user-profile-gender');
         const walletEl = document.getElementById('user-profile-wallet');
 
-        if (avatarEl) avatarEl.innerText = user.name[0] || 'U';
-        if (nameEl) nameEl.innerText = user.name;
-        if (emailEl) emailEl.innerText = user.email || user.phone || 'Verified Citizen';
+        if (avatarEl) avatarEl.innerText = (user.name || 'U')[0];
+        if (nameEl) nameEl.innerText = user.name || 'Citizen User';
+        if (emailEl) emailEl.innerText = user.phone ? `+91 ${user.phone}` : (user.email || 'Verified Citizen');
+        if (genderEl) genderEl.innerText = user.gender ? `Gender: ${user.gender}` : 'Gender: Verified';
         if (walletEl) walletEl.innerText = `₹${(user.walletBalance || 0).toFixed(2)}`;
     }
 
@@ -261,9 +270,10 @@ class ToigoApp {
                     <h3 class="font-bold text-slate-900 text-sm">Linked Bank & UPI Payout Info</h3>
                     <div class="p-3 bg-slate-50 rounded-2xl space-y-1.5 text-xs">
                         <div class="flex justify-between"><span class="text-slate-500">Host UPI ID:</span><span class="font-bold font-mono text-emerald-700">${prov.upiId || 'host@okaxis'}</span></div>
-                        <div class="flex justify-between"><span class="text-slate-500">Bank Name:</span><span class="font-semibold text-slate-800">${prov.bankHolderName || prov.name}</span></div>
+                        <div class="flex justify-between"><span class="text-slate-500">Bank Name:</span><span class="font-semibold text-slate-800">${prov.bankName || 'Verified Bank'}</span></div>
                         <div class="flex justify-between"><span class="text-slate-500">Account No:</span><span class="font-mono text-slate-800">•••• ${prov.bankAccountNo ? prov.bankAccountNo.slice(-4) : '5012'}</span></div>
                         <div class="flex justify-between"><span class="text-slate-500">IFSC Code:</span><span class="font-mono text-slate-800">${prov.bankIfsc || 'UTIB0000123'}</span></div>
+                        <div class="flex justify-between"><span class="text-slate-500">Bank Verification:</span><span class="font-bold text-emerald-700">✓ VERIFIED</span></div>
                     </div>
                 </div>
 
@@ -309,7 +319,7 @@ class ToigoApp {
         if (role === 'user') {
             const user = window.auth.getCurrentUser();
             if (!user || user.role !== 'user') {
-                this.openAuthModal('user', (newUser) => {
+                this.openAuthModal('user', 'mobile', () => {
                     this.setAppRoleMode('user');
                 });
                 return;
@@ -318,7 +328,7 @@ class ToigoApp {
         } else if (role === 'provider') {
             const user = window.auth.getCurrentUser();
             if (!user || user.role !== 'provider') {
-                this.openAuthModal('provider', (newProv) => {
+                this.openAuthModal('provider', 'register', () => {
                     this.setAppRoleMode('provider');
                 });
                 return;
@@ -331,17 +341,19 @@ class ToigoApp {
         }
     }
 
-    // Auth Modal Management
-    openAuthModal(targetRole = 'user', onSuccess = null) {
+    // ================= AUTH MODAL & STATE MACHINE =================
+    openAuthModal(targetRole = 'user', initialMethod = 'mobile', onSuccess = null) {
         this.authCallback = onSuccess;
+        this.activeAuthRole = targetRole;
         const modal = document.getElementById('auth-modal');
         if (!modal) return;
 
-        modal.dataset.targetRole = targetRole;
-        this.switchAuthTab(targetRole);
+        this.switchAuthRoleTab(targetRole);
 
-        document.getElementById('auth-step-credentials')?.classList.remove('hidden');
+        // Reset steps
+        document.getElementById('auth-step-input')?.classList.remove('hidden');
         document.getElementById('auth-step-otp')?.classList.add('hidden');
+        document.getElementById('auth-step-profile-completion')?.classList.add('hidden');
 
         modal.classList.remove('hidden');
     }
@@ -349,92 +361,262 @@ class ToigoApp {
     closeAuthModal() {
         const modal = document.getElementById('auth-modal');
         if (modal) modal.classList.add('hidden');
+        clearInterval(this.resendCountdownInterval);
     }
 
-    switchAuthTab(role) {
-        const modal = document.getElementById('auth-modal');
-        if (!modal) return;
-        modal.dataset.targetRole = role;
+    switchAuthRoleTab(role) {
+        this.activeAuthRole = role;
 
-        document.querySelectorAll('.auth-tab-btn').forEach(btn => {
+        document.querySelectorAll('.auth-role-tab-btn').forEach(btn => {
             if (btn.dataset.role === role) {
-                btn.className = 'auth-tab-btn flex-1 py-2 text-xs font-bold rounded-lg bg-emerald-600 text-white shadow-sm transition';
+                btn.className = 'auth-role-tab-btn flex-1 py-2 text-xs font-bold rounded-lg bg-emerald-600 text-white shadow-sm transition';
             } else {
-                btn.className = 'auth-tab-btn flex-1 py-2 text-xs font-bold rounded-lg text-slate-500 hover:text-slate-900 transition';
+                btn.className = 'auth-role-tab-btn flex-1 py-2 text-xs font-bold rounded-lg text-slate-500 hover:text-slate-900 transition';
             }
         });
 
-        const provFields = document.getElementById('provider-specific-fields');
-        if (provFields) {
-            if (role === 'provider') provFields.classList.remove('hidden');
-            else provFields.classList.add('hidden');
-        }
+        const userSection = document.getElementById('auth-user-section');
+        const providerSection = document.getElementById('auth-provider-section');
+        const adminSection = document.getElementById('auth-admin-section');
 
-        const adminNotice = document.getElementById('admin-specific-notice');
-        if (adminNotice) {
-            if (role === 'admin') adminNotice.classList.remove('hidden');
-            else adminNotice.classList.add('hidden');
+        if (userSection) userSection.classList.add('hidden');
+        if (providerSection) providerSection.classList.add('hidden');
+        if (adminSection) adminSection.classList.add('hidden');
+
+        if (role === 'user') {
+            if (userSection) userSection.classList.remove('hidden');
+            this.switchUserAuthMethod('mobile');
+        } else if (role === 'provider') {
+            if (providerSection) providerSection.classList.remove('hidden');
+            this.switchProviderAuthMode('register');
+        } else if (role === 'admin') {
+            if (adminSection) adminSection.classList.remove('hidden');
         }
     }
 
-    submitAuthStep1() {
-        const modal = document.getElementById('auth-modal');
-        const role = modal.dataset.targetRole || 'user';
+    // User Login Method Switcher: Mobile vs Email
+    switchUserAuthMethod(method) {
+        this.activeUserAuthMethod = method;
 
-        let email = document.getElementById('auth-email-input').value.trim();
-        let phone = document.getElementById('auth-phone-input').value.trim();
-        let name = document.getElementById('auth-name-input').value.trim();
+        const mobileBox = document.getElementById('user-auth-mobile-box');
+        const emailBox = document.getElementById('user-auth-email-box');
+        const tabMobile = document.getElementById('tab-user-method-mobile');
+        const tabEmail = document.getElementById('tab-user-method-email');
 
-        if (role === 'admin') {
-            email = 'founder@toigo.app';
-            phone = '9999999999';
-            name = 'Vivek (Founder)';
+        if (method === 'mobile') {
+            mobileBox?.classList.remove('hidden');
+            emailBox?.classList.add('hidden');
+            if (tabMobile) tabMobile.className = 'px-3 py-1.5 text-xs font-bold rounded-lg bg-white text-emerald-700 shadow-xs border border-slate-200 transition';
+            if (tabEmail) tabEmail.className = 'px-3 py-1.5 text-xs font-semibold text-slate-500 hover:text-slate-800 transition';
         } else {
-            if (!phone && !email) {
-                this.showToast('Please enter your Phone or Email', 'error');
-                return;
-            }
-            if (!name) name = role === 'provider' ? 'Restroom Host' : 'Citizen User';
+            mobileBox?.classList.add('hidden');
+            emailBox?.classList.remove('hidden');
+            if (tabMobile) tabMobile.className = 'px-3 py-1.5 text-xs font-semibold text-slate-500 hover:text-slate-800 transition';
+            if (tabEmail) tabEmail.className = 'px-3 py-1.5 text-xs font-bold rounded-lg bg-white text-emerald-700 shadow-xs border border-slate-200 transition';
         }
+    }
 
-        const authData = {
-            role,
-            name,
-            email: email || `${phone}@toigo.app`,
-            phone: phone || '9876543210',
-            businessName: document.getElementById('auth-business-input')?.value || 'Restroom Host',
-            upiId: document.getElementById('auth-upi-input')?.value || 'host@okaxis',
-            bankAccountNo: document.getElementById('auth-bank-acc')?.value || '918273645012',
-            bankIfsc: document.getElementById('auth-bank-ifsc')?.value || 'UTIB0000123',
-            qrCodeImage: window.auth.uploadedQrImage
+    // Provider Mode Switcher: Register vs Login
+    switchProviderAuthMode(mode) {
+        this.activeProviderAuthMode = mode;
+        const regForm = document.getElementById('provider-register-fields');
+        const loginForm = document.getElementById('provider-login-fields');
+        const tabReg = document.getElementById('tab-prov-mode-register');
+        const tabLogin = document.getElementById('tab-prov-mode-login');
+
+        if (mode === 'register') {
+            regForm?.classList.remove('hidden');
+            loginForm?.classList.add('hidden');
+            if (tabReg) tabReg.className = 'px-3 py-1.5 text-xs font-bold rounded-lg bg-white text-indigo-700 shadow-xs border border-slate-200 transition';
+            if (tabLogin) tabLogin.className = 'px-3 py-1.5 text-xs font-semibold text-slate-500 hover:text-slate-800 transition';
+        } else {
+            regForm?.classList.add('hidden');
+            loginForm?.classList.remove('hidden');
+            if (tabReg) tabReg.className = 'px-3 py-1.5 text-xs font-semibold text-slate-500 hover:text-slate-800 transition';
+            if (tabLogin) tabLogin.className = 'px-3 py-1.5 text-xs font-bold rounded-lg bg-white text-indigo-700 shadow-xs border border-slate-200 transition';
+        }
+    }
+
+    // Live IFSC Bank Name Resolver
+    bindBankIfscAutoDetect() {
+        const ifscInput = document.getElementById('prov-reg-ifsc');
+        const bankNameLabel = document.getElementById('prov-reg-bank-detected');
+        if (!ifscInput || !bankNameLabel) return;
+
+        ifscInput.addEventListener('input', (e) => {
+            const val = e.target.value.trim().toUpperCase();
+            e.target.value = val;
+            if (val.length === 11) {
+                const check = window.db.verifyBankIfsc(val);
+                if (check.valid) {
+                    bankNameLabel.innerHTML = `<span class="text-emerald-700 font-bold">✓ ${check.bankName}</span>`;
+                } else {
+                    bankNameLabel.innerHTML = `<span class="text-red-500 font-medium">Invalid IFSC format</span>`;
+                }
+            } else {
+                bankNameLabel.innerHTML = `<span class="text-slate-400">Bank name auto-resolves from IFSC</span>`;
+            }
+        });
+    }
+
+    // Trigger Send OTP
+    submitAuthSendOtp() {
+        let authData = {
+            role: this.activeAuthRole,
+            method: this.activeUserAuthMethod,
+            isRegister: false
         };
 
-        const res = window.auth.requestOtp(authData);
-        if (res.success) {
-            document.getElementById('auth-step-credentials').classList.add('hidden');
-            document.getElementById('auth-step-otp').classList.remove('hidden');
-            document.getElementById('otp-sent-to-label').innerText = `OTP sent to ${authData.phone}`;
-            document.getElementById('auth-otp-input').value = res.otp;
-            this.showToast(`Verification OTP: ${res.otp} (Auto-filled)`, 'info');
+        if (this.activeAuthRole === 'user') {
+            if (this.activeUserAuthMethod === 'mobile') {
+                const phone = document.getElementById('user-mobile-input')?.value.trim();
+                authData.phone = phone;
+                authData.method = 'mobile';
+            } else {
+                const email = document.getElementById('user-email-input')?.value.trim();
+                authData.email = email;
+                authData.method = 'email';
+            }
+        } else if (this.activeAuthRole === 'provider') {
+            if (this.activeProviderAuthMode === 'register') {
+                authData.isRegister = true;
+                authData.name = document.getElementById('prov-reg-name')?.value.trim();
+                authData.phone = document.getElementById('prov-reg-phone')?.value.trim();
+                authData.email = document.getElementById('prov-reg-email')?.value.trim();
+                authData.businessName = document.getElementById('prov-reg-biz-name')?.value.trim();
+                authData.address = document.getElementById('prov-reg-address')?.value.trim();
+                authData.bankAccountNo = document.getElementById('prov-reg-acc')?.value.trim();
+                authData.bankIfsc = document.getElementById('prov-reg-ifsc')?.value.trim();
+                authData.upiId = document.getElementById('prov-reg-upi')?.value.trim() || 'host@okaxis';
+                authData.method = 'mobile';
+            } else {
+                const identifier = document.getElementById('prov-login-input')?.value.trim();
+                if (identifier.includes('@')) {
+                    authData.email = identifier;
+                    authData.method = 'email';
+                } else {
+                    authData.phone = identifier;
+                    authData.method = 'mobile';
+                }
+            }
+        } else if (this.activeAuthRole === 'admin') {
+            authData.phone = '9999999999';
+            authData.name = 'Vivek (Founder)';
+            authData.method = 'mobile';
         }
+
+        const res = window.auth.requestOtp(authData);
+        if (!res.success) {
+            this.showToast(res.message, 'error');
+            return;
+        }
+
+        // Show Step 2: OTP Entry
+        document.getElementById('auth-step-input').classList.add('hidden');
+        document.getElementById('auth-step-otp').classList.remove('hidden');
+        document.getElementById('otp-sent-to-label').innerText = `4-digit OTP sent to ${res.identifier}`;
+        document.getElementById('auth-otp-input').value = res.otp; // Auto-fill for seamless user experience
+
+        this.startResendOtpTimer();
+        this.showToast(`Verification OTP: ${res.otp} (Auto-filled)`, 'info');
     }
 
-    submitAuthStep2() {
+    startResendOtpTimer() {
+        this.resendSecondsLeft = 60;
+        const resendBtn = document.getElementById('auth-resend-otp-btn');
+        const timerLabel = document.getElementById('auth-otp-timer-label');
+        if (resendBtn) resendBtn.disabled = true;
+
+        clearInterval(this.resendCountdownInterval);
+        this.resendCountdownInterval = setInterval(() => {
+            this.resendSecondsLeft--;
+            if (timerLabel) {
+                timerLabel.innerText = `Resend available in ${this.resendSecondsLeft}s`;
+            }
+
+            if (this.resendSecondsLeft <= 0) {
+                clearInterval(this.resendCountdownInterval);
+                if (timerLabel) timerLabel.innerText = 'Didn\'t receive OTP?';
+                if (resendBtn) {
+                    resendBtn.disabled = false;
+                    resendBtn.className = 'text-xs text-emerald-600 font-bold hover:underline cursor-pointer';
+                }
+            }
+        }, 1000);
+    }
+
+    resendOtp() {
+        if (this.resendSecondsLeft > 0) return;
+        this.submitAuthSendOtp();
+    }
+
+    // Verify OTP Step 2
+    submitVerifyOtp() {
         const otpVal = document.getElementById('auth-otp-input').value.trim();
         const res = window.auth.verifyOtp(otpVal);
 
-        if (res.success) {
-            this.closeAuthModal();
-            this.showToast(res.message, 'success');
-
-            this.setAppRoleMode(res.user.role);
-
-            if (this.authCallback) {
-                this.authCallback(res.user);
-                this.authCallback = null;
-            }
-        } else {
+        if (!res.success) {
             this.showToast(res.message, 'error');
+            return;
+        }
+
+        // Check if first-time user profile completion is required
+        if (res.requireProfileCompletion) {
+            document.getElementById('auth-step-otp').classList.add('hidden');
+            document.getElementById('auth-step-profile-completion').classList.remove('hidden');
+            this.showToast('Please complete your Name and Gender to continue.', 'info');
+            return;
+        }
+
+        this.finishAuthFlow(res.user);
+    }
+
+    // Gender selection pill in Step 3
+    selectGender(gender) {
+        this.selectedGender = gender;
+        document.querySelectorAll('.gender-pill-btn').forEach(btn => {
+            if (btn.dataset.gender === gender) {
+                btn.className = 'gender-pill-btn flex-1 py-2 rounded-xl text-xs font-bold bg-emerald-600 text-white shadow-xs transition';
+            } else {
+                btn.className = 'gender-pill-btn flex-1 py-2 rounded-xl text-xs font-semibold bg-slate-100 text-slate-600 hover:bg-slate-200 transition';
+            }
+        });
+    }
+
+    // Complete Step 3: Name + Gender for First-Time User
+    submitProfileCompletion() {
+        const fullName = document.getElementById('profile-name-input').value.trim();
+        const res = window.auth.completeProfile(fullName, this.selectedGender);
+
+        if (!res.success) {
+            this.showToast(res.message, 'error');
+            return;
+        }
+
+        this.finishAuthFlow(res.user);
+    }
+
+    // Google Login Simulation
+    handleGoogleLogin() {
+        const res = window.auth.loginWithGoogle();
+        if (res.requireProfileCompletion) {
+            document.getElementById('auth-step-input').classList.add('hidden');
+            document.getElementById('auth-step-profile-completion').classList.remove('hidden');
+            this.showToast('Google account connected! Please confirm Name and Gender.', 'info');
+            return;
+        }
+
+        this.finishAuthFlow(res.user);
+    }
+
+    finishAuthFlow(user) {
+        this.closeAuthModal();
+        this.showToast(`Signed in successfully as ${user.name || 'Citizen'}!`, 'success');
+        this.setAppRoleMode(user.role);
+
+        if (this.authCallback) {
+            this.authCallback(user);
+            this.authCallback = null;
         }
     }
 
