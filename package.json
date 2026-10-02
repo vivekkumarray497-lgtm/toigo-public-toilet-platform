@@ -1,0 +1,13 @@
+{
+  "name": "toigo-find-use-pay",
+  "version": "1.0.0",
+  "description": "TOIGO - Public & Private Toilet Finder, Booking, Host Earning and Admin Platform",
+  "main": "index.html",
+  "scripts": {
+    "start": "npx serve . -l 3000",
+    "dev": "npx serve . -l 3000"
+  },
+  "keywords": ["toigo", "toilet-finder", "sanitation", "smart-city", "pay-and-use"],
+  "author": "TOIGO Founder",
+  "license": "MIT"
+}
