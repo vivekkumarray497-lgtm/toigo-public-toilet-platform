@@ -12,12 +12,30 @@ class AuthController {
 
     loadStoredUser() {
         try {
-            const token = window.api ? window.api.getToken() : localStorage.getItem('TOIGO_JWT_TOKEN');
+            let token = window.api ? window.api.getToken() : localStorage.getItem('TOIGO_JWT_TOKEN');
+            let raw = localStorage.getItem('TOIGO_CURRENT_USER');
+
+            // If web storage is empty, check Android SharedPreferences native bridge
+            if ((!token || !raw) && window.ToigoNativeBridge && window.ToigoNativeBridge.getSavedAuthToken) {
+                try {
+                    const nativeToken = window.ToigoNativeBridge.getSavedAuthToken();
+                    const nativeUser = window.ToigoNativeBridge.getSavedAuthUser();
+                    if (nativeToken && nativeUser) {
+                        token = nativeToken;
+                        raw = nativeUser;
+                        localStorage.setItem('TOIGO_JWT_TOKEN', nativeToken);
+                        localStorage.setItem('TOIGO_CURRENT_USER', nativeUser);
+                        if (window.api) window.api.setToken(nativeToken);
+                    }
+                } catch (ne) {
+                    console.warn('[TOIGO AUTH] Native bridge restore error:', ne);
+                }
+            }
+
             if (!token) {
                 localStorage.removeItem('TOIGO_CURRENT_USER');
                 return null;
             }
-            const raw = localStorage.getItem('TOIGO_CURRENT_USER');
             return raw ? JSON.parse(raw) : null;
         } catch (e) {
             localStorage.removeItem('TOIGO_CURRENT_USER');
@@ -29,11 +47,26 @@ class AuthController {
         this.currentUser = user;
         if (user && user.userId) {
             localStorage.setItem('TOIGO_CURRENT_USER', JSON.stringify(user));
+            if (window.ToigoNativeBridge && window.ToigoNativeBridge.saveAuthSession) {
+                try {
+                    const token = window.api ? window.api.getToken() : localStorage.getItem('TOIGO_JWT_TOKEN');
+                    window.ToigoNativeBridge.saveAuthSession(token || '', JSON.stringify(user));
+                } catch (e) {
+                    console.warn('[TOIGO AUTH] Error saving to native bridge:', e);
+                }
+            }
         } else {
             this.currentUser = null;
             localStorage.removeItem('TOIGO_CURRENT_USER');
             if (window.api) window.api.setToken(null);
             else localStorage.removeItem('TOIGO_JWT_TOKEN');
+            if (window.ToigoNativeBridge && window.ToigoNativeBridge.clearAuthSession) {
+                try {
+                    window.ToigoNativeBridge.clearAuthSession();
+                } catch (e) {
+                    console.warn('[TOIGO AUTH] Error clearing native bridge:', e);
+                }
+            }
         }
     }
 

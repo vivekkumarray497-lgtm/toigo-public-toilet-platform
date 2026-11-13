@@ -68,11 +68,12 @@ async function runProviderTests() {
     const { db } = require('../../server/config/db');
 
     const newHostEmail = `provider.test.${Date.now()}@example.com`;
+    const hostMobile = '98' + Date.now().toString().slice(-8);
     const regRes = await makeRequest('POST', '/auth/register', {
         name: 'New Host Facility',
         email: newHostEmail,
         password: 'password123',
-        mobile: '9899112233',
+        mobile: hostMobile,
         role: 'PROVIDER',
         businessName: 'Clean Restroom Co'
     });
@@ -99,9 +100,9 @@ async function runProviderTests() {
     // Trigger and retrieve Mobile OTP
     await makeRequest('POST', '/auth/send-mobile-otp', {
         userId: regRes.data.userId,
-        mobile: '9899112233'
+        mobile: hostMobile
     });
-    const mobileInbox = await makeRequest('GET', '/auth/test-inbox?mobile=9899112233');
+    const mobileInbox = await makeRequest('GET', `/auth/test-inbox?mobile=${hostMobile}`);
     const realMobileOtp = mobileInbox.data.otp;
 
     const mobileVerifyRes = await makeRequest('POST', '/auth/verify-mobile-otp', {

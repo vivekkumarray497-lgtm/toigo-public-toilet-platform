@@ -343,10 +343,19 @@ class JsonDatabaseEngine {
         try {
             if (fs.existsSync(DB_FILE)) {
                 const raw = fs.readFileSync(DB_FILE, 'utf8');
-                return JSON.parse(raw);
+                if (raw && raw.trim().length > 0) {
+                    const parsed = JSON.parse(raw);
+                    // Ensure all standard tables exist without wiping user data
+                    for (const key of Object.keys(initialSeed)) {
+                        if (!parsed[key] || !Array.isArray(parsed[key])) {
+                            parsed[key] = JSON.parse(JSON.stringify(initialSeed[key]));
+                        }
+                    }
+                    return parsed;
+                }
             }
         } catch (e) {
-            console.error('Error reading JSON DB file, falling back to seed:', e);
+            console.error('Error reading JSON DB file, preserving state and falling back to seed:', e);
         }
         const fresh = JSON.parse(JSON.stringify(initialSeed));
         this.saveData(fresh);
@@ -357,16 +366,28 @@ class JsonDatabaseEngine {
         this.saveData(this.data);
     }
 
+    // Atomic write to prevent file corruption on sudden restart or crash
     saveData(data) {
+        const tmpFile = `${DB_FILE}.tmp.${Date.now()}`;
         try {
-            fs.writeFileSync(DB_FILE, JSON.stringify(data, null, 2), 'utf8');
+            fs.writeFileSync(tmpFile, JSON.stringify(data, null, 2), 'utf8');
+            fs.renameSync(tmpFile, DB_FILE);
         } catch (e) {
-            console.error('Error writing JSON DB file:', e);
+            // Direct write fallback if atomic rename is blocked by OS file lock
+            try {
+                fs.writeFileSync(DB_FILE, JSON.stringify(data, null, 2), 'utf8');
+                if (fs.existsSync(tmpFile)) fs.unlinkSync(tmpFile);
+            } catch (err2) {
+                console.error('Fatal: Failed to persist database to disk:', err2);
+            }
         }
     }
 
     reset() {
+        // Safe reset: preserve registered users if resetting
+        const existingUsers = (this.data && Array.isArray(this.data.users)) ? this.data.users : initialSeed.users;
         this.data = JSON.parse(JSON.stringify(initialSeed));
+        this.data.users = existingUsers;
         this.save();
         return this.data;
     }
@@ -377,23 +398,36 @@ const db = new JsonDatabaseEngine();
 const connectDB = async () => {
     const mongoUri = process.env.MONGODB_URI;
     if (mongoUri) {
+        const sanitizedUri = mongoUri.replace(/:([^@]+)@/, ':****@');
+        console.log(`🔄 Attempting connection to MongoDB Atlas at ${sanitizedUri}...`);
         try {
             await mongoose.connect(mongoUri, {
-                serverSelectionTimeoutMS: 3000
+                serverSelectionTimeoutMS: 5000
             });
             isMongoConnected = true;
-            console.log('✅ Connected to MongoDB Database successfully.');
+            console.log('✅ Connected to MongoDB Atlas successfully.');
         } catch (err) {
-            console.warn('⚠️ MongoDB connection not available. Using robust file-persistent database storage (server/data/db.json).');
+            console.error('❌ MongoDB Atlas connection error:', err.message);
+            console.warn('⚠️ Falling back to persistent local storage (server/data/db.json). Registered users and state are preserved.');
             isMongoConnected = false;
         }
     } else {
-        console.log('ℹ️ Running with persistent JSON database storage (server/data/db.json). Provide MONGODB_URI in .env for MongoDB.');
+        console.log('ℹ️ Running with persistent JSON database storage (server/data/db.json).');
+        console.log('ℹ️ For MongoDB Atlas persistence, set MONGODB_URI in your environment variables.');
     }
 };
+
+const getDbStatus = () => ({
+    connected: true,
+    storageType: isMongoConnected ? 'MongoDB Atlas' : 'Persistent File Storage (server/data/db.json)',
+    isMongo: isMongoConnected,
+    userCount: (db.data.users || []).length,
+    toiletCount: (db.data.toilets || []).length
+});
 
 module.exports = {
     connectDB,
     db,
-    isMongoConnected: () => isMongoConnected
+    isMongoConnected: () => isMongoConnected,
+    getDbStatus
 };

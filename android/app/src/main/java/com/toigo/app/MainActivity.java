@@ -257,6 +257,42 @@ public class MainActivity extends AppCompatActivity {
                 }
             });
         }
+
+        @JavascriptInterface
+        public void saveAuthSession(String token, String userJson) {
+            try {
+                getPrefs().edit()
+                        .putString("toigo_auth_token", token)
+                        .putString("toigo_auth_user", userJson)
+                        .apply();
+                Log.d("TOIGO_AUTH", "Auth session securely saved in Android SharedPreferences.");
+            } catch (Exception e) {
+                Log.e("TOIGO_AUTH", "Error saving auth session: " + e.getMessage());
+            }
+        }
+
+        @JavascriptInterface
+        public void clearAuthSession() {
+            try {
+                getPrefs().edit()
+                        .remove("toigo_auth_token")
+                        .remove("toigo_auth_user")
+                        .apply();
+                Log.d("TOIGO_AUTH", "Auth session cleared from Android SharedPreferences.");
+            } catch (Exception e) {
+                Log.e("TOIGO_AUTH", "Error clearing auth session: " + e.getMessage());
+            }
+        }
+
+        @JavascriptInterface
+        public String getSavedAuthToken() {
+            return getPrefs().getString("toigo_auth_token", null);
+        }
+
+        @JavascriptInterface
+        public String getSavedAuthUser() {
+            return getPrefs().getString("toigo_auth_user", null);
+        }
     }
 
     private class CustomWebViewClient extends WebViewClient {
@@ -309,6 +345,25 @@ public class MainActivity extends AppCompatActivity {
             // Expose native backend URL to web client
             String backend = getBackendUrl().replaceAll("/$", "");
             view.evaluateJavascript("window.__TOIGO_NATIVE_BACKEND__ = '" + backend + "';", null);
+
+            // Synchronize saved persistent session into webview localStorage if empty
+            String savedToken = getPrefs().getString("toigo_auth_token", null);
+            String savedUser = getPrefs().getString("toigo_auth_user", null);
+            if (savedToken != null && !savedToken.isEmpty()) {
+                String safeToken = savedToken.replace("'", "\\'");
+                String safeUser = (savedUser != null) ? savedUser.replace("\\", "\\\\").replace("'", "\\'") : "";
+                String jsSync = "(function() { " +
+                        "try { " +
+                        "  var currentToken = localStorage.getItem('TOIGO_JWT_TOKEN'); " +
+                        "  if (!currentToken || currentToken === 'null' || currentToken === 'undefined') { " +
+                        "    localStorage.setItem('TOIGO_JWT_TOKEN', '" + safeToken + "'); " +
+                        (savedUser != null ? "    localStorage.setItem('TOIGO_CURRENT_USER', '" + safeUser + "'); " : "") +
+                        "    if (window.auth && window.auth.syncCurrentUser) { window.auth.syncCurrentUser(); } " +
+                        "  } " +
+                        "} catch(e) {} " +
+                        "})();";
+                view.evaluateJavascript(jsSync, null);
+            }
         }
 
         @Override

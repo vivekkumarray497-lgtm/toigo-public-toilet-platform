@@ -148,7 +148,7 @@ async function runApiTests() {
     console.assert(userNotifs.success === true && Array.isArray(userNotifs.notifications), 'Notifications failed');
     console.log(`14. Notifications Protected Route (${userNotifs.count} alerts): PASS ✅`);
 
-    // 15. Public Registration Security: Reject Client-Sent ADMIN Role
+    // 15. Public Registration Security: Reject Client-Sent ADMIN Role (403 Forbidden)
     const fakeAdminEmail = `fakeadmin_${Date.now()}@example.com`;
     const fakeAdminReg = await request('POST', '/auth/register', {
         name: 'Malicious Attacker',
@@ -156,17 +156,18 @@ async function runApiTests() {
         password: 'Password123!',
         role: 'ADMIN' // Malicious attempt to register as ADMIN
     });
-    console.assert(fakeAdminReg.success === true, 'Registration request failed');
+    console.assert(fakeAdminReg._statusCode === 403 && fakeAdminReg.success === false, 'Public ADMIN registration was not rejected with 403 Forbidden!');
     const fs = require('fs');
     const path = require('path');
     const dbFilePath = path.join(__dirname, '../../server/data/db.json');
     const dbRaw = JSON.parse(fs.readFileSync(dbFilePath, 'utf8'));
     const attackerUser = (dbRaw.users || []).find(u => u.email === fakeAdminEmail);
-    console.assert(attackerUser && attackerUser.role === 'USER', 'CRITICAL SECURITY VULNERABILITY: Public user became ADMIN!');
-    console.log('15. Public ADMIN Registration Blocked & Defaulted to USER: PASS ✅');
+    console.assert(!attackerUser, 'CRITICAL SECURITY VULNERABILITY: Public user was created from rejected ADMIN registration!');
+    console.log('15. Public ADMIN Registration Strictly Rejected (403 Forbidden): PASS ✅');
 
     // 16. New User Wallet Balance is Strictly ₹0
-    console.assert(attackerUser.walletBalance === 0, 'Wallet bug: New user received non-zero wallet balance!');
+    const regularUser = (dbRaw.users || []).find(u => u.email === testRegEmail);
+    console.assert(regularUser && regularUser.walletBalance === 0, 'Wallet bug: New user received non-zero wallet balance!');
     console.log('16. Strict ₹0 Initial Wallet Balance: PASS ✅');
 
     // 17. Free Toilet Direct Access (No Payment Gateway Order Created)

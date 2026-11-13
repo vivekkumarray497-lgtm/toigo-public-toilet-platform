@@ -8,8 +8,9 @@
     "dev": "node server/server.js",
     "server": "node server/server.js",
     "seed": "node server/scripts/seed.js",
-    "test": "node tests/syntax-check.js && node tests/api/api.test.js && node tests/api/mobile-otp.test.js && node tests/provider/provider.test.js",
+    "test": "node tests/syntax-check.js && node tests/auth/login-auth.test.js && node tests/api/api.test.js && node tests/api/mobile-otp.test.js && node tests/provider/provider.test.js",
     "test:syntax": "node tests/syntax-check.js",
+    "test:auth": "node tests/auth/login-auth.test.js",
     "test:api": "node tests/api/api.test.js",
     "test:otp": "node tests/api/mobile-otp.test.js",
     "test:provider": "node tests/provider/provider.test.js"

@@ -4,7 +4,7 @@ require('dotenv').config({ path: path.join(__dirname, '.env') });
 const express = require('express');
 const cors = require('cors');
 const helmet = require('helmet');
-const { connectDB } = require('./config/db');
+const { connectDB, getDbStatus } = require('./config/db');
 const { apiLimiter } = require('./middleware/rateLimiter');
 
 // Validate critical security environment variables
@@ -149,7 +149,8 @@ app.get('/api/health', (req, res) => {
         status: 'OK',
         service: 'TOIGO Sanitation Network REST API',
         timestamp: new Date().toISOString(),
-        version: '2.0.0'
+        version: '2.0.0',
+        database: getDbStatus()
     });
 });
 

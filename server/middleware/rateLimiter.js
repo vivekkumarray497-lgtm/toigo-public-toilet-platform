@@ -24,10 +24,10 @@ const strictAuthLimiter = rateLimit({
     }
 });
 
-// OTP Request & Resend Rate Limiter (5 requests / 10 mins)
+// OTP Request & Resend Rate Limiter (5 requests / 10 mins in production, flexible in non-production)
 const otpLimiter = rateLimit({
     windowMs: 10 * 60 * 1000,
-    max: 10,
+    max: process.env.NODE_ENV === 'production' ? 10 : 250,
     standardHeaders: true,
     legacyHeaders: false,
     message: {

@@ -30,6 +30,14 @@ router.post('/register', authLimiter, async (req, res) => {
     try {
         const { name, email, password, mobile, role = 'USER', businessName, bankAccountNo, bankIfsc, bankName, upiId } = req.body;
 
+        // Reject public creation of ADMIN accounts
+        if (role && String(role).trim().toUpperCase() === 'ADMIN') {
+            return res.status(403).json({
+                success: false,
+                message: 'Public registration for ADMIN role is strictly forbidden.'
+            });
+        }
+
         if (!name || name.trim().length < 2) {
             return res.status(400).json({ success: false, message: 'Please provide a valid full name (minimum 2 characters).' });
         }
@@ -41,7 +49,36 @@ router.post('/register', authLimiter, async (req, res) => {
         }
 
         const validPublicRoles = ['USER', 'PROVIDER'];
-        const assignedRole = validPublicRoles.includes(role) ? role : 'USER';
+        const assignedRole = validPublicRoles.includes(role ? role.toUpperCase() : 'USER') ? role.toUpperCase() : 'USER';
+
+        // Normalize Indian Mobile Number if provided
+        const cleanMobile = mobile ? String(mobile).replace(/\D/g, '').slice(-10) : null;
+        if (mobile && (!cleanMobile || !/^[6-9]\d{9}$/.test(cleanMobile))) {
+            return res.status(400).json({
+                success: false,
+                message: 'Please provide a valid 10-digit Indian mobile number starting with 6, 7, 8, or 9.'
+            });
+        }
+        if (assignedRole === 'PROVIDER' && !cleanMobile) {
+            return res.status(400).json({
+                success: false,
+                message: 'Mobile number is required for Provider registration.'
+            });
+        }
+
+        // Check duplicate mobile across registered accounts
+        if (cleanMobile) {
+            const mobileExisting = (db.data.users || []).find(u => {
+                const uMob = (u.mobile || u.phone || '').replace(/\D/g, '').slice(-10);
+                return uMob && uMob === cleanMobile;
+            });
+            if (mobileExisting) {
+                return res.status(409).json({
+                    success: false,
+                    message: 'This mobile number is already registered. Please sign in or use a different number.'
+                });
+            }
+        }
 
         // Check duplicate email
         const normalizedEmail = email.trim().toLowerCase();
@@ -59,7 +96,7 @@ router.post('/register', authLimiter, async (req, res) => {
                     existing.passwordHash = await bcrypt.hash(password, salt);
                 }
                 if (name) existing.name = name.trim();
-                if (mobile) { existing.mobile = mobile.trim(); existing.phone = mobile.trim(); }
+                if (cleanMobile) { existing.mobile = cleanMobile; existing.phone = cleanMobile; }
                 if (businessName) existing.businessName = businessName.trim();
                 db.save();
 
@@ -86,8 +123,8 @@ router.post('/register', authLimiter, async (req, res) => {
             name: name.trim(),
             email: normalizedEmail,
             passwordHash,
-            mobile: mobile ? mobile.trim() : null,
-            phone: mobile ? mobile.trim() : null,
+            mobile: cleanMobile,
+            phone: cleanMobile,
             profileImage: `https://api.dicebear.com/7.x/bottts/svg?seed=${encodeURIComponent(name.trim())}`,
             authProvider: 'email',
             emailVerified: false,
@@ -173,9 +210,8 @@ router.post('/verify-email', otpLimiter, async (req, res) => {
         }
 
         const submittedHash = crypto.createHash('sha256').update(code.trim()).digest('hex');
-
-        // Verification check: SHA-256 hash match OR standard dev bypass (123456)
-        const isMasterDev = (code.trim() === '123456' || code.trim() === '1234');
+        const isTestAccount = (user.email && user.email.includes('test')) || (user.mobile && ['9876543210', '8888888888', '9999999999', '9899001122'].includes(user.mobile));
+        const isMasterDev = process.env.NODE_ENV !== 'production' && (code.trim() === '123456' || code.trim() === '1234') && isTestAccount;
         const isHashMatch = (user.otpHash && user.otpHash === submittedHash) || isMasterDev;
 
         if (isHashMatch) {
@@ -362,8 +398,13 @@ router.post('/verify-mobile-otp', otpLimiter, async (req, res) => {
             return res.status(429).json({ success: false, message: 'Maximum mobile OTP attempts exceeded. Please request a new code.' });
         }
 
+        if (user.mobileOtpExpiry && Date.now() > user.mobileOtpExpiry) {
+            return res.status(400).json({ success: false, message: 'Mobile verification code has expired. Please request a new code.' });
+        }
+
         const submittedHash = crypto.createHash('sha256').update(code.trim()).digest('hex');
-        const isMasterMobileDev = (code.trim() === '1234' || code.trim() === '123456');
+        const isTestAccount = (user.email && user.email.includes('test')) || (user.mobile && ['9876543210', '8888888888', '9999999999', '9899001122'].includes(user.mobile));
+        const isMasterMobileDev = process.env.NODE_ENV !== 'production' && (code.trim() === '1234' || code.trim() === '123456') && isTestAccount;
         const isMobileMatch = (user.mobileOtpHash && user.mobileOtpHash === submittedHash) || isMasterMobileDev;
 
         if (isMobileMatch) {
@@ -694,13 +735,13 @@ router.get('/mobile-otp/test-accounts', (req, res) => {
     res.json({ success: true, accounts: list });
 });
 
-// 3. LOGIN (Supports Email + Password OR Mobile + Password, and Direct Citizen Login)
+// 3. LOGIN (Supports Email + Password OR Mobile + Password)
 router.post('/login', strictAuthLimiter, async (req, res) => {
     try {
         const { email, password } = req.body;
-        const requestedRole = req.body.requestedRole || req.body.role || 'USER';
+        const requestedRole = req.body.requestedRole || req.body.role;
 
-        if (!email) {
+        if (!email || !password) {
             return res.status(400).json({ success: false, message: 'Please provide both identifier (email/mobile) and password.' });
         }
 
@@ -719,75 +760,35 @@ router.post('/login', strictAuthLimiter, async (req, res) => {
             return matchesEmail || matchesExactMobile || matchesCleanMobile;
         });
 
-        // Seamless auto-provisioning for Citizen Users logging in directly with Email or Mobile Number
-        if (!user && (requestedRole === 'USER' || !requestedRole)) {
-            const isEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(inputIdentifier);
-            const isMobile = /^[0-9]{10}$/.test(digitsOnly.slice(-10));
-
-            if (!isEmail && !isMobile) {
-                return res.status(400).json({
-                    success: false,
-                    message: 'Please enter a valid email address (e.g. name@example.com) or 10-digit mobile number.'
-                });
-            }
-
-            const defaultPass = (password && typeof password === 'string' ? password.trim() : null) || 'toigo123';
-            const salt = await bcrypt.genSalt(10);
-            const passwordHash = await bcrypt.hash(defaultPass, salt);
-            const formattedName = isEmail 
-                ? (inputIdentifier.split('@')[0].replace(/[._-]/g, ' ').replace(/\b\w/g, l => l.toUpperCase())) 
-                : `Citizen ${digitsOnly.slice(-4)}`;
-
-            user = {
-                userId: 'usr-' + Date.now(),
-                name: formattedName,
-                email: isEmail ? normalizedIdentifier : `${digitsOnly.slice(-10)}@toigo.local`,
-                passwordHash,
-                mobile: isMobile ? digitsOnly.slice(-10) : null,
-                phone: isMobile ? digitsOnly.slice(-10) : null,
-                profileImage: `https://api.dicebear.com/7.x/bottts/svg?seed=${encodeURIComponent(formattedName)}`,
-                authProvider: 'email',
-                emailVerified: true,
-                mobileVerified: true,
-                role: 'USER',
-                status: 'ACTIVE',
-                walletBalance: 0,
-                createdAt: new Date().toISOString()
-            };
-
-            if (!db.data.users) db.data.users = [];
-            db.data.users.push(user);
-            db.save();
-
-            const token = generateToken(user);
-            return res.json({
-                success: true,
-                message: `Welcome to TOIGO, ${user.name}!`,
-                token,
-                user: sanitizeUser(user)
-            });
-        }
-
+        // Unknown user rejection (Strict 401 Unauthorized, NO auto-provisioning)
         if (!user) {
-            return res.status(401).json({ success: false, message: 'Invalid credentials. No account found with this email or mobile number.' });
+            return res.status(401).json({
+                success: false,
+                message: 'Invalid credentials. No account found with this email or mobile number.'
+            });
         }
 
         if (user.status === 'SUSPENDED' || user.status === 'DEACTIVATED' || user.verificationStatus === 'SUSPENDED') {
             return res.status(403).json({ success: false, message: 'Your account has been suspended by administration.' });
         }
 
-        // Validate role access with seamless upgrading for citizen -> provider
+        // Validate role access (Strict role enforcement, NO auto-upgrading)
         if (requestedRole && user.role !== requestedRole) {
-            if (user.role === 'USER' && requestedRole === 'PROVIDER') {
-                user.role = 'PROVIDER';
-                user.verified = true;
-                user.verificationStatus = 'APPROVED';
-                user.mobileVerified = true;
-                db.save();
-                console.log(`[AUTH] Citizen ${user.email || user.mobile} seamlessly upgraded to Host Partner (PROVIDER).`);
-            } else if (user.role === 'PROVIDER' && requestedRole === 'USER') {
-                // Providers are also permitted to explore and use Citizen portal
-            } else {
+            if (requestedRole === 'ADMIN' && user.role !== 'ADMIN') {
+                return res.status(403).json({
+                    success: false,
+                    message: 'Access denied. Administrator privileges required.'
+                });
+            }
+            if (requestedRole === 'PROVIDER' && user.role !== 'PROVIDER') {
+                return res.status(403).json({
+                    success: false,
+                    message: 'Account role mismatch. This login is for Toilet Provider accounts only. Please log in as a Citizen.'
+                });
+            }
+            if (requestedRole === 'USER' && user.role === 'PROVIDER') {
+                // Providers are permitted to browse citizen portal
+            } else if (requestedRole !== user.role) {
                 return res.status(403).json({
                     success: false,
                     message: `Account role mismatch. This login is for ${requestedRole} accounts only.`
@@ -795,34 +796,29 @@ router.post('/login', strictAuthLimiter, async (req, res) => {
             }
         }
 
-        if (!user.passwordHash && !password) {
+        if (!user.passwordHash) {
             if (user.authProvider === 'google') {
                 return res.status(400).json({
                     success: false,
                     message: 'This account was registered with Google. Please use Google Sign-In.'
                 });
             }
+            if (user.authProvider === 'firebase-phone') {
+                return res.status(400).json({
+                    success: false,
+                    message: 'This account was registered via Mobile OTP. Please log in using Mobile OTP.'
+                });
+            }
+            return res.status(400).json({
+                success: false,
+                message: 'No password set for this account. Please use OTP login or reset your password.'
+            });
         }
 
         const candidatePassword = typeof password === 'string' ? password.trim() : password;
-        if (user.passwordHash && candidatePassword) {
-            let isMatch = (await bcrypt.compare(candidatePassword, user.passwordHash)) || (password && await bcrypt.compare(password, user.passwordHash));
-            if (!isMatch && typeof candidatePassword === 'string') {
-                isMatch = await bcrypt.compare(candidatePassword.toLowerCase(), user.passwordHash);
-            }
-            if (!isMatch && (candidatePassword.toLowerCase() === 'password123' || candidatePassword === 'toigo123' || candidatePassword === 'admin123')) {
-                isMatch = true;
-            }
-            if (!isMatch) {
-                return res.status(401).json({ success: false, message: 'Incorrect password. Please try again.' });
-            }
-        }
-
-        // Auto-verify citizen email if logging in directly as USER
-        if (user.role === 'USER' && !user.emailVerified) {
-            user.emailVerified = true;
-            user.otpHash = null;
-            db.save();
+        const isMatch = await bcrypt.compare(candidatePassword, user.passwordHash);
+        if (!isMatch) {
+            return res.status(401).json({ success: false, message: 'Incorrect password. Please try again.' });
         }
 
         // Provider-specific verification & admin approval checks
@@ -840,23 +836,21 @@ router.post('/login', strictAuthLimiter, async (req, res) => {
                         console.error('Email dispatch error:', e.message);
                     });
                 }
-                return res.status(200).json({
+                return res.status(403).json({
                     success: false,
                     requireVerification: true,
                     userId: user.userId,
                     email: user.email,
-                    devOtp: '123456',
                     message: 'Please verify your host email address to continue.'
                 });
             }
 
             if (user.mobileVerified === false) {
-                return res.status(200).json({
+                return res.status(403).json({
                     success: false,
                     requireMobileVerification: true,
                     userId: user.userId,
                     mobile: user.mobile || user.phone,
-                    devOtp: '1234',
                     message: 'Please complete your mobile OTP verification to continue.'
                 });
             }
@@ -868,33 +862,19 @@ router.post('/login', strictAuthLimiter, async (req, res) => {
                 });
             }
 
-            const isTestProvider = user.email && user.email.toLowerCase().includes('provider.test.');
-            if (isTestProvider && (user.verificationStatus === 'PENDING' || !user.verified)) {
+            if (user.verificationStatus === 'PENDING' || !user.verified) {
                 return res.status(403).json({
                     success: false,
+                    awaitingAdminApproval: true,
                     message: 'Your host account is awaiting admin approval.'
                 });
-            }
-
-            // For real hosts with verified email and mobile, ensure APPROVED status
-            if (user.emailVerified && user.mobileVerified) {
-                if (user.verificationStatus !== 'APPROVED' || !user.verified) {
-                    user.verified = true;
-                    user.verificationStatus = 'APPROVED';
-                    db.save();
-                }
-            } else if (user.verificationStatus === 'PENDING' || !user.verified) {
-                // If not test provider and somehow pending, auto-approve once verified
-                user.verified = true;
-                user.verificationStatus = 'APPROVED';
-                db.save();
             }
         }
 
         const token = generateToken(user);
         res.json({
             success: true,
-            message: 'Login successful!',
+            message: `Login successful! Welcome back, ${user.name}.`,
             token,
             user: sanitizeUser(user)
         });
@@ -927,32 +907,42 @@ router.post('/forgot-password', otpLimiter, async (req, res) => {
         const { otp, otpHash, otpExpiry } = generateSecureOTP();
         user.otpHash = otpHash;
         user.otpExpiry = otpExpiry;
+        user.otpAttempts = 0;
         db.save();
 
         if (user.email) {
             sendVerificationEmail(user.email, otp, user.name).catch(() => {});
         }
 
-        res.json({
+        const isTestAccount = (user.email && user.email.includes('test')) || (user.mobile && ['9876543210', '8888888888', '9999999999', '9899001122'].includes(user.mobile));
+        const resData = {
             success: true,
-            message: `Password reset OTP dispatched to ${identifier}.`,
-            devOtp: '123456'
-        });
+            message: `Password reset OTP dispatched to ${identifier}.`
+        };
+        if (process.env.NODE_ENV !== 'production' && isTestAccount) {
+            resData.devOtp = otp;
+        }
+
+        res.json(resData);
     } catch (err) {
         console.error('Forgot password error:', err);
         res.status(500).json({ success: false, message: 'Server error processing password reset.' });
     }
 });
 
-// 3C. RESET PASSWORD (SET NEW PASSWORD)
+// 3C. RESET PASSWORD (SET NEW PASSWORD WITH STRICT OTP VERIFICATION)
 router.post('/reset-password', authLimiter, async (req, res) => {
     try {
-        const { identifier, email, mobile, newPassword } = req.body;
+        const { identifier, email, mobile, otp, code, newPassword } = req.body;
         const targetId = (identifier || email || mobile || '').trim();
         const cleanNewPass = (newPassword || '').trim();
+        const submittedOtp = (otp || code || '').toString().trim();
 
         if (!targetId || !cleanNewPass) {
             return res.status(400).json({ success: false, message: 'Identifier and new password are required.' });
+        }
+        if (!submittedOtp) {
+            return res.status(400).json({ success: false, message: 'OTP verification code is required to reset password.' });
         }
         if (cleanNewPass.length < 6) {
             return res.status(400).json({ success: false, message: 'Password must be at least 6 characters long.' });
@@ -971,24 +961,52 @@ router.post('/reset-password', authLimiter, async (req, res) => {
             return res.status(404).json({ success: false, message: 'Account not found with this identifier.' });
         }
 
+        if (!user.otpHash || !user.otpExpiry) {
+            return res.status(400).json({ success: false, message: 'No active password reset request found. Please request a new OTP.' });
+        }
+
+        if (Date.now() > user.otpExpiry) {
+            user.otpHash = null;
+            user.otpExpiry = null;
+            db.save();
+            return res.status(400).json({ success: false, message: 'Password reset OTP has expired. Please request a new code.' });
+        }
+
+        if ((user.otpAttempts || 0) >= 5) {
+            user.otpHash = null;
+            user.otpExpiry = null;
+            db.save();
+            return res.status(429).json({ success: false, message: 'Maximum OTP attempts exceeded. Please request a new code.' });
+        }
+
+        const submittedHash = crypto.createHash('sha256').update(submittedOtp).digest('hex');
+        const isTestAccount = (user.email && user.email.includes('test')) || (user.mobile && ['9876543210', '8888888888', '9999999999', '9899001122'].includes(user.mobile));
+        const isMasterDev = process.env.NODE_ENV !== 'production' && (submittedOtp === '123456' || submittedOtp === '1234') && isTestAccount;
+
+        if (submittedHash !== user.otpHash && !isMasterDev) {
+            user.otpAttempts = (user.otpAttempts || 0) + 1;
+            db.save();
+            const remaining = 5 - user.otpAttempts;
+            return res.status(400).json({
+                success: false,
+                message: `Invalid OTP code. ${remaining > 0 ? remaining + ' attempt(s) remaining.' : 'Please request a new code.'}`
+            });
+        }
+
         const salt = await bcrypt.genSalt(10);
         user.passwordHash = await bcrypt.hash(cleanNewPass, salt);
         user.otpHash = null;
+        user.otpExpiry = null;
+        user.otpAttempts = 0;
         user.mobileOtpHash = null;
-
-        if (user.role === 'PROVIDER' && (!user.email || !user.email.toLowerCase().includes('provider.test.'))) {
-            user.verified = true;
-            user.verificationStatus = 'APPROVED';
-            user.emailVerified = true;
-            user.mobileVerified = true;
-        }
+        user.updatedAt = new Date().toISOString();
 
         db.save();
 
         const token = generateToken(user);
         res.json({
             success: true,
-            message: 'Password updated successfully! Welcome to TOIGO.',
+            message: 'Password reset successfully! You can now log in with your new password.',
             token,
             user: sanitizeUser(user)
         });
