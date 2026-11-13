@@ -16,6 +16,7 @@ import android.webkit.ValueCallback;
 import android.webkit.WebChromeClient;
 import android.webkit.WebResourceError;
 import android.webkit.WebResourceRequest;
+import android.webkit.WebResourceResponse;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
@@ -28,6 +29,7 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
+import androidx.webkit.WebViewAssetLoader;
 
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.FirebaseException;
@@ -59,14 +61,22 @@ public class MainActivity extends AppCompatActivity {
     private String mVerificationId;
     private PhoneAuthProvider.ForceResendingToken mResendToken;
 
+    public static final String LOCAL_APP_URL = "https://appassets.androidplatform.net/assets/www/index.html";
+
     private SharedPreferences getPrefs() {
         return getSharedPreferences("toigo_prefs", MODE_PRIVATE);
     }
 
-    private String getAppUrl() {
+    private String getBackendUrl() {
         String saved = getPrefs().getString("server_url", null);
         if (saved != null && !saved.trim().isEmpty()) {
-            return saved.trim();
+            String clean = saved.trim();
+            // Automatically purge invalid or broken legacy URLs
+            if (!clean.contains("localhost") && !clean.contains("10.0.2.2") && !clean.contains("toigo.onrender.com")) {
+                return clean;
+            } else {
+                getPrefs().edit().remove("server_url").apply();
+            }
         }
         return BuildConfig.BACKEND_URL;
     }
@@ -93,8 +103,9 @@ public class MainActivity extends AppCompatActivity {
 
         swipeRefreshLayout.setOnRefreshListener(() -> webView.reload());
 
-        // Load the TOIGO Web Application
-        webView.loadUrl(getAppUrl());
+        // Always load TOIGO directly from local bundled assets
+        // This ensures zero 404/Not Found screens and instant app launch
+        webView.loadUrl(LOCAL_APP_URL);
     }
 
     @SuppressLint("SetJavaScriptEnabled")
@@ -106,6 +117,8 @@ public class MainActivity extends AppCompatActivity {
         settings.setGeolocationEnabled(true);
         settings.setAllowFileAccess(true);
         settings.setAllowContentAccess(true);
+        settings.setAllowFileAccessFromFileURLs(true);
+        settings.setAllowUniversalAccessFromFileURLs(true);
         settings.setMediaPlaybackRequiresUserGesture(false);
         settings.setMixedContentMode(WebSettings.MIXED_CONTENT_ALWAYS_ALLOW);
         settings.setLoadWithOverviewMode(true);
@@ -130,7 +143,7 @@ public class MainActivity extends AppCompatActivity {
 
         @JavascriptInterface
         public String getServerUrl() {
-            return getAppUrl();
+            return getBackendUrl();
         }
 
         @JavascriptInterface
@@ -143,8 +156,8 @@ public class MainActivity extends AppCompatActivity {
                 final String target = cleanUrl;
                 getPrefs().edit().putString("server_url", target).apply();
                 runOnUiThread(() -> {
-                    Toast.makeText(MainActivity.this, "Server URL updated to: " + target, Toast.LENGTH_SHORT).show();
-                    webView.loadUrl(target);
+                    Toast.makeText(MainActivity.this, "Backend API set to: " + target, Toast.LENGTH_SHORT).show();
+                    webView.evaluateJavascript("if (window.apiClient) { window.apiClient.baseUrl = '" + target.replaceAll("/$", "") + "/api'; }", null);
                 });
             }
         }
@@ -247,6 +260,15 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private class CustomWebViewClient extends WebViewClient {
+        private final WebViewAssetLoader assetLoader = new WebViewAssetLoader.Builder()
+                .addPathHandler("/assets/", new WebViewAssetLoader.AssetsPathHandler(MainActivity.this))
+                .build();
+
+        @Override
+        public WebResourceResponse shouldInterceptRequest(WebView view, WebResourceRequest request) {
+            return assetLoader.shouldInterceptRequest(request.getUrl());
+        }
+
         @Override
         public boolean shouldOverrideUrlLoading(WebView view, WebResourceRequest request) {
             String url = request.getUrl().toString();
@@ -284,6 +306,23 @@ public class MainActivity extends AppCompatActivity {
             super.onPageFinished(view, url);
             swipeRefreshLayout.setRefreshing(false);
             progressBar.setVisibility(View.GONE);
+            // Expose native backend URL to web client
+            String backend = getBackendUrl().replaceAll("/$", "");
+            view.evaluateJavascript("window.__TOIGO_NATIVE_BACKEND__ = '" + backend + "';", null);
+        }
+
+        @Override
+        public void onReceivedHttpError(WebView view, WebResourceRequest request, WebResourceResponse errorResponse) {
+            if (request.isForMainFrame()) {
+                int status = errorResponse.getStatusCode();
+                Log.w("TOIGO_HTTP_ERROR", "Remote HTTP Error " + status + " on " + request.getUrl());
+                if (status == 404 || status >= 500) {
+                    runOnUiThread(() -> {
+                        Toast.makeText(MainActivity.this, "Remote server returned HTTP " + status + ". Loading TOIGO app locally.", Toast.LENGTH_SHORT).show();
+                        webView.loadUrl(LOCAL_APP_URL);
+                    });
+                }
+            }
         }
 
         @Override
@@ -291,7 +330,9 @@ public class MainActivity extends AppCompatActivity {
             if (request.isForMainFrame()) {
                 swipeRefreshLayout.setRefreshing(false);
                 progressBar.setVisibility(View.GONE);
-                showOfflineErrorPage();
+                runOnUiThread(() -> {
+                    webView.loadUrl(LOCAL_APP_URL);
+                });
             }
         }
     }
@@ -405,7 +446,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void showOfflineErrorPage() {
-        String currentUrl = getAppUrl();
+        String currentUrl = getBackendUrl();
         String html = "<!DOCTYPE html><html><head><meta name='viewport' content='width=device-width, initial-scale=1.0'>"
                 + "<style>"
                 + "body{background:#0f172a;color:#f8fafc;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100vh;margin:0;padding:20px;box-sizing:border-box;text-align:center;}"

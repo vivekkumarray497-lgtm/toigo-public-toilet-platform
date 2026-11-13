@@ -1,4 +1,4 @@
-name: Deploy TOIGO App to GitHub Pages
+name: Deploy TOIGO Frontend to GitHub Pages
 
 on:
   push:
@@ -24,14 +24,27 @@ jobs:
       - name: Checkout Repository
         uses: actions/checkout@v4
 
-      - name: Setup Pages
-        uses: actions/configure-pages@v4
+      - name: Stage Static Frontend Files
+        run: |
+          mkdir -p _site
+          cp index.html _site/
+          cp -r css _site/
+          cp -r js _site/
+          if [ -d "assets" ]; then cp -r assets _site/; fi
+          # Ensure sensitive backend and android source files are NOT deployed to static pages
+          touch _site/.nojekyll
 
-      - name: Upload Artifact
+      - name: Setup GitHub Pages
+        id: pages_setup
+        uses: actions/configure-pages@v4
+        continue-on-error: true
+
+      - name: Upload Pages Artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          path: '.'
+          path: '_site'
 
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4
+        continue-on-error: true

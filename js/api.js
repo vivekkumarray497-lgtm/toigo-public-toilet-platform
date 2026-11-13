@@ -5,13 +5,32 @@
 
 class ToigoApiClient {
     constructor() {
-        // Base API URL (automatically connects to backend on port 5000 regardless of whether served via 5000, Live Server 5500, or file://)
-        if (window.location.origin.includes(':5000')) {
+        // 1. If running inside Android Native App Bridge, read configured backend
+        if (typeof window !== 'undefined' && window.ToigoNativeBridge && typeof window.ToigoNativeBridge.getServerUrl === 'function') {
+            try {
+                const nativeBackend = window.ToigoNativeBridge.getServerUrl();
+                if (nativeBackend && !nativeBackend.includes('localhost') && !nativeBackend.includes('10.0.2.2')) {
+                    this.baseUrl = `${nativeBackend.replace(/\/$/, '')}/api`;
+                    return;
+                }
+            } catch (e) {
+                console.warn('Native bridge backend query exception:', e);
+            }
+        }
+
+        // 2. If injected global native backend exists
+        if (typeof window !== 'undefined' && window.__TOIGO_NATIVE_BACKEND__) {
+            this.baseUrl = `${window.__TOIGO_NATIVE_BACKEND__.replace(/\/$/, '')}/api`;
+            return;
+        }
+
+        // 3. Environment detection for web & local testing
+        if (window.location.protocol === 'file:' || window.location.hostname === 'appassets.androidplatform.net') {
+            this.baseUrl = 'https://toigo-sanitation-app.onrender.com/api';
+        } else if (window.location.origin.includes(':5000')) {
             this.baseUrl = `${window.location.origin}/api`;
         } else if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
             this.baseUrl = `http://${window.location.hostname}:5000/api`;
-        } else if (window.location.protocol === 'file:') {
-            this.baseUrl = 'http://localhost:5000/api';
         } else {
             this.baseUrl = '/api';
         }

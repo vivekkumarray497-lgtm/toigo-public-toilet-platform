@@ -1,0 +1,263 @@
+/* ==========================================================================
+   TOIGO — Next-Gen Modern UI Design System
+   ========================================================================== */
+
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,700&family=Outfit:wght@400;500;600;700;800;900&display=swap');
+
+:root {
+    --brand-primary: #059669;
+    --brand-accent: #10b981;
+    --brand-cyan: #06b6d4;
+    --brand-dark: #0f172a;
+    --brand-card: #ffffff;
+    --brand-bg: #f8fafc;
+    --brand-border: rgba(226, 232, 240, 0.8);
+    --shadow-soft: 0 10px 25px -5px rgba(0, 0, 0, 0.05), 0 8px 10px -6px rgba(0, 0, 0, 0.02);
+    --shadow-elevated: 0 20px 35px -5px rgba(5, 150, 105, 0.15), 0 10px 15px -5px rgba(0, 0, 0, 0.04);
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    -webkit-tap-highlight-color: transparent;
+}
+
+body {
+    background-color: #f1f5f9;
+    color: #0f172a;
+    min-height: 100vh;
+    display: flex;
+    justify-content: center;
+}
+
+/* App Container Wrapper (Mobile-first app feel on all devices) */
+.app-viewport {
+    width: 100%;
+    max-width: 540px;
+    min-height: 100vh;
+    background: #ffffff;
+    position: relative;
+    box-shadow: 0 0 50px rgba(0, 0, 0, 0.08);
+    display: flex;
+    flex-direction: column;
+    overflow-x: hidden;
+}
+
+@media (min-width: 1024px) {
+    .app-viewport {
+        max-width: 1200px;
+        border-left: 1px solid #e2e8f0;
+        border-right: 1px solid #e2e8f0;
+    }
+}
+
+/* Typography styles */
+h1, h2, h3, h4, .font-heading {
+    font-family: 'Outfit', 'Plus Jakarta Sans', sans-serif;
+    letter-spacing: -0.02em;
+}
+
+/* Glassmorphic elements */
+.glass-header {
+    background: rgba(255, 255, 255, 0.92);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border-bottom: 1px solid rgba(226, 232, 240, 0.8);
+}
+
+.glass-pill {
+    background: rgba(255, 255, 255, 0.85);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.6);
+}
+
+.glass-dark {
+    background: rgba(15, 23, 42, 0.95);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+/* Custom scrollbars */
+::-webkit-scrollbar {
+    width: 4px;
+    height: 4px;
+}
+::-webkit-scrollbar-track {
+    background: transparent;
+}
+::-webkit-scrollbar-thumb {
+    background: #cbd5e1;
+    border-radius: 9999px;
+}
+.no-scrollbar::-webkit-scrollbar {
+    display: none;
+}
+.no-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+}
+
+/* Modern Card Glows & Animations */
+.action-card {
+    transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    border: 2px solid transparent;
+}
+.action-card:hover {
+    transform: translateY(-4px);
+}
+.action-card-emerald:hover {
+    border-color: #10b981;
+    box-shadow: 0 20px 30px -10px rgba(16, 185, 129, 0.25);
+}
+.action-card-indigo:hover {
+    border-color: #6366f1;
+    box-shadow: 0 20px 30px -10px rgba(99, 102, 241, 0.25);
+}
+
+/* Animations */
+@keyframes pulseRing {
+    0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7); }
+    70% { transform: scale(1); box-shadow: 0 0 0 12px rgba(16, 185, 129, 0); }
+    100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
+}
+.pulse-ring {
+    animation: pulseRing 2s infinite cubic-bezier(0.45, 0, 0.55, 1);
+}
+
+@keyframes slideUpDrawer {
+    from { transform: translateY(100%); opacity: 0; }
+    to { transform: translateY(0); opacity: 1; }
+}
+.animate-drawer {
+    animation: slideUpDrawer 0.32s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes fadeInScale {
+    from { transform: scale(0.96); opacity: 0; }
+    to { transform: scale(1); opacity: 1; }
+}
+.animate-scale {
+    animation: fadeInScale 0.24s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+/* Filter buttons */
+.filter-btn {
+    transition: all 0.2s ease;
+    white-space: nowrap;
+}
+.filter-btn.active {
+    background: #059669 !important;
+    color: #ffffff !important;
+    border-color: #059669 !important;
+    box-shadow: 0 4px 14px rgba(5, 150, 105, 0.3);
+}
+
+/* Map Markers and Overlays */
+.custom-user-pin {
+    background: transparent !important;
+    border: none !important;
+}
+
+.custom-toilet-icon {
+    background: transparent !important;
+    border: none !important;
+}
+
+.toilet-marker-pill {
+    transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+    filter: drop-shadow(0 6px 12px rgba(0, 0, 0, 0.2));
+}
+.toilet-marker-pill:hover {
+    transform: scale(1.15) translateY(-3px);
+}
+
+/* Laser QR Scanner */
+.scanner-box {
+    position: relative;
+    border-radius: 20px;
+    overflow: hidden;
+}
+@keyframes laserSweep {
+    0% { top: 10%; opacity: 0.2; }
+    50% { top: 85%; opacity: 1; }
+    100% { top: 10%; opacity: 0.2; }
+}
+.laser-line {
+    position: absolute;
+    width: 90%;
+    left: 5%;
+    height: 3px;
+    background: #10b981;
+    box-shadow: 0 0 12px #10b981, 0 0 24px #10b981;
+    border-radius: 9999px;
+    animation: laserSweep 2s infinite ease-in-out;
+}
+
+/* Bottom Nav bar active state */
+.nav-tab-item {
+    transition: all 0.2s ease;
+}
+.nav-tab-item.active {
+    color: #059669;
+}
+.nav-tab-item.active .nav-icon-wrapper {
+    background: #ecfdf5;
+    color: #059669;
+    transform: translateY(-2px);
+}
+
+/* Badge tags */
+.badge-clean {
+    background: linear-gradient(135deg, #ecfdf5 0%, #d1fae5 100%);
+    color: #065f46;
+    border: 1px solid #a7f3d0;
+}
+
+.badge-verified {
+    background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
+    color: #1e40af;
+    border: 1px solid #bfdbfe;
+}
+
+/* Critical utility overrides: hidden elements MUST be completely hidden and not intercept pointer events */
+.hidden,
+[hidden],
+.app-modal.hidden,
+.app-view.hidden,
+.role-nav-bar.hidden {
+    display: none !important;
+    pointer-events: none !important;
+    visibility: hidden !important;
+    opacity: 0 !important;
+    width: 0 !important;
+    height: 0 !important;
+    position: absolute !important;
+    top: -9999px !important;
+    left: -9999px !important;
+    z-index: -9999 !important;
+}
+
+/* Modal Overlay & Stacking - Only active when NOT hidden */
+.app-modal {
+    display: none;
+    pointer-events: none;
+}
+
+.app-modal:not(.hidden) {
+    display: flex !important;
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    bottom: 0 !important;
+    z-index: 99999 !important;
+    pointer-events: auto !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    width: 100% !important;
+    height: 100% !important;
+}

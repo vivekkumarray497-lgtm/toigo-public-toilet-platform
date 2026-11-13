@@ -35,6 +35,11 @@ jobs:
         run: chmod +x android/gradlew
 
       - name: Build Signed Release APK
+        env:
+          KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD || 'toigo@2026' }}
+          KEY_ALIAS: ${{ secrets.KEY_ALIAS || 'toigo-release' }}
+          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD || 'toigo@2026' }}
+          PROD_BACKEND_URL: ${{ secrets.PROD_BACKEND_URL || 'https://toigo-sanitation-app.onrender.com' }}
         run: |
           cd android
           ./gradlew assembleRelease --stacktrace
@@ -62,30 +67,38 @@ jobs:
         uses: softprops/action-gh-release@v2
         if: startsWith(github.ref, 'refs/tags/') || github.ref == 'refs/heads/main'
         with:
-          tag_name: ${{ startsWith(github.ref, 'refs/tags/') && github.ref_name || 'v1.0.0' }}
-          name: "Toigo Mobile App v1.0.0 (Official Signed Release)"
+          tag_name: ${{ startsWith(github.ref, 'refs/tags/') && github.ref_name || 'v1.0.1' }}
+          name: "Toigo Mobile App v1.0.1 (Official Signed Release)"
           body: |
             ## 🚻 Toigo – Public Toilet Availability & Hygiene Reporting Platform
             
             ### 📱 Direct APK Download for Android Phone:
             Download and install directly on your Android phone without needing a computer:
             
-            👉 **[Download Toigo.apk](https://github.com/vivekkumarray497-lgtm/toigo-public-toilet-platform/releases/download/v1.0.0/Toigo.apk)**
+            👉 **[Download Toigo.apk](https://github.com/vivekkumarray497-lgtm/toigo-public-toilet-platform/releases/download/v1.0.1/Toigo.apk)**
             
             ---
             
-            ### 🚀 Quick Installation Guide:
+            ### 🚀 Quick Installation & Upgrade Guide:
             1. Open this GitHub Release in **Google Chrome** on your Android phone.
             2. Tap **`Toigo.apk`** to download.
-            3. Tap **Open** → **Install** when download completes.
+            3. Tap **Open** → **Install** (or **Update**) when download completes.
             4. If Android displays *"For security, your phone is not allowed to install unknown apps from this source"*, tap **Settings** and turn ON **Allow from this source**.
             5. Return and tap **Install**. Launch **Toigo**!
             
             ---
             
+            ### 🛠️ What's New in v1.0.1:
+            - **Zero "Not Found" Screen Guarantee:** Application frontend is bundled locally in APK assets via `WebViewAssetLoader`, launching the full TOIGO home page instantly without remote network dependency or cold-start wait.
+            - **Automatic 404 Recovery:** If a remote server returns HTTP 404, the app catches it and immediately displays the full interactive TOIGO platform with local cache.
+            - **Dynamic Backend API Client:** Connects seamlessly to production cloud backend with built-in runtime switcher in native bridge.
+            - **Upgraded Build Version:** `versionCode: 2`, `versionName: 1.0.1` for seamless in-place mobile upgrades.
+            
+            ---
+            
             ### 🔐 Cryptographic Signing & Security Verification:
             - **Package:** `com.toigo.app`
-            - **Version:** `1.0.0` (VersionCode: 1)
+            - **Version:** `1.0.1` (VersionCode: 2)
             - **Signature Scheme:** APK Signature Scheme v2 (Signed with RSA 2048)
             - **Release SHA-1:** `E0:B9:BD:C6:B7:06:18:FB:11:86:B1:53:49:EF:21:F0:BE:2A:D5:D8`
             - **Release SHA-256:** `AE:B5:4A:EE:66:BE:62:B1:BA:0E:0C:F3:B0:3E:DC:72:CE:28:95:3B:FD:AD:AE:29:49:F1:4E:AC:6F:48:DF:F0`
