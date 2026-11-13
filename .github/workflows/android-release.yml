@@ -1,0 +1,98 @@
+name: Build and Release Toigo Android APK
+
+on:
+  push:
+    tags:
+      - 'v*'
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build-and-release:
+    name: Build Signed Android Release APK
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Source Code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Java Development Kit (JDK 21)
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '21'
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v3
+
+      - name: Make Gradle Wrapper Executable
+        run: chmod +x android/gradlew
+
+      - name: Build Signed Release APK
+        run: |
+          cd android
+          ./gradlew assembleRelease --stacktrace
+
+      - name: Locate and Prepare Toigo.apk
+        run: |
+          APK_FILE=$(find . -name "app-release.apk" -o -name "*release.apk" | grep -v "unsigned" | head -n 1)
+          if [ -z "$APK_FILE" ]; then
+            echo "Error: Signed release APK not found!"
+            find . -name "*.apk"
+            exit 1
+          fi
+          echo "Found signed release APK: $APK_FILE"
+          cp "$APK_FILE" ./Toigo.apk
+          ls -lh ./Toigo.apk
+
+      - name: Upload Build Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: Toigo-Release-APK
+          path: Toigo.apk
+          retention-days: 30
+
+      - name: Publish Official GitHub Release
+        uses: softprops/action-gh-release@v2
+        if: startsWith(github.ref, 'refs/tags/') || github.ref == 'refs/heads/main'
+        with:
+          tag_name: ${{ startsWith(github.ref, 'refs/tags/') && github.ref_name || 'v1.0.0' }}
+          name: "Toigo Mobile App v1.0.0 (Official Signed Release)"
+          body: |
+            ## 🚻 Toigo – Public Toilet Availability & Hygiene Reporting Platform
+            
+            ### 📱 Direct APK Download for Android Phone:
+            Download and install directly on your Android phone without needing a computer:
+            
+            👉 **[Download Toigo.apk](https://github.com/vivekkumarray497-lgtm/toigo-public-toilet-platform/releases/download/v1.0.0/Toigo.apk)**
+            
+            ---
+            
+            ### 🚀 Quick Installation Guide:
+            1. Open this GitHub Release in **Google Chrome** on your Android phone.
+            2. Tap **`Toigo.apk`** to download.
+            3. Tap **Open** → **Install** when download completes.
+            4. If Android displays *"For security, your phone is not allowed to install unknown apps from this source"*, tap **Settings** and turn ON **Allow from this source**.
+            5. Return and tap **Install**. Launch **Toigo**!
+            
+            ---
+            
+            ### 🔐 Cryptographic Signing & Security Verification:
+            - **Package:** `com.toigo.app`
+            - **Version:** `1.0.0` (VersionCode: 1)
+            - **Signature Scheme:** APK Signature Scheme v2 (Signed with RSA 2048)
+            - **Release SHA-1:** `E0:B9:BD:C6:B7:06:18:FB:11:86:B1:53:49:EF:21:F0:BE:2A:D5:D8`
+            - **Release SHA-256:** `AE:B5:4A:EE:66:BE:62:B1:BA:0E:0C:F3:B0:3E:DC:72:CE:28:95:3B:FD:AD:AE:29:49:F1:4E:AC:6F:48:DF:F0`
+            - **Firebase Configuration:** Release certificate registered in `google-services.json`
+          files: |
+            Toigo.apk
+          draft: false
+          prerelease: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

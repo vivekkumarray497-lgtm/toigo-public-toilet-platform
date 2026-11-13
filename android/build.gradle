@@ -5,7 +5,9 @@ plugins {
 }
 
 allprojects {
-    buildDir = new File(System.getProperty("java.io.tmpdir"), "toigo-build/${project.name}")
+    if (System.getProperty("os.name").toLowerCase().contains("windows")) {
+        buildDir = new File(System.getProperty("java.io.tmpdir"), "toigo-build/${project.name}")
+    }
 }
 
 tasks.register('clean', Delete) {

@@ -3,6 +3,7 @@ package com.toigo.app;
 import android.Manifest;
 import android.annotation.SuppressLint;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.net.Uri;
 import android.os.Bundle;
@@ -58,8 +59,17 @@ public class MainActivity extends AppCompatActivity {
     private String mVerificationId;
     private PhoneAuthProvider.ForceResendingToken mResendToken;
 
-    // Backend Web App URL (Configured per build type in build.gradle)
-    private static final String APP_URL = BuildConfig.BACKEND_URL;
+    private SharedPreferences getPrefs() {
+        return getSharedPreferences("toigo_prefs", MODE_PRIVATE);
+    }
+
+    private String getAppUrl() {
+        String saved = getPrefs().getString("server_url", null);
+        if (saved != null && !saved.trim().isEmpty()) {
+            return saved.trim();
+        }
+        return BuildConfig.BACKEND_URL;
+    }
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -84,7 +94,7 @@ public class MainActivity extends AppCompatActivity {
         swipeRefreshLayout.setOnRefreshListener(() -> webView.reload());
 
         // Load the TOIGO Web Application
-        webView.loadUrl(APP_URL);
+        webView.loadUrl(getAppUrl());
     }
 
     @SuppressLint("SetJavaScriptEnabled")
@@ -119,8 +129,31 @@ public class MainActivity extends AppCompatActivity {
         }
 
         @JavascriptInterface
+        public String getServerUrl() {
+            return getAppUrl();
+        }
+
+        @JavascriptInterface
+        public void setServerUrl(String newUrl) {
+            if (newUrl != null && !newUrl.trim().isEmpty()) {
+                String cleanUrl = newUrl.trim();
+                if (!cleanUrl.startsWith("http://") && !cleanUrl.startsWith("https://")) {
+                    cleanUrl = "https://" + cleanUrl;
+                }
+                final String target = cleanUrl;
+                getPrefs().edit().putString("server_url", target).apply();
+                runOnUiThread(() -> {
+                    Toast.makeText(MainActivity.this, "Server URL updated to: " + target, Toast.LENGTH_SHORT).show();
+                    webView.loadUrl(target);
+                });
+            }
+        }
+
+        @JavascriptInterface
         public String getShaFingerprint() {
-            return "SHA-1: B5:E9:67:87:BB:3C:9D:E8:8D:14:66:DE:A9:F0:26:D4:3B:81:F4:0A | SHA-256: 9F:6E:09:68:3B:45:DB:08:E7:F6:76:43:74:19:88:D1:19:0F:AA:03:D1:93:B4:8D:AD:8C:FF:24:91:26:4C:CF";
+            return "Debug SHA-1: B5:E9:67:87:BB:3C:9D:E8:8D:14:66:DE:A9:F0:26:D4:3B:81:F4:0A\n" +
+                   "Release SHA-1: E0:B9:BD:C6:B7:06:18:FB:11:86:B1:53:49:EF:21:F0:BE:2A:D5:D8\n" +
+                   "Release SHA-256: AE:B5:4A:EE:66:BE:62:B1:BA:0E:0C:F3:B0:3E:DC:72:CE:28:95:3B:FD:AD:AE:29:49:F1:4E:AC:6F:48:DF:F0";
         }
 
         @JavascriptInterface
@@ -372,11 +405,38 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void showOfflineErrorPage() {
-        String html = "<html><body style='background-color:#0f172a;color:#ffffff;display:flex;flex-direction:column;align-items:center;justify-content:center;height:100vh;font-family:sans-serif;padding:20px;text-align:center;'>"
-                + "<h2 style='color:#10b981;font-size:24px;margin-bottom:8px;'>TOIGO Connection Error</h2>"
-                + "<p style='color:#94a3b8;font-size:14px;margin-bottom:24px;'>Unable to connect to the TOIGO backend server. Please verify your backend server is running on port 5000 and try again.</p>"
-                + "<button onclick='window.location.reload()' style='background:#059669;color:#ffffff;border:none;padding:12px 24px;border-radius:12px;font-size:14px;font-weight:bold;'>Retry Connection</button>"
-                + "</body></html>";
+        String currentUrl = getAppUrl();
+        String html = "<!DOCTYPE html><html><head><meta name='viewport' content='width=device-width, initial-scale=1.0'>"
+                + "<style>"
+                + "body{background:#0f172a;color:#f8fafc;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100vh;margin:0;padding:20px;box-sizing:border-box;text-align:center;}"
+                + ".card{background:#1e293b;border:1px solid #334155;border-radius:20px;padding:24px;max-width:380px;width:100%;box-shadow:0 20px 25px -5px rgba(0,0,0,0.5);}"
+                + ".badge{display:inline-block;background:rgba(16,185,129,0.15);color:#10b981;font-size:11px;font-weight:700;padding:4px 10px;border-radius:999px;margin-bottom:12px;letter-spacing:0.5px;}"
+                + "h2{color:#f8fafc;margin:0 0 8px 0;font-size:20px;font-weight:800;}"
+                + "p{color:#94a3b8;font-size:13px;line-height:1.5;margin:0 0 16px 0;}"
+                + ".url-display{background:#0f172a;border:1px dashed #475569;border-radius:10px;padding:10px;font-family:monospace;font-size:12px;color:#38bdf8;word-break:break-all;margin-bottom:16px;}"
+                + ".btn-primary{width:100%;background:#10b981;color:#ffffff;border:none;padding:14px;border-radius:12px;font-size:14px;font-weight:700;margin-bottom:16px;cursor:pointer;box-shadow:0 4px 12px rgba(16,185,129,0.3);}"
+                + ".divider{display:flex;align-items:center;margin:16px 0;color:#64748b;font-size:11px;font-weight:600;text-transform:uppercase;}"
+                + ".divider::before,.divider::after{content:'';flex:1;border-bottom:1px solid #334155;}"
+                + ".divider::before{margin-right:8px;}.divider::after{margin-left:8px;}"
+                + "input{width:100%;box-sizing:border-box;padding:12px 14px;border-radius:10px;border:1px solid #475569;background:#0f172a;color:#ffffff;font-size:13px;margin-bottom:10px;outline:none;}"
+                + "input:focus{border-color:#10b981;}"
+                + ".btn-secondary{width:100%;background:#334155;color:#e2e8f0;border:none;padding:12px;border-radius:10px;font-size:13px;font-weight:600;cursor:pointer;}"
+                + "</style></head><body><div class='card'>"
+                + "<div class='badge'>SANISAFE NETWORK</div>"
+                + "<h2>Connection Notice</h2>"
+                + "<p>Unable to connect to the TOIGO cloud backend server:</p>"
+                + "<div class='url-display'>" + currentUrl + "</div>"
+                + "<button class='btn-primary' onclick='window.location.reload()'>🔄 Retry Connection</button>"
+                + "<div class='divider'>Change Server URL</div>"
+                + "<input id='urlInput' placeholder='https://your-service.onrender.com' value='" + currentUrl + "'>"
+                + "<button class='btn-secondary' onclick='updateUrl()'>⚙️ Save & Switch Server</button>"
+                + "</div><script>"
+                + "function updateUrl(){"
+                + "  var val = document.getElementById('urlInput').value;"
+                + "  if(val && window.ToigoNativeBridge){ window.ToigoNativeBridge.setServerUrl(val); }"
+                + "  else if(val){ window.location.href = val; }"
+                + "}"
+                + "</script></body></html>";
         webView.loadDataWithBaseURL(null, html, "text/html", "UTF-8", null);
     }
 

@@ -21,14 +21,27 @@ android {
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
     }
 
+    signingConfigs {
+        release {
+            storeFile file("release.keystore")
+            storePassword "toigo@2026"
+            keyAlias "toigo-release"
+            keyPassword "toigo@2026"
+            v1SigningEnabled true
+            v2SigningEnabled true
+        }
+    }
+
     buildTypes {
         debug {
             buildConfigField "String", "BACKEND_URL", "\"http://10.0.2.2:5000\""
         }
         release {
+            signingConfig signingConfigs.release
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
-            buildConfigField "String", "BACKEND_URL", "\"https://toigo.onrender.com\""
+            def prodUrl = project.findProperty("PROD_BACKEND_URL") ?: System.getenv("PROD_BACKEND_URL") ?: "https://toigo-sanitation-app.onrender.com"
+            buildConfigField "String", "BACKEND_URL", "\"${prodUrl}\""
         }
     }
     compileOptions {

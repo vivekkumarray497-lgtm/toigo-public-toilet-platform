@@ -14,11 +14,19 @@
       },
       "oauth_client": [
         {
-          "client_id": "103948572019-androidclient.apps.googleusercontent.com",
+          "client_id": "103948572019-androiddebug.apps.googleusercontent.com",
           "client_type": 1,
           "android_info": {
             "package_name": "com.toigo.app",
             "certificate_hash": "b5e96787bb3c9de88d1466dea9f026d43b81f40a"
+          }
+        },
+        {
+          "client_id": "103948572019-androidrelease.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.toigo.app",
+            "certificate_hash": "e0b9bdc6b70618fb1186b15349ef21f0be2ad5d8"
           }
         },
         {
