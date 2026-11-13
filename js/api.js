@@ -5,13 +5,16 @@
 
 class ToigoApiClient {
     constructor() {
+        this.baseUrl = this.detectBaseUrl();
+    }
+
+    detectBaseUrl() {
         // 1. If running inside Android Native App Bridge, read configured backend
         if (typeof window !== 'undefined' && window.ToigoNativeBridge && typeof window.ToigoNativeBridge.getServerUrl === 'function') {
             try {
                 const nativeBackend = window.ToigoNativeBridge.getServerUrl();
                 if (nativeBackend && !nativeBackend.includes('localhost') && !nativeBackend.includes('10.0.2.2')) {
-                    this.baseUrl = `${nativeBackend.replace(/\/$/, '')}/api`;
-                    return;
+                    return `${nativeBackend.replace(/\/$/, '')}/api`;
                 }
             } catch (e) {
                 console.warn('Native bridge backend query exception:', e);
@@ -20,19 +23,46 @@ class ToigoApiClient {
 
         // 2. If injected global native backend exists
         if (typeof window !== 'undefined' && window.__TOIGO_NATIVE_BACKEND__) {
-            this.baseUrl = `${window.__TOIGO_NATIVE_BACKEND__.replace(/\/$/, '')}/api`;
-            return;
+            return `${window.__TOIGO_NATIVE_BACKEND__.replace(/\/$/, '')}/api`;
         }
 
-        // 3. Environment detection for web & local testing
-        if (window.location.protocol === 'file:' || window.location.hostname === 'appassets.androidplatform.net') {
-            this.baseUrl = 'https://toigo-sanitation-app.onrender.com/api';
-        } else if (window.location.origin.includes(':5000')) {
-            this.baseUrl = `${window.location.origin}/api`;
-        } else if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
-            this.baseUrl = `http://${window.location.hostname}:5000/api`;
-        } else {
-            this.baseUrl = '/api';
+        // 3. Runtime stored server URL override
+        try {
+            const savedServer = localStorage.getItem('TOIGO_SERVER_URL');
+            if (savedServer && (savedServer.startsWith('http://') || savedServer.startsWith('https://'))) {
+                return `${savedServer.replace(/\/$/, '')}/api`;
+            }
+        } catch (e) {}
+
+        // 4. Environment detection for local development testing
+        if (typeof window !== 'undefined' && window.location) {
+            if (window.location.origin && window.location.origin.includes(':5000')) {
+                return `${window.location.origin}/api`;
+            } else if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+                return `http://${window.location.hostname}:5000/api`;
+            }
+        }
+
+        // 5. Default production backend API URL (Used on Android app & GitHub Pages)
+        return 'https://toigo-sanitation-app.onrender.com/api';
+    }
+
+    getBaseUrl() {
+        return this.baseUrl || this.detectBaseUrl();
+    }
+
+    setBaseUrl(newUrl) {
+        if (!newUrl) return;
+        let clean = newUrl.trim();
+        if (!clean.startsWith('http://') && !clean.startsWith('https://')) {
+            clean = 'https://' + clean;
+        }
+        this.baseUrl = clean.endsWith('/api') ? clean : `${clean.replace(/\/$/, '')}/api`;
+        try {
+            localStorage.setItem('TOIGO_SERVER_URL', clean.replace(/\/api$/, ''));
+        } catch (e) {}
+        if (window.ToigoNativeBridge && window.ToigoNativeBridge.setServerUrl) {
+            try { window.ToigoNativeBridge.setServerUrl(clean.replace(/\/api$/, '')); } catch (e) {}
         }
     }
 
@@ -62,7 +92,8 @@ class ToigoApiClient {
     }
 
     async request(endpoint, options = {}) {
-        const url = endpoint.startsWith('http') ? endpoint : `${this.baseUrl}${endpoint.startsWith('/') ? endpoint : '/' + endpoint}`;
+        const base = this.getBaseUrl();
+        const url = endpoint.startsWith('http') ? endpoint : `${base}${endpoint.startsWith('/') ? endpoint : '/' + endpoint}`;
         const config = {
             ...options,
             headers: this.getHeaders(options.headers)
@@ -73,8 +104,15 @@ class ToigoApiClient {
             const data = await response.json().catch(() => ({}));
 
             if (!response.ok) {
-                // If token expired or unauthorized, clean local token
-                if (response.status === 401) {
+                // Do NOT trigger session expired on login/registration/auth attempts
+                const isAuthEndpoint = endpoint.includes('/auth/login') ||
+                                       endpoint.includes('/auth/register') ||
+                                       endpoint.includes('/auth/mobile-otp') ||
+                                       endpoint.includes('/auth/verify-email') ||
+                                       endpoint.includes('/auth/forgot-password') ||
+                                       endpoint.includes('/auth/reset-password');
+
+                if (response.status === 401 && !isAuthEndpoint) {
                     this.setToken(null);
                     if (window.auth && window.auth.isLoggedIn()) {
                         window.auth.handleSessionExpired();
@@ -95,6 +133,15 @@ class ToigoApiClient {
                 throw netErr;
             }
             throw error;
+        }
+    }
+
+    async checkHealth() {
+        try {
+            const res = await this.get('/health');
+            return { online: res && res.status === 'OK', data: res };
+        } catch (e) {
+            return { online: false, error: e.message };
         }
     }
 
@@ -134,6 +181,7 @@ class ToigoApiClient {
 }
 
 window.api = new ToigoApiClient();
+window.apiClient = window.api;
 
 /**
  * Global HTML Sanitizer to prevent XSS vulnerability across frontend views

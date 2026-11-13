@@ -911,7 +911,7 @@ router.post('/forgot-password', otpLimiter, async (req, res) => {
         db.save();
 
         if (user.email) {
-            sendVerificationEmail(user.email, otp, user.name).catch(() => {});
+            sendVerificationEmail(user.email, otp, user.name).catch(() => { });
         }
 
         const isTestAccount = (user.email && user.email.includes('test')) || (user.mobile && ['9876543210', '8888888888', '9999999999', '9899001122'].includes(user.mobile));

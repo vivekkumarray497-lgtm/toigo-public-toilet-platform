@@ -18,8 +18,27 @@ function decodeJwtPayload(token) {
     }
 }
 
-const API_BASE = 'http://localhost:5000/api';
+const API_BASE = 'http://127.0.0.1:5000/api';
 const DB_PATH = path.join(__dirname, '../../server/data/db.json');
+
+async function ensureServer() {
+    return new Promise((resolve) => {
+        const probe = http.request({ hostname: '127.0.0.1', port: 5000, path: '/api/health', method: 'GET', timeout: 800 }, (res) => {
+            resolve(true);
+        });
+        probe.on('error', () => {
+            try {
+                process.env.PORT = '5000';
+                require('../../server/server.js');
+                setTimeout(() => resolve(true), 1500);
+            } catch (err) {
+                console.error('Failed to bootstrap server in test:', err);
+                resolve(false);
+            }
+        });
+        probe.end();
+    });
+}
 
 function request(method, urlPath, body = null, token = null) {
     return new Promise((resolve, reject) => {
@@ -36,7 +55,7 @@ function request(method, urlPath, body = null, token = null) {
         }
 
         const req = http.request({
-            hostname: 'localhost',
+            hostname: '127.0.0.1',
             port: 5000,
             path: '/api' + urlPath,
             method,
@@ -62,6 +81,7 @@ function request(method, urlPath, body = null, token = null) {
 }
 
 async function runAll15Scenarios() {
+    await ensureServer();
     console.log('========================================================================');
     console.log('🚀 RUNNING COMPREHENSIVE 15-SCENARIO AUTHENTICATION & DATABASE TEST SUITE');
     console.log('========================================================================\n');
@@ -290,6 +310,8 @@ async function runAll15Scenarios() {
 
     if (failed > 0) {
         process.exit(1);
+    } else {
+        process.exit(0);
     }
 }
 

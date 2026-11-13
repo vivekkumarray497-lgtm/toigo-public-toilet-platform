@@ -1,6 +1,25 @@
 const http = require('http');
 const crypto = require('crypto');
 
+async function ensureServer() {
+    return new Promise((resolve) => {
+        const probe = http.request({ hostname: '127.0.0.1', port: 5000, path: '/api/health', method: 'GET', timeout: 800 }, (res) => {
+            resolve(true);
+        });
+        probe.on('error', () => {
+            try {
+                process.env.PORT = '5000';
+                require('../../server/server.js');
+                setTimeout(() => resolve(true), 1500);
+            } catch (err) {
+                console.error('Failed to bootstrap server in test:', err);
+                resolve(false);
+            }
+        });
+        probe.end();
+    });
+}
+
 function request(method, path, body = null, token = null) {
     return new Promise((resolve, reject) => {
         const payload = body ? JSON.stringify(body) : null;
@@ -15,7 +34,7 @@ function request(method, path, body = null, token = null) {
         }
 
         const req = http.request({
-            hostname: 'localhost',
+            hostname: '127.0.0.1',
             port: 5000,
             path: '/api' + path,
             method,
@@ -41,6 +60,7 @@ function request(method, path, body = null, token = null) {
 }
 
 async function runApiTests() {
+    await ensureServer();
     console.log('🧪 Testing TOIGO Backend Core & Security API Endpoints...\n');
 
     // 1. Health Check
@@ -199,7 +219,9 @@ async function runApiTests() {
 module.exports = { runApiTests };
 
 if (require.main === module) {
-    runApiTests().catch(err => {
+    runApiTests().then(() => {
+        process.exit(0);
+    }).catch(err => {
         console.error('API Test failed:', err);
         process.exit(1);
     });

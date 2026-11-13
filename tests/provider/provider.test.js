@@ -1,10 +1,29 @@
 const http = require('http');
 
+async function ensureServer() {
+    return new Promise((resolve) => {
+        const probe = http.request({ hostname: '127.0.0.1', port: 5000, path: '/api/health', method: 'GET', timeout: 800 }, (res) => {
+            resolve(true);
+        });
+        probe.on('error', () => {
+            try {
+                process.env.PORT = '5000';
+                require('../../server/server.js');
+                setTimeout(() => resolve(true), 1500);
+            } catch (err) {
+                console.error('Failed to bootstrap server in test:', err);
+                resolve(false);
+            }
+        });
+        probe.end();
+    });
+}
+
 function makeRequest(method, path, body = null, headers = {}) {
     return new Promise((resolve, reject) => {
         const postData = body ? JSON.stringify(body) : null;
         const options = {
-            hostname: 'localhost',
+            hostname: '127.0.0.1',
             port: 5000,
             path: '/api' + path,
             method: method,
@@ -39,6 +58,7 @@ function makeRequest(method, path, body = null, headers = {}) {
 }
 
 async function runProviderTests() {
+    await ensureServer();
     console.log('🧪 Running Comprehensive Provider / Host Module Integration Tests...\n');
 
     // 1. Host 1 Login (Provider 1)
@@ -297,7 +317,9 @@ async function runProviderTests() {
 module.exports = { runProviderTests };
 
 if (require.main === module) {
-    runProviderTests().catch(err => {
+    runProviderTests().then(() => {
+        process.exit(0);
+    }).catch(err => {
         console.error('Test failed with error:', err);
         process.exit(1);
     });

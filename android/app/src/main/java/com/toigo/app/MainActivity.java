@@ -71,8 +71,7 @@ public class MainActivity extends AppCompatActivity {
         String saved = getPrefs().getString("server_url", null);
         if (saved != null && !saved.trim().isEmpty()) {
             String clean = saved.trim();
-            // Automatically purge invalid or broken legacy URLs
-            if (!clean.contains("localhost") && !clean.contains("10.0.2.2") && !clean.contains("toigo.onrender.com")) {
+            if (!clean.contains("localhost") && !clean.contains("10.0.2.2")) {
                 return clean;
             } else {
                 getPrefs().edit().remove("server_url").apply();
@@ -157,7 +156,13 @@ public class MainActivity extends AppCompatActivity {
                 getPrefs().edit().putString("server_url", target).apply();
                 runOnUiThread(() -> {
                     Toast.makeText(MainActivity.this, "Backend API set to: " + target, Toast.LENGTH_SHORT).show();
-                    webView.evaluateJavascript("if (window.apiClient) { window.apiClient.baseUrl = '" + target.replaceAll("/$", "") + "/api'; }", null);
+                    String js = "(function() { " +
+                            "var base = '" + target.replaceAll("/$", "") + "/api'; " +
+                            "if (window.api) window.api.baseUrl = base; " +
+                            "if (window.apiClient) window.apiClient.baseUrl = base; " +
+                            "window.__TOIGO_NATIVE_BACKEND__ = '" + target.replaceAll("/$", "") + "'; " +
+                            "})();";
+                    webView.evaluateJavascript(js, null);
                 });
             }
         }

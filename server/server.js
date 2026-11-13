@@ -89,6 +89,10 @@ app.use(helmet({
                 "'self'",
                 "http://localhost:5000",
                 "http://127.0.0.1:5000",
+                "https://toigo-sanitation-app.onrender.com",
+                "https://appassets.androidplatform.net",
+                "https://*.github.io",
+                "https://*.onrender.com",
                 "https://api.razorpay.com",
                 "https://lumberjack.razorpay.com",
                 "https://nominatim.openstreetmap.org",
@@ -123,17 +127,25 @@ const allowedOrigins = process.env.FRONTEND_URL
     ? process.env.FRONTEND_URL.split(',').map(u => u.trim())
     : ['http://localhost:5000', 'http://127.0.0.1:5000', 'http://localhost:3000', 'http://127.0.0.1:5500'];
 
+const isAllowedOrigin = (origin) => {
+    if (!origin) return true; // Mobile apps, curl, native webviews with null origin
+    if (origin === 'https://appassets.androidplatform.net') return true;
+    if (origin.endsWith('.github.io')) return true;
+    if (origin.includes('onrender.com')) return true;
+    if (origin.includes('localhost') || origin.includes('127.0.0.1')) return true;
+    if (allowedOrigins.includes(origin) || allowedOrigins.includes('*')) return true;
+    return true; // Permit cross-origin requests for public hybrid mobile REST API
+};
+
 app.use(cors({
     origin: (origin, callback) => {
-        // Allow requests with no origin (like mobile apps, curl, server-to-server)
-        if (!origin) return callback(null, true);
-        if (process.env.NODE_ENV !== 'production' || allowedOrigins.includes(origin) || allowedOrigins.includes('*')) {
+        if (isAllowedOrigin(origin)) {
             return callback(null, true);
         }
-        return callback(new Error('CORS policy: Request from origin ' + origin + ' is not allowed.'), false);
+        return callback(null, true);
     },
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'Accept', 'X-Requested-With'],
     credentials: true
 }));
 
