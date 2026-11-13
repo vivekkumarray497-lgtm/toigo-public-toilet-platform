@@ -4,10 +4,31 @@
   "description": "TOIGO - Public & Private Toilet Finder, Booking, Host Earning and Admin Platform",
   "main": "index.html",
   "scripts": {
-    "start": "npx serve . -l 3000",
-    "dev": "npx serve . -l 3000"
+    "start": "node server/server.js",
+    "dev": "node server/server.js",
+    "server": "node server/server.js",
+    "seed": "node server/scripts/seed.js",
+    "test": "node tests/syntax-check.js && node tests/api/api.test.js && node tests/api/mobile-otp.test.js && node tests/provider/provider.test.js",
+    "test:syntax": "node tests/syntax-check.js",
+    "test:api": "node tests/api/api.test.js",
+    "test:otp": "node tests/api/mobile-otp.test.js",
+    "test:provider": "node tests/provider/provider.test.js"
   },
   "keywords": ["toigo", "toilet-finder", "sanitation", "smart-city", "pay-and-use"],
   "author": "TOIGO Founder",
-  "license": "MIT"
+  "license": "MIT",
+  "dependencies": {
+    "bcryptjs": "^3.0.3",
+    "cors": "^2.8.6",
+    "dotenv": "^18.0.5",
+    "express": "^5.2.1",
+    "express-rate-limit": "^8.7.0",
+    "google-auth-library": "^11.1.0",
+    "helmet": "^8.3.0",
+    "jsonwebtoken": "^9.0.3",
+    "mongoose": "^9.10.4",
+    "multer": "^2.4.0",
+    "nodemailer": "^10.0.14",
+    "razorpay": "^2.9.8"
+  }
 }

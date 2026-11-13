@@ -1,0 +1,4 @@
+<resources>
+    <string name="app_name">TOIGO</string>
+    <string name="default_web_url">http://10.0.2.2:5000</string>
+</resources>

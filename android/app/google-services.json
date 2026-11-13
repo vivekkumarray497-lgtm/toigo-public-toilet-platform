@@ -1,0 +1,43 @@
+{
+  "project_info": {
+    "project_number": "103948572019",
+    "project_id": "toigo-sanitation-app",
+    "storage_bucket": "toigo-sanitation-app.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:103948572019:android:a1b2c3d4e5f67890",
+        "android_client_info": {
+          "package_name": "com.toigo.app"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "103948572019-androidclient.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.toigo.app",
+            "certificate_hash": "b5e96787bb3c9de88d1466dea9f026d43b81f40a"
+          }
+        },
+        {
+          "client_id": "103948572019-webclient.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDummyKeyForCollegeDemoReplaceWithRealOne"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
+

@@ -9,32 +9,40 @@ class MapController {
         this.userMarker = null;
         this.routeLayer = null;
         this.currentTileLayer = null;
-        this.mapType = 'google_streets'; // 'google_streets' | 'google_satellite' | 'osm'
+        this.mapType = 'osm'; // 'osm' | 'satellite'
         this.userCoords = { lat: 28.6315, lng: 77.2167 };
         this.isLocating = false;
     }
 
     init(containerId = 'map-view') {
-        if (this.map) {
-            this.map.invalidateSize();
-            return;
-        }
-
         const mapEl = document.getElementById(containerId);
         if (!mapEl) return;
 
-        this.map = L.map(containerId, {
-            zoomControl: false,
-            attributionControl: false
-        }).setView([this.userCoords.lat, this.userCoords.lng], 16);
+        if (this.map) {
+            setTimeout(() => this.map.invalidateSize(), 100);
+            return;
+        }
 
-        this.setMapType('google_streets');
+        try {
+            this.map = L.map(containerId, {
+                zoomControl: false,
+                attributionControl: false
+            }).setView([this.userCoords.lat, this.userCoords.lng], 15);
 
-        this.markersLayer = L.layerGroup().addTo(this.map);
-        this.routeLayer = L.layerGroup().addTo(this.map);
+            this.setMapType('osm');
 
-        this.updateUserMarker();
-        this.renderApprovedMarkers();
+            this.markersLayer = L.layerGroup().addTo(this.map);
+            this.routeLayer = L.layerGroup().addTo(this.map);
+
+            this.updateUserMarker();
+            this.renderApprovedMarkers();
+
+            setTimeout(() => {
+                if (this.map) this.map.invalidateSize();
+            }, 200);
+        } catch (e) {
+            console.warn('Map initialization note:', e);
+        }
     }
 
     setMapType(type) {
@@ -43,24 +51,40 @@ class MapController {
             this.map.removeLayer(this.currentTileLayer);
         }
 
+        // Google Maps HD Street Map (m = standard roads, landmarks, POIs)
         let tileUrl = 'https://{s}.google.com/vt/lyrs=m&x={x}&y={y}&z={z}';
-        if (type === 'google_satellite') {
-            tileUrl = 'https://{s}.google.com/vt/lyrs=s,h&x={x}&y={y}&z={z}';
+        let options = {
+            maxZoom: 21,
+            subdomains: ['mt0', 'mt1', 'mt2', 'mt3']
+        };
+
+        if (type === 'satellite' || type === 'google_satellite') {
+            // Google Maps Hybrid Satellite (y = high-res satellite + road overlays & city names)
+            tileUrl = 'https://{s}.google.com/vt/lyrs=y&x={x}&y={y}&z={z}';
+            options = {
+                maxZoom: 21,
+                subdomains: ['mt0', 'mt1', 'mt2', 'mt3']
+            };
+        } else if (type === 'terrain') {
+            tileUrl = 'https://{s}.google.com/vt/lyrs=p&x={x}&y={y}&z={z}';
+            options = {
+                maxZoom: 21,
+                subdomains: ['mt0', 'mt1', 'mt2', 'mt3']
+            };
         }
 
-        this.currentTileLayer = L.tileLayer(tileUrl, {
-            maxZoom: 20,
-            subdomains: ['mt0', 'mt1', 'mt2', 'mt3']
-        }).addTo(this.map);
+        if (this.map) {
+            this.currentTileLayer = L.tileLayer(tileUrl, options).addTo(this.map);
+        }
     }
 
     toggleSatellite() {
-        if (this.mapType === 'google_streets') {
-            this.setMapType('google_satellite');
-            window.app.showToast('Switched to Google Satellite View 🛰️', 'info');
-        } else {
+        if (this.mapType === 'satellite' || this.mapType === 'google_satellite') {
             this.setMapType('google_streets');
-            window.app.showToast('Switched to Google Street Map 🗺️', 'info');
+            window.app?.showToast('Switched to Google Maps Street View 🗺️', 'info');
+        } else {
+            this.setMapType('satellite');
+            window.app?.showToast('Switched to Google Satellite View 🛰️', 'info');
         }
     }
 
@@ -74,12 +98,13 @@ class MapController {
 
     locateUser(panToUser = true) {
         if (!navigator.geolocation) {
+            window.app?.showToast('Geolocation is not supported by your browser.', 'error');
             return;
         }
 
         this.isLocating = true;
-        const locateBtn = document.getElementById('locate-me-btn');
-        if (locateBtn) locateBtn.classList.add('animate-spin');
+        const locateBtns = document.querySelectorAll('#locate-me-btn, #map-locate-btn');
+        locateBtns.forEach(btn => btn.classList.add('animate-spin'));
 
         navigator.geolocation.getCurrentPosition(
             (pos) => {
@@ -88,7 +113,14 @@ class MapController {
                     lng: pos.coords.longitude
                 };
                 this.isLocating = false;
-                if (locateBtn) locateBtn.classList.remove('animate-spin');
+                locateBtns.forEach(btn => btn.classList.remove('animate-spin'));
+
+                if (window.userFlow) {
+                    window.userFlow.userLocation = { ...this.userCoords };
+                    window.userFlow.locationPermissionGranted = true;
+                    window.userFlow.hideLocationNotice();
+                    window.userFlow.loadAndRenderApprovedToilets();
+                }
 
                 this.updateUserMarker();
                 this.renderApprovedMarkers();
@@ -97,13 +129,18 @@ class MapController {
                     this.map.flyTo([this.userCoords.lat, this.userCoords.lng], 16, { animate: true, duration: 1.2 });
                 }
 
-                window.app?.showToast('GPS Location synchronized!', 'success');
+                window.app?.showToast('GPS Location synchronized! 📍', 'success');
             },
             (err) => {
                 this.isLocating = false;
-                if (locateBtn) locateBtn.classList.remove('animate-spin');
+                locateBtns.forEach(btn => btn.classList.remove('animate-spin'));
+                console.warn('Geolocation warning:', err);
+                if (window.userFlow) {
+                    window.userFlow.loadAndRenderApprovedToilets();
+                }
+                window.app?.showToast('Using standard area coordinates. Washrooms ready!', 'info');
             },
-            { enableHighAccuracy: true, timeout: 8000 }
+            { enableHighAccuracy: true, timeout: 8000, maximumAge: 10000 }
         );
     }
 
@@ -136,17 +173,17 @@ class MapController {
         if (!this.map || !this.markersLayer) return;
         this.markersLayer.clearLayers();
 
-        const list = toilets || window.db.getPublicApprovedToilets();
+        const list = toilets || (window.db && window.db.getPublicApprovedToilets ? window.db.getPublicApprovedToilets() : []) || [];
 
         list.forEach(toilet => {
-            const isIndian = toilet.commodeType.includes('Indian');
+            const isIndian = toilet.commodeType && toilet.commodeType.includes('Indian');
             const pinColor = isIndian ? 'bg-amber-500' : 'bg-emerald-600';
             const pinIcon = isIndian ? '🇮🇳' : '🚽';
 
             const customIcon = L.divIcon({
                 className: 'custom-toilet-marker',
                 html: `
-                    <div class="cursor-pointer transform hover:scale-110 transition duration-200">
+                    <div class="cursor-pointer transform hover:scale-110 transition duration-200" title="${toilet.name}">
                         <div class="relative flex items-center justify-center">
                             <div class="w-10 h-10 rounded-2xl ${pinColor} text-white flex items-center justify-center text-lg shadow-xl shadow-slate-900/30 border-2 border-white">
                                 ${pinIcon}
@@ -159,10 +196,16 @@ class MapController {
                 iconAnchor: [20, 44]
             });
 
-            const marker = L.marker([toilet.latitude, toilet.longitude], { icon: customIcon });
+            const lat = parseFloat(toilet.latitude);
+            const lng = parseFloat(toilet.longitude);
+            if (isNaN(lat) || isNaN(lng)) return;
+
+            const marker = L.marker([lat, lng], { icon: customIcon });
 
             marker.on('click', () => {
-                window.userFlow?.selectToilet(toilet.toiletId);
+                if (window.userFlow) {
+                    window.userFlow.selectToilet(toilet.toiletId);
+                }
             });
 
             this.markersLayer.addLayer(marker);
@@ -173,9 +216,13 @@ class MapController {
         if (!this.map || !this.routeLayer) return;
         this.routeLayer.clearLayers();
 
+        const lat = parseFloat(targetLat);
+        const lng = parseFloat(targetLng);
+        if (isNaN(lat) || isNaN(lng)) return;
+
         const latlngs = [
-            [this.userCoords.lat, this.userCoords.lng],
-            [targetLat, targetLng]
+            [parseFloat(this.userCoords.lat), parseFloat(this.userCoords.lng)],
+            [lat, lng]
         ];
 
         const polyline = L.polyline(latlngs, {
@@ -186,7 +233,11 @@ class MapController {
             lineCap: 'round'
         }).addTo(this.routeLayer);
 
-        this.map.fitBounds(polyline.getBounds(), { padding: [50, 50] });
+        try {
+            this.map.fitBounds(polyline.getBounds(), { padding: [50, 50] });
+        } catch (e) {
+            console.warn('fitBounds note:', e);
+        }
     }
 
     clearRoute() {

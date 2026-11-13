@@ -1,0 +1,399 @@
+const mongoose = require('mongoose');
+const fs = require('fs');
+const path = require('path');
+const bcrypt = require('bcryptjs');
+
+const DATA_DIR = path.join(__dirname, '..', 'data');
+const DB_FILE = path.join(DATA_DIR, 'db.json');
+
+// Ensure data directory exists
+if (!fs.existsSync(DATA_DIR)) {
+    fs.mkdirSync(DATA_DIR, { recursive: true });
+}
+
+let isMongoConnected = false;
+
+const initialSeed = {
+    users: [
+        {
+            userId: 'usr-1',
+            name: 'Demo User 1',
+            email: 'user1@example.com',
+            passwordHash: bcrypt.hashSync('password123', 10),
+            mobile: null,
+            profileImage: null,
+            authProvider: 'email',
+            emailVerified: true,
+            role: 'USER',
+            status: 'ACTIVE',
+            walletBalance: 0,
+            createdAt: '2026-08-15T10:00:00.000Z'
+        },
+        {
+            userId: 'usr-2',
+            name: 'Demo User 2',
+            email: 'user2@example.com',
+            passwordHash: null,
+            mobile: null,
+            profileImage: null,
+            authProvider: 'google',
+            emailVerified: true,
+            role: 'USER',
+            status: 'ACTIVE',
+            walletBalance: 0,
+            createdAt: '2026-09-01T12:00:00.000Z'
+        },
+        {
+            userId: 'prov-1',
+            name: 'Demo Provider 1',
+            email: 'provider1@example.com',
+            passwordHash: bcrypt.hashSync('password123', 10),
+            phone: '9899001122',
+            mobile: '9899001122',
+            businessName: 'Demo Restrooms Hub',
+            profileImage: null,
+            authProvider: 'email',
+            emailVerified: true,
+            mobileVerified: true,
+            verificationStatus: 'APPROVED',
+            verified: true,
+            bankAccountNo: null,
+            bankIfsc: null,
+            bankName: null,
+            upiId: null,
+            role: 'PROVIDER',
+            status: 'ACTIVE',
+            walletBalance: 0,
+            createdAt: '2026-07-10T08:00:00.000Z'
+        },
+        {
+            userId: 'prov-2',
+            name: 'Demo Provider 2',
+            email: 'provider2@example.com',
+            passwordHash: bcrypt.hashSync('password123', 10),
+            phone: '9899001133',
+            mobile: '9899001133',
+            businessName: 'Demo Clean Restrooms',
+            profileImage: null,
+            authProvider: 'email',
+            emailVerified: true,
+            mobileVerified: true,
+            verificationStatus: 'APPROVED',
+            verified: true,
+            bankAccountNo: null,
+            bankIfsc: null,
+            bankName: null,
+            upiId: null,
+            role: 'PROVIDER',
+            status: 'ACTIVE',
+            walletBalance: 0,
+            createdAt: '2026-08-20T09:30:00.000Z'
+        },
+        {
+            userId: 'admin-vivek',
+            name: 'System Admin',
+            email: 'founder@toigo.app',
+            passwordHash: bcrypt.hashSync('admin123', 10),
+            mobile: null,
+            profileImage: null,
+            authProvider: 'email',
+            emailVerified: true,
+            role: 'ADMIN',
+            status: 'ACTIVE',
+            walletBalance: 0,
+            createdAt: '2026-01-01T00:00:00.000Z'
+        }
+    ],
+    toilets: [
+        {
+            toiletId: 't-1',
+            providerId: 'prov-1',
+            providerName: 'Demo Provider 1',
+            name: 'SmartRest Luxury Lounge & Washrooms',
+            description: 'Ultra-hygienic premium air-conditioned washroom facility with automated touchless taps, sanitized seats and full handicap access.',
+            address: 'Block A, Connaught Place, Inner Circle, Near Metro Gate 3, New Delhi',
+            latitude: 28.6315,
+            longitude: 77.2167,
+            openingTime: '06:00 AM',
+            closingTime: '11:30 PM',
+            commodeType: 'English / Western',
+            genderType: 'Unisex & Separate Men/Women',
+            facilities: ['Air Conditioned', 'Hand Soap', 'Tissue / Toilet Paper', 'Hand Sanitizer', 'Jet Spray', 'Mirror', 'Running Water', 'Sanitary Pad Dispenser', 'Baby Changing Station'],
+            accessibility: 'Wheelchair Accessible Ramp & Wide Door',
+            hygieneStatus: 'High (Automated sanitized seats)',
+            hygieneScore: 98,
+            cleanlinessScore: '98%',
+            lastInspectedAt: '2026-10-01T10:00:00.000Z',
+            lastReportedIssue: null,
+            price: 15,
+            isFree: false,
+            photos: [],
+            status: 'APPROVED',
+            availability: 'OPEN',
+            rejectionReason: null,
+            active: true,
+            rating: 4.9,
+            totalReviews: 142,
+            upiId: null,
+            createdAt: '2026-07-15T10:00:00.000Z',
+            updatedAt: '2026-07-15T10:00:00.000Z'
+        },
+        {
+            toiletId: 't-2',
+            providerId: 'prov-2',
+            providerName: 'Demo Provider 2',
+            name: 'Clean & Safe Restroom (Shop Front)',
+            description: 'Clean and safe market washroom equipped with western commode, indian squat option, jet spray and continuous clean water supply.',
+            address: 'Shop #12, Janpath Market Road, Opp Central Bank, New Delhi',
+            latitude: 28.6250,
+            longitude: 77.2185,
+            openingTime: '07:00 AM',
+            closingTime: '10:00 PM',
+            commodeType: 'Both (Indian & Western)',
+            genderType: 'Unisex',
+            facilities: ['Hand Soap', 'Jet Spray', 'Mirror', 'Running Water', 'Hand Sanitizer'],
+            accessibility: 'Ground Floor Entry',
+            hygieneStatus: 'Clean & Sanitized Daily',
+            hygieneScore: 94,
+            cleanlinessScore: '94%',
+            lastInspectedAt: '2026-09-29T11:00:00.000Z',
+            lastReportedIssue: 'Water pressure fixed',
+            price: 10,
+            isFree: false,
+            photos: [],
+            status: 'APPROVED',
+            availability: 'OPEN',
+            rejectionReason: null,
+            active: true,
+            rating: 4.7,
+            totalReviews: 89,
+            upiId: null,
+            createdAt: '2026-08-22T11:00:00.000Z',
+            updatedAt: '2026-08-22T11:00:00.000Z'
+        },
+        {
+            toiletId: 't-3',
+            providerId: 'prov-1',
+            providerName: 'Demo Provider 1',
+            name: 'Metro Transit Public Sanitation Unit',
+            description: 'Free municipal & public sanitation booth accessible 24/7 with fresh water and running hygiene checks.',
+            address: 'Barakhamba Road, Near Metro Gate 2, New Delhi',
+            latitude: 28.6300,
+            longitude: 77.2250,
+            openingTime: '00:00 AM',
+            closingTime: '11:59 PM',
+            commodeType: 'English / Western',
+            genderType: 'Separate Men & Women',
+            facilities: ['Running Water', 'Jet Spray', 'Hand Soap', 'Mirror'],
+            accessibility: 'Wheelchair Accessible Ramp',
+            hygieneStatus: 'Standard Municipal Check',
+            hygieneScore: 88,
+            cleanlinessScore: '88%',
+            lastInspectedAt: '2026-09-30T09:00:00.000Z',
+            lastReportedIssue: null,
+            price: 0,
+            isFree: true,
+            photos: [],
+            status: 'APPROVED',
+            availability: 'OPEN',
+            rejectionReason: null,
+            active: true,
+            rating: 4.5,
+            totalReviews: 34,
+            upiId: null,
+            createdAt: '2026-09-01T09:00:00.000Z',
+            updatedAt: '2026-09-01T09:00:00.000Z'
+        },
+        {
+            toiletId: 't-4',
+            providerId: 'prov-2',
+            providerName: 'Demo Provider 2',
+            name: 'Central Park Green Restroom Pavilion',
+            description: 'Modern eco-friendly public restroom facility in central park with baby changing station and touchless hand wash.',
+            address: 'Central Park Radial Road 1, Connaught Place, New Delhi',
+            latitude: 28.6328,
+            longitude: 77.2195,
+            openingTime: '05:30 AM',
+            closingTime: '10:30 PM',
+            commodeType: 'Both (Indian & Western)',
+            genderType: 'Unisex & Separate Men/Women',
+            facilities: ['Running Water', 'Hand Soap', 'Tissue / Toilet Paper', 'Baby Changing Station', 'Hand Sanitizer', 'Mirror'],
+            accessibility: 'Wheelchair Accessible Ramp & Wide Door',
+            hygieneStatus: 'Eco-Clean Certified',
+            hygieneScore: 96,
+            cleanlinessScore: '96%',
+            lastInspectedAt: '2026-10-02T14:00:00.000Z',
+            lastReportedIssue: null,
+            price: 5,
+            isFree: false,
+            photos: [],
+            status: 'APPROVED',
+            availability: 'OPEN',
+            rejectionReason: null,
+            active: true,
+            rating: 4.8,
+            totalReviews: 67,
+            upiId: null,
+            createdAt: '2026-09-10T10:00:00.000Z',
+            updatedAt: '2026-09-10T10:00:00.000Z'
+        }
+    ],
+    reports: [
+        {
+            reportId: 'rep-1',
+            userId: 'usr-1',
+            userName: 'Demo User 1',
+            toiletId: 't-2',
+            toiletName: 'Clean & Safe Restroom (Shop Front)',
+            providerId: 'prov-2',
+            category: 'No Water',
+            priority: 'HIGH',
+            description: 'Water tap had low pressure around noon. Needs maintenance.',
+            photo: null,
+            location: { latitude: 28.6250, longitude: 77.2185 },
+            status: 'RESOLVED',
+            adminResponse: 'Host notified; plumbing fixed and water pressure restored.',
+            createdAt: '2026-09-28T14:20:00.000Z',
+            updatedAt: '2026-09-29T10:00:00.000Z'
+        }
+    ],
+    reviews: [
+        {
+            reviewId: 'rev-1',
+            toiletId: 't-1',
+            userId: 'usr-1',
+            userName: 'Demo User 1',
+            rating: 5,
+            cleanlinessRating: 5,
+            waterAvailable: true,
+            soapAvailable: true,
+            maintenanceRating: 5,
+            accessibilityRating: 5,
+            hygieneTag: 'Spotless Clean',
+            comment: 'Super clean, fresh fragrance, and touchless taps. Best washroom in CP!',
+            photos: [],
+            visitVerified: true,
+            createdAt: '2026-09-25T12:00:00.000Z'
+        }
+    ],
+    payments: [
+        {
+            paymentId: 'pay-seed-1',
+            orderId: 'order_seed_1',
+            transactionId: 'txn_toigo_987123',
+            userId: 'usr-1',
+            userName: 'Demo User 1',
+            toiletId: 't-1',
+            toiletName: 'SmartRest Luxury Lounge & Washrooms',
+            amount: 15,
+            currency: 'INR',
+            method: 'UPI',
+            status: 'SUCCESS',
+            signature: 'sig_verified_mock_98123',
+            createdAt: '2026-09-25T11:55:00.000Z'
+        }
+    ],
+    accessSessions: [
+        {
+            sessionId: 'sess-seed-1',
+            userId: 'usr-1',
+            toiletId: 't-1',
+            paymentId: 'pay-seed-1',
+            accessToken: 'TG-ACC-98214',
+            status: 'COMPLETED',
+            startedAt: '2026-09-25T11:56:00.000Z',
+            validUntil: '2026-09-25T12:26:00.000Z',
+            endedAt: '2026-09-25T12:08:00.000Z'
+        }
+    ],
+    notifications: [
+        {
+            notificationId: 'notif-1',
+            userId: 'usr-1',
+            title: 'Welcome to TOIGO!',
+            message: 'Find, verify, access and pay for clean washrooms around you anytime.',
+            type: 'SYSTEM',
+            read: false,
+            createdAt: '2026-08-15T10:00:00.000Z'
+        }
+    ],
+    auditLogs: [
+        {
+            logId: 'audit-1',
+            adminId: 'admin-vivek',
+            adminName: 'Vivek (Super Admin)',
+            action: 'TOILET_APPROVED',
+            targetId: 't-1',
+            targetType: 'TOILET',
+            previousValue: 'PENDING',
+            newValue: 'APPROVED',
+            reason: 'Hygiene inspection verified',
+            timestamp: '2026-07-15T10:05:00.000Z'
+        }
+    ]
+};
+
+// In-Memory / File Persistent Database Engine
+class JsonDatabaseEngine {
+    constructor() {
+        this.data = this.load();
+    }
+
+    load() {
+        try {
+            if (fs.existsSync(DB_FILE)) {
+                const raw = fs.readFileSync(DB_FILE, 'utf8');
+                return JSON.parse(raw);
+            }
+        } catch (e) {
+            console.error('Error reading JSON DB file, falling back to seed:', e);
+        }
+        const fresh = JSON.parse(JSON.stringify(initialSeed));
+        this.saveData(fresh);
+        return fresh;
+    }
+
+    save() {
+        this.saveData(this.data);
+    }
+
+    saveData(data) {
+        try {
+            fs.writeFileSync(DB_FILE, JSON.stringify(data, null, 2), 'utf8');
+        } catch (e) {
+            console.error('Error writing JSON DB file:', e);
+        }
+    }
+
+    reset() {
+        this.data = JSON.parse(JSON.stringify(initialSeed));
+        this.save();
+        return this.data;
+    }
+}
+
+const db = new JsonDatabaseEngine();
+
+const connectDB = async () => {
+    const mongoUri = process.env.MONGODB_URI;
+    if (mongoUri) {
+        try {
+            await mongoose.connect(mongoUri, {
+                serverSelectionTimeoutMS: 3000
+            });
+            isMongoConnected = true;
+            console.log('✅ Connected to MongoDB Database successfully.');
+        } catch (err) {
+            console.warn('⚠️ MongoDB connection not available. Using robust file-persistent database storage (server/data/db.json).');
+            isMongoConnected = false;
+        }
+    } else {
+        console.log('ℹ️ Running with persistent JSON database storage (server/data/db.json). Provide MONGODB_URI in .env for MongoDB.');
+    }
+};
+
+module.exports = {
+    connectDB,
+    db,
+    isMongoConnected: () => isMongoConnected
+};
