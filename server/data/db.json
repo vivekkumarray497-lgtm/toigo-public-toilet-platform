@@ -11,7 +11,7 @@
       "emailVerified": true,
       "role": "USER",
       "status": "ACTIVE",
-      "walletBalance": 175,
+      "walletBalance": 210,
       "createdAt": "2026-08-15T10:00:00.000Z"
     },
     {
@@ -48,7 +48,7 @@
       "upiId": null,
       "role": "PROVIDER",
       "status": "ACTIVE",
-      "walletBalance": 140,
+      "walletBalance": 168,
       "createdAt": "2026-07-10T08:00:00.000Z"
     },
     {
@@ -135,7 +135,7 @@
       "status": "ACTIVE",
       "walletBalance": 100,
       "createdAt": "2026-11-13T05:28:24.346Z",
-      "updatedAt": "2026-11-13T06:27:31.545Z"
+      "updatedAt": "2026-11-15T12:10:40.213Z"
     },
     {
       "userId": "prov-1794547739617",
@@ -692,9 +692,218 @@
       "mobileOtpAttempts": 0,
       "mobileOtpLastSentAt": 1794551254437,
       "rejectionReason": null
+    },
+    {
+      "userId": "prov-1794744634701",
+      "name": "Unverified Test Host",
+      "email": "provider.test.1794744634622@example.com",
+      "passwordHash": "$2b$10$36Vsm0T5JqkvJgtAjiDeQ.yb6BtHaXPxoq0rI5/VZ1jZ.sXBdJgra",
+      "mobile": "9844634622",
+      "phone": "9844634622",
+      "profileImage": "https://api.dicebear.com/7.x/bottts/svg?seed=Unverified%20Test%20Host",
+      "authProvider": "email",
+      "emailVerified": true,
+      "mobileVerified": true,
+      "otpHash": null,
+      "otpExpiry": null,
+      "otpAttempts": 0,
+      "otpLastSentAt": 1794744634701,
+      "role": "PROVIDER",
+      "status": "ACTIVE",
+      "walletBalance": 0,
+      "businessName": "Unverified Host Suites",
+      "verificationStatus": "PENDING",
+      "verified": false,
+      "bankAccountNo": null,
+      "bankIfsc": null,
+      "bankName": null,
+      "upiId": null,
+      "createdAt": "2026-11-15T12:10:34.701Z",
+      "verificationCode": null,
+      "mobileOtpHash": null,
+      "mobileOtpExpiry": null,
+      "mobileOtpAttempts": 0,
+      "mobileOtpLastSentAt": 1794744634718
+    },
+    {
+      "userId": "usr-1794744637634",
+      "name": "New Test User",
+      "email": "testuser_1794744637570@example.com",
+      "passwordHash": "$2b$10$MgpHgxEPUoAv.kw7AMd9puvpvpAS5pGPcCDZkJjh6Y28rSTs3W8jy",
+      "mobile": null,
+      "phone": null,
+      "profileImage": "https://api.dicebear.com/7.x/bottts/svg?seed=New%20Test%20User",
+      "authProvider": "email",
+      "emailVerified": false,
+      "mobileVerified": true,
+      "otpHash": "d3bacb247feebc56ca67f95eb9446adb25f59c6214a8f630765d46ead11aa3ed",
+      "otpExpiry": 1794745237634,
+      "otpAttempts": 0,
+      "otpLastSentAt": 1794744637634,
+      "role": "USER",
+      "status": "ACTIVE",
+      "walletBalance": 0,
+      "businessName": null,
+      "verificationStatus": "APPROVED",
+      "verified": true,
+      "bankAccountNo": null,
+      "bankIfsc": null,
+      "bankName": null,
+      "upiId": null,
+      "createdAt": "2026-11-15T12:10:37.634Z"
+    },
+    {
+      "userId": "prov-1794744643153",
+      "name": "New Host Facility",
+      "email": "provider.test.1794744643090@example.com",
+      "passwordHash": "$2b$10$iwaarxezWAX.S.sGejP7eeV53gA86x7q9KhYC5OJvMssYLgwVk8fO",
+      "mobile": "9844643090",
+      "phone": "9844643090",
+      "profileImage": "https://api.dicebear.com/7.x/bottts/svg?seed=New%20Host%20Facility",
+      "authProvider": "email",
+      "emailVerified": true,
+      "mobileVerified": true,
+      "otpHash": null,
+      "otpExpiry": null,
+      "otpAttempts": 0,
+      "otpLastSentAt": 1794744643153,
+      "role": "PROVIDER",
+      "status": "ACTIVE",
+      "walletBalance": 0,
+      "businessName": "Clean Restroom Co",
+      "verificationStatus": "APPROVED",
+      "verified": true,
+      "bankAccountNo": null,
+      "bankIfsc": null,
+      "bankName": null,
+      "upiId": null,
+      "createdAt": "2026-11-15T12:10:43.153Z",
+      "verificationCode": null,
+      "mobileOtpHash": null,
+      "mobileOtpExpiry": null,
+      "mobileOtpAttempts": 0,
+      "mobileOtpLastSentAt": 1794744643175,
+      "rejectionReason": null
     }
   ],
   "toilets": [
+    {
+      "toiletId": "t-1794744643411",
+      "providerId": "prov-1",
+      "providerName": "Demo Provider 1",
+      "name": "Central Transit Restroom (Renovated)",
+      "description": "Clean public restroom facility with touchless taps and sanitizers.",
+      "toiletType": "Paid Toilet",
+      "genderType": "Separate Men & Women",
+      "commodeType": "Both (Indian & Western)",
+      "address": "Gate 4, Transit Concourse",
+      "landmark": "Near Exit Gate 4",
+      "city": "New Delhi",
+      "state": "Delhi",
+      "pincode": "110001",
+      "latitude": 28.6335,
+      "longitude": 77.219,
+      "location": {
+        "type": "Point",
+        "coordinates": [
+          77.219,
+          28.6335
+        ]
+      },
+      "openingTime": "05:30 AM",
+      "closingTime": "11:45 PM",
+      "isOpen24Hours": false,
+      "weeklySchedule": {
+        "monday": {
+          "open": true,
+          "from": "05:30 AM",
+          "to": "11:45 PM"
+        },
+        "tuesday": {
+          "open": true,
+          "from": "05:30 AM",
+          "to": "11:45 PM"
+        },
+        "wednesday": {
+          "open": true,
+          "from": "05:30 AM",
+          "to": "11:45 PM"
+        },
+        "thursday": {
+          "open": true,
+          "from": "05:30 AM",
+          "to": "11:45 PM"
+        },
+        "friday": {
+          "open": true,
+          "from": "05:30 AM",
+          "to": "11:45 PM"
+        },
+        "saturday": {
+          "open": true,
+          "from": "05:30 AM",
+          "to": "11:45 PM"
+        },
+        "sunday": {
+          "open": true,
+          "from": "05:30 AM",
+          "to": "11:45 PM"
+        }
+      },
+      "facilities": [
+        "Running Water",
+        "Hand Soap",
+        "Jet Spray",
+        "Mirror",
+        "Tissue / Toilet Paper"
+      ],
+      "accessibility": [
+        "Wheelchair Accessible Ramp",
+        "Wide Door Access",
+        "Signage Added"
+      ],
+      "price": 20,
+      "isFree": false,
+      "pricing": {
+        "isFree": false,
+        "amount": 20,
+        "taxRate": 0,
+        "finalPrice": 20
+      },
+      "photos": [],
+      "primaryPhoto": null,
+      "contactNumber": "",
+      "emergencyContact": "",
+      "rules": "Please maintain cleanliness. Flush after use. Turn off water tap.",
+      "cleaningFrequency": "Every 2 Hours",
+      "lastCleanedAt": "2026-11-15T12:10:43.437Z",
+      "lastInspectedAt": "2026-11-15T12:10:43.551Z",
+      "hygieneStatus": "Inspected Clean by Host on 15/11/2026",
+      "hygieneScore": null,
+      "cleanlinessScore": null,
+      "status": "REMOVED",
+      "availability": "CLOSED",
+      "closureReason": null,
+      "expectedReopenAt": null,
+      "rejectionReason": null,
+      "pendingUpdates": null,
+      "active": false,
+      "rating": null,
+      "totalReviews": 0,
+      "upiId": null,
+      "createdAt": "2026-11-15T12:10:43.411Z",
+      "updatedAt": "2026-11-15T12:10:43.568Z",
+      "maintenanceLogs": [
+        {
+          "logId": "maint-1794744643461",
+          "performedBy": "Demo Provider 1",
+          "timestamp": "2026-11-15T12:10:43.461Z",
+          "waterChecked": true,
+          "soapChecked": true,
+          "notes": "Dispensers refilled & floors sanitized"
+        }
+      ]
+    },
     {
       "toiletId": "t-1794551254641",
       "providerId": "prov-1",
@@ -1395,7 +1604,7 @@
       "rejectionReason": null,
       "active": true,
       "rating": 5,
-      "totalReviews": 1,
+      "totalReviews": 2,
       "upiId": null,
       "createdAt": "2026-09-01T09:00:00.000Z",
       "updatedAt": "2026-09-01T09:00:00.000Z"
@@ -1442,6 +1651,23 @@
     }
   ],
   "reports": [
+    {
+      "reportId": "rep-1794744637494",
+      "userId": "usr-1",
+      "userName": "Demo User 1",
+      "toiletId": "t-2",
+      "toiletName": "Clean & Safe Restroom (Shop Front)",
+      "providerId": "prov-2",
+      "category": "No Water",
+      "priority": "MEDIUM",
+      "description": "Water tap was running low at 2pm.",
+      "photo": null,
+      "location": null,
+      "status": "OPEN",
+      "adminResponse": null,
+      "createdAt": "2026-11-15T12:10:37.494Z",
+      "updatedAt": "2026-11-15T12:10:37.494Z"
+    },
     {
       "reportId": "rep-1794551248732",
       "userId": "usr-1",
@@ -1549,6 +1775,23 @@
     }
   ],
   "reviews": [
+    {
+      "reviewId": "rev-1794744637486",
+      "toiletId": "t-3",
+      "userId": "usr-1",
+      "userName": "Demo User 1",
+      "rating": 5,
+      "cleanlinessRating": 5,
+      "waterAvailable": true,
+      "soapAvailable": true,
+      "maintenanceRating": 5,
+      "accessibilityRating": 5,
+      "hygieneTag": "Spotless Clean",
+      "comment": "Very clean with fresh water and sanitizer.",
+      "photos": [],
+      "visitVerified": true,
+      "createdAt": "2026-11-15T12:10:37.486Z"
+    },
     {
       "reviewId": "rev-1794547831649",
       "toiletId": "t-3",
@@ -1874,9 +2117,109 @@
       "signature": "wallet_internal_debit_verified",
       "verifiedAt": "2026-11-13T06:27:28.878Z",
       "createdAt": "2026-11-13T06:27:28.878Z"
+    },
+    {
+      "paymentId": "pay_1794744637474",
+      "orderId": "order_1794744637474_6051cdca",
+      "transactionId": "txn_test_1794744637478",
+      "userId": "usr-1",
+      "userName": "Demo User 1",
+      "userEmail": "user1@example.com",
+      "userMobile": null,
+      "toiletId": "t-1",
+      "toiletName": "SmartRest Luxury Lounge & Washrooms",
+      "toiletAddress": "Block A, Connaught Place, Inner Circle, Near Metro Gate 3, New Delhi",
+      "toiletLocation": {
+        "lat": 28.6315,
+        "lng": 77.2167
+      },
+      "providerId": "prov-1",
+      "providerName": "Demo Provider 1",
+      "amount": 15,
+      "currency": "INR",
+      "method": "UPI",
+      "gateway": "DIRECT_GATEWAY",
+      "gatewayOrderId": "order_1794744637474_6051cdca",
+      "gatewayPaymentId": "txn_test_1794744637478",
+      "status": "SUCCESS",
+      "signature": "verified_server_hmac",
+      "createdAt": "2026-11-15T12:10:37.474Z",
+      "verifiedAt": "2026-11-15T12:10:37.480Z"
+    },
+    {
+      "paymentId": "pay_wal_1794744637660",
+      "orderId": "ord_wal_1794744637660",
+      "transactionId": "TXN_WAL_33E54EC7",
+      "userId": "usr-1",
+      "userName": "Demo User 1",
+      "userEmail": "user1@example.com",
+      "toiletId": "t-1",
+      "toiletName": "SmartRest Luxury Lounge & Washrooms",
+      "toiletAddress": "Block A, Connaught Place, Inner Circle, Near Metro Gate 3, New Delhi",
+      "toiletLocation": {
+        "lat": 28.6315,
+        "lng": 77.2167
+      },
+      "providerId": "prov-1",
+      "providerName": "Demo Provider 1",
+      "amount": 15,
+      "currency": "INR",
+      "method": "TOIGO Wallet",
+      "gateway": "TOIGO_WALLET",
+      "gatewayOrderId": "ord_wal_1794744637660",
+      "gatewayPaymentId": "TXN_WAL_33E54EC7",
+      "status": "SUCCESS",
+      "signature": "wallet_internal_debit_verified",
+      "verifiedAt": "2026-11-15T12:10:37.660Z",
+      "createdAt": "2026-11-15T12:10:37.660Z"
     }
   ],
   "accessSessions": [
+    {
+      "sessionId": "sess-1794744637660",
+      "userId": "usr-1",
+      "toiletId": "t-1",
+      "paymentId": "pay_wal_1794744637660",
+      "accessToken": "TG-WAL-A15324",
+      "status": "ACTIVE",
+      "startedAt": "2026-11-15T12:10:37.660Z",
+      "validUntil": "2026-11-15T12:40:37.660Z",
+      "endedAt": null
+    },
+    {
+      "sessionId": "sess-free-1794744637646",
+      "userId": "usr-1",
+      "toiletId": "t-3",
+      "paymentId": null,
+      "isFree": true,
+      "accessToken": "TG-FREE-A5BDF1",
+      "status": "ACTIVE",
+      "startedAt": "2026-11-15T12:10:37.646Z",
+      "validUntil": "2026-11-15T12:40:37.646Z",
+      "endedAt": null
+    },
+    {
+      "sessionId": "sess-1794744637480",
+      "userId": "usr-1",
+      "toiletId": "t-1",
+      "paymentId": "pay_1794744637474",
+      "accessToken": "TG-ACC-3D88ED-4010",
+      "status": "ACTIVE",
+      "startedAt": "2026-11-15T12:10:37.480Z",
+      "validUntil": "2026-11-15T12:40:37.480Z",
+      "endedAt": null
+    },
+    {
+      "sessionId": "sess-1794744637469",
+      "userId": "usr-1",
+      "toiletId": "t-3",
+      "paymentId": null,
+      "accessToken": "TG-FREE-83DD95-1235",
+      "status": "ACTIVE",
+      "startedAt": "2026-11-15T12:10:37.469Z",
+      "validUntil": "2026-11-15T12:40:37.469Z",
+      "endedAt": null
+    },
     {
       "sessionId": "sess-1794551248878",
       "userId": "usr-1",
@@ -2082,6 +2425,105 @@
     }
   ],
   "notifications": [
+    {
+      "notificationId": "notif-1794744643555",
+      "userId": "prov-1",
+      "role": "PROVIDER",
+      "title": "🎉 Washroom Approved!",
+      "message": "Congratulations! Your washroom \"Central Transit Restroom (Renovated)\" is now approved and live on the map.",
+      "type": "TOILET",
+      "read": false,
+      "createdAt": "2026-11-15T12:10:43.555Z"
+    },
+    {
+      "notificationId": "notif-1794744643548-adm",
+      "userId": null,
+      "role": "ADMIN",
+      "title": "🔄 Rejected Restroom Edited & Resubmitted",
+      "message": "Host Demo Provider 1 corrected and resubmitted \"Central Transit Restroom (Renovated)\" for verification.",
+      "type": "TOILET_SUBMISSION",
+      "toiletId": "t-1794744643411",
+      "read": false,
+      "createdAt": "2026-11-15T12:10:43.548Z"
+    },
+    {
+      "notificationId": "notif-1794744643542",
+      "userId": "prov-1",
+      "role": "PROVIDER",
+      "title": "❌ Washroom Listing Rejected",
+      "message": "Your washroom \"Central Transit Restroom (Renovated)\" was rejected. Reason: Please install clearer signage",
+      "type": "TOILET",
+      "read": false,
+      "createdAt": "2026-11-15T12:10:43.542Z"
+    },
+    {
+      "notificationId": "notif-1794744643414-adm",
+      "userId": null,
+      "role": "ADMIN",
+      "title": "🆕 New Restroom Submitted for Approval",
+      "message": "Host Demo Provider 1 listed \"Central Transit Public Restroom\" at Gate 4, Transit Concourse. Status: PENDING_APPROVAL.",
+      "type": "TOILET_SUBMISSION",
+      "toiletId": "t-1794744643411",
+      "read": false,
+      "createdAt": "2026-11-15T12:10:43.414Z"
+    },
+    {
+      "notificationId": "notif-1794744643333",
+      "userId": "prov-1794744643153",
+      "role": "PROVIDER",
+      "title": "🎉 Host Partner Approved!",
+      "message": "Congratulations! Your TOIGO host account is approved. You can now log in and manage your washrooms.",
+      "type": "SYSTEM",
+      "read": false,
+      "createdAt": "2026-11-15T12:10:43.333Z"
+    },
+    {
+      "notificationId": "notif-1794744637660",
+      "userId": "usr-1",
+      "title": "👛 Wallet Payment Successful",
+      "message": "Paid ₹15 using TOIGO Wallet for SmartRest Luxury Lounge & Washrooms. Access token: TG-WAL-A15324. New balance: ₹210",
+      "type": "PAYMENT",
+      "read": false,
+      "createdAt": "2026-11-15T12:10:37.660Z"
+    },
+    {
+      "notificationId": "notif-1794744637656",
+      "userId": "usr-1",
+      "title": "🎁 Promotional Credits Added!",
+      "message": "You received ₹50 bonus credits from Founder Vivek. New balance: ₹225",
+      "type": "SYSTEM",
+      "read": false,
+      "createdAt": "2026-11-15T12:10:37.656Z"
+    },
+    {
+      "notificationId": "notif-1794744637497",
+      "userId": "prov-2",
+      "role": "PROVIDER",
+      "title": "🚩 New Issue Reported: No Water",
+      "message": "A visitor reported an issue at Clean & Safe Restroom (Shop Front): \"Water tap was running low at 2pm.\"",
+      "type": "REPORT",
+      "read": false,
+      "createdAt": "2026-11-15T12:10:37.497Z"
+    },
+    {
+      "notificationId": "notif-1794744637489",
+      "userId": "prov-1",
+      "role": "PROVIDER",
+      "title": "🌟 New Review for Metro Transit Public Sanitation Unit",
+      "message": "Demo User 1 rated your washroom ★ 5/5 (Spotless Clean): \"Very clean with fresh water and sanitizer.\"",
+      "type": "REVIEW",
+      "read": false,
+      "createdAt": "2026-11-15T12:10:37.489Z"
+    },
+    {
+      "notificationId": "notif-1794744637480",
+      "userId": "usr-1",
+      "title": "💳 Payment Successful",
+      "message": "Paid ₹15 for SmartRest Luxury Lounge & Washrooms. Your door access code is: TG-ACC-3D88ED-4010",
+      "type": "PAYMENT",
+      "read": false,
+      "createdAt": "2026-11-15T12:10:37.480Z"
+    },
     {
       "notificationId": "notif-1794551254763",
       "userId": "prov-1",
@@ -2549,6 +2991,54 @@
   ],
   "auditLogs": [
     {
+      "logId": "audit-1794744643553-4znkq",
+      "adminId": "admin-vivek",
+      "adminName": "System Admin",
+      "action": "TOILET_APPROVED",
+      "targetId": "t-1794744643411",
+      "targetType": "TOILET",
+      "previousValue": "PENDING",
+      "newValue": "APPROVED",
+      "reason": "Admin marked as APPROVED",
+      "timestamp": "2026-11-15T12:10:43.553Z"
+    },
+    {
+      "logId": "audit-1794744643539-upiwn",
+      "adminId": "admin-vivek",
+      "adminName": "System Admin",
+      "action": "TOILET_REJECTED",
+      "targetId": "t-1794744643411",
+      "targetType": "TOILET",
+      "previousValue": "PENDING",
+      "newValue": "REJECTED",
+      "reason": "Please install clearer signage",
+      "timestamp": "2026-11-15T12:10:43.539Z"
+    },
+    {
+      "logId": "audit-1794744643330-9rufv",
+      "adminId": "admin-vivek",
+      "adminName": "System Admin",
+      "action": "PROVIDER_APPROVED",
+      "targetId": "prov-1794744643153",
+      "targetType": "PROVIDER",
+      "previousValue": "PENDING",
+      "newValue": "APPROVED",
+      "reason": "Admin marked host as APPROVED",
+      "timestamp": "2026-11-15T12:10:43.330Z"
+    },
+    {
+      "logId": "audit-1794744637654-ls385",
+      "adminId": "admin-vivek",
+      "adminName": "System Admin",
+      "action": "WALLET_CREDITED",
+      "targetId": "usr-1",
+      "targetType": "USER",
+      "previousValue": "₹175",
+      "newValue": "₹225",
+      "reason": "Test Topup",
+      "timestamp": "2026-11-15T12:10:37.654Z"
+    },
+    {
       "logId": "audit-1794551254761-t0fad",
       "adminId": "admin-vivek",
       "adminName": "System Admin",
@@ -2803,6 +3293,28 @@
   ],
   "ledger": [
     {
+      "ledgerId": "ledg-1794744637660",
+      "paymentId": "pay_wal_1794744637660",
+      "orderId": "ord_wal_1794744637660",
+      "transactionId": "TXN_WAL_33E54EC7",
+      "providerId": "prov-1",
+      "grossAmount": 15,
+      "hostEarning": 14,
+      "platformFee": 1,
+      "timestamp": "2026-11-15T12:10:37.660Z"
+    },
+    {
+      "ledgerId": "ledg-1794744637480-urnk",
+      "paymentId": "pay_1794744637474",
+      "orderId": "order_1794744637474_6051cdca",
+      "transactionId": "txn_test_1794744637478",
+      "providerId": "prov-1",
+      "grossAmount": 15,
+      "hostEarning": 14,
+      "platformFee": 1,
+      "timestamp": "2026-11-15T12:10:37.480Z"
+    },
+    {
       "ledgerId": "ledg-1794551248878",
       "paymentId": "pay_wal_1794551248878",
       "orderId": "ord_wal_1794551248878",
@@ -2915,6 +3427,16 @@
   ],
   "walletTransactions": [
     {
+      "txId": "wtx-1794744637660",
+      "userId": "usr-1",
+      "amount": 15,
+      "type": "DEBIT",
+      "description": "Pass for SmartRest Luxury Lounge & Washrooms",
+      "toiletId": "t-1",
+      "balanceAfter": 210,
+      "createdAt": "2026-11-15T12:10:37.660Z"
+    },
+    {
       "txId": "wtx-1794551248878",
       "userId": "usr-1",
       "amount": 15,
@@ -2966,6 +3488,62 @@
     }
   ],
   "activities": [
+    {
+      "activityId": "act-1794744643566-izkz",
+      "providerId": "prov-1",
+      "toiletId": null,
+      "action": "PROFILE_UPDATED",
+      "details": "Updated business and payout information",
+      "timestamp": "2026-11-15T12:10:43.566Z"
+    },
+    {
+      "activityId": "act-1794744643548-e3kz",
+      "providerId": "prov-1",
+      "toiletId": "t-1794744643411",
+      "action": "TOILET_RESUBMITTED",
+      "details": "Updated details for \"Central Transit Restroom (Renovated)\" (Resubmitted for Admin Approval)",
+      "timestamp": "2026-11-15T12:10:43.548Z"
+    },
+    {
+      "activityId": "act-1794744643464-gcrn",
+      "providerId": "prov-1",
+      "toiletId": "t-1794744643411",
+      "action": "MAINTENANCE_LOG",
+      "details": "Logged cleaning & maintenance check for \"Central Transit Restroom (Renovated)\"",
+      "timestamp": "2026-11-15T12:10:43.464Z"
+    },
+    {
+      "activityId": "act-1794744643436-xu19",
+      "providerId": "prov-1",
+      "toiletId": "t-1794744643411",
+      "action": "TOILET_REOPENED",
+      "details": "Reopened restroom \"Central Transit Restroom (Renovated)\" to public",
+      "timestamp": "2026-11-15T12:10:43.436Z"
+    },
+    {
+      "activityId": "act-1794744643432-6ec4",
+      "providerId": "prov-1",
+      "toiletId": "t-1794744643411",
+      "action": "STATUS_CHANGED",
+      "details": "Changed status of \"Central Transit Restroom (Renovated)\" to UNDER_MAINTENANCE (Deep cleaning and pipe maintenance)",
+      "timestamp": "2026-11-15T12:10:43.432Z"
+    },
+    {
+      "activityId": "act-1794744643428-flci",
+      "providerId": "prov-1",
+      "toiletId": "t-1794744643411",
+      "action": "TOILET_EDITED",
+      "details": "Updated details for \"Central Transit Restroom (Renovated)\" ",
+      "timestamp": "2026-11-15T12:10:43.428Z"
+    },
+    {
+      "activityId": "act-1794744643414-ctcq",
+      "providerId": "prov-1",
+      "toiletId": "t-1794744643411",
+      "action": "TOILET_CREATED",
+      "details": "Added new restroom \"Central Transit Public Restroom\" (Status: PENDING)",
+      "timestamp": "2026-11-15T12:10:43.414Z"
+    },
     {
       "activityId": "act-1794551254772-ou0e",
       "providerId": "prov-1",

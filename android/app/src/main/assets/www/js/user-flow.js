@@ -236,6 +236,9 @@ class UserFlowController {
                     <p class="text-xs text-slate-500 mt-1">Try adjusting your search keywords or filter criteria.</p>
                 </div>
             `;
+            if (window.bottomSheet) {
+                window.bottomSheet.onToiletsRendered(0);
+            }
             return;
         }
 
@@ -312,6 +315,9 @@ class UserFlowController {
         }).join('');
 
         container.innerHTML = cardsHtml;
+        if (window.bottomSheet) {
+            window.bottomSheet.onToiletsRendered(toilets.length);
+        }
     }
 
     // ================= 4. TOILET DETAILS MODAL =================

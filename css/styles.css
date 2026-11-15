@@ -261,3 +261,195 @@ h1, h2, h3, h4, .font-heading {
     width: 100% !important;
     height: 100% !important;
 }
+
+/* ==========================================================================
+   TOIGO Google Maps-Style Draggable Bottom Sheet & Responsive Map Layout
+   ========================================================================== */
+
+/* 1. Mobile Full-Screen Layout & Dynamic Viewport Height (100dvh) */
+#view-user-home {
+    height: calc(100vh - 7.5rem);
+    height: calc(100dvh - 7.5rem);
+    min-height: 480px;
+    position: relative;
+    overflow: hidden;
+    overscroll-behavior: none;
+    touch-action: none;
+}
+
+/* Interactive Map Container */
+#map-view {
+    width: 100%;
+    height: 100%;
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 0;
+    touch-action: pan-x pan-y pinch-zoom;
+}
+
+/* 2. Draggable Bottom Sheet Base Styles */
+.toigo-bottom-sheet {
+    position: absolute;
+    z-index: 30;
+    display: flex;
+    flex-direction: column;
+    background: rgba(255, 255, 255, 0.96);
+    backdrop-filter: blur(18px);
+    -webkit-backdrop-filter: blur(18px);
+    border: 1px solid rgba(255, 255, 255, 0.9);
+    box-shadow: 0 -10px 35px rgba(0, 0, 0, 0.14), 0 2px 8px rgba(0, 0, 0, 0.05);
+    will-change: transform;
+    user-select: none;
+    -webkit-user-select: none;
+}
+
+/* 3. Mobile (< 769px) Bottom Sheet Mechanics & Touch Layout */
+@media (max-width: 768px) {
+    .toigo-bottom-sheet {
+        left: 0;
+        right: 0;
+        bottom: 0;
+        width: 100%;
+        height: calc(100% - 8px);
+        border-top-left-radius: 28px;
+        border-top-right-radius: 28px;
+        border-bottom-left-radius: 0;
+        border-bottom-right-radius: 0;
+        border-bottom: none;
+        transition: transform 0.32s cubic-bezier(0.2, 0.9, 0.3, 1);
+        touch-action: none;
+    }
+
+    .toigo-bottom-sheet.is-dragging {
+        transition: none !important;
+    }
+
+    /* Grab Handle Pill */
+    .toigo-sheet-drag-handle {
+        width: 100%;
+        padding: 10px 0 6px 0;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        cursor: grab;
+        touch-action: none;
+        flex-shrink: 0;
+    }
+
+    .toigo-sheet-drag-handle:active {
+        cursor: grabbing;
+    }
+
+    .toigo-sheet-pill {
+        width: 44px;
+        height: 5px;
+        background: #cbd5e1;
+        border-radius: 9999px;
+        transition: background-color 0.2s ease, width 0.2s ease;
+    }
+
+    .toigo-bottom-sheet.is-dragging .toigo-sheet-pill,
+    .toigo-sheet-drag-handle:hover .toigo-sheet-pill {
+        background: #059669;
+        width: 52px;
+    }
+
+    /* Sheet Header Bar */
+    .toigo-sheet-header {
+        padding: 4px 16px 10px 16px;
+        flex-shrink: 0;
+        cursor: pointer;
+        touch-action: none;
+        border-bottom: 1px solid rgba(226, 232, 240, 0.6);
+    }
+
+    /* Quick Toggle Button */
+    .toigo-sheet-toggle-btn {
+        width: 28px;
+        height: 28px;
+        border-radius: 10px;
+        background: #f1f5f9;
+        color: #475569;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border: 1px solid #e2e8f0;
+        cursor: pointer;
+        transition: all 0.2s ease;
+    }
+
+    .toigo-sheet-toggle-btn:hover {
+        background: #e2e8f0;
+        color: #0f172a;
+    }
+
+    /* Scrollable Washroom Cards Container */
+    .toigo-sheet-content {
+        flex: 1;
+        width: 100%;
+        padding: 10px 14px 20px 14px;
+        overflow-y: auto;
+        -webkit-overflow-scrolling: touch;
+        overscroll-behavior-y: contain;
+        touch-action: pan-y;
+        position: relative;
+    }
+
+    /* Safe Bottom Padding - Guarantees final washroom card is never cut off */
+    #toilet-cards-container {
+        padding-bottom: calc(5.5rem + env(safe-area-inset-bottom, 24px));
+    }
+
+    /* State-driven Scroll Management */
+    .toigo-bottom-sheet[data-state="collapsed"] .toigo-sheet-content {
+        overflow-y: hidden !important;
+        pointer-events: none;
+    }
+
+    .toigo-bottom-sheet[data-state="half"] .toigo-sheet-content {
+        overflow-y: hidden !important;
+    }
+
+    .toigo-bottom-sheet[data-state="full"] .toigo-sheet-content {
+        overflow-y: auto !important;
+    }
+}
+
+/* 4. Desktop View (>= 769px) Compatibility */
+@media (min-width: 769px) {
+    .toigo-bottom-sheet {
+        left: 12px;
+        right: 12px;
+        bottom: 12px;
+        border-radius: 24px;
+        transform: none !important;
+        max-height: 270px;
+        height: auto;
+    }
+
+    .toigo-sheet-drag-handle {
+        display: none !important;
+    }
+
+    .toigo-sheet-toggle-btn {
+        display: none !important;
+    }
+
+    .toigo-sheet-header {
+        padding: 14px 18px 8px 18px;
+        flex-shrink: 0;
+    }
+
+    .toigo-sheet-content {
+        padding: 8px 18px 16px 18px;
+        max-height: 210px;
+        overflow-y: auto;
+    }
+
+    #toilet-cards-container {
+        padding-bottom: 8px;
+    }
+}

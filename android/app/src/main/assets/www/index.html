@@ -299,20 +299,39 @@
                 </div>
             </div>
 
-            <!-- Bottom Floating Drawer with Nearby Approved Toilets -->
-            <div class="absolute bottom-2 left-2 right-2 z-20 pointer-events-auto">
-                <div class="glass-pill rounded-3xl p-3 sm:p-4 shadow-2xl border border-white/80">
-                    <div class="flex items-center justify-between mb-2 px-1">
-                        <div class="flex items-center gap-1.5">
-                            <span class="w-2 h-2 rounded-full bg-emerald-500 animate-ping"></span>
-                            <h3 class="text-xs font-extrabold text-slate-800 uppercase tracking-wider">Nearby Approved
-                                Public Toilets</h3>
-                        </div>
-                        <span class="text-[11px] text-slate-500">Sorted by nearest GPS</span>
-                    </div>
+            <!-- Bottom Draggable Sheet with Nearby Approved Toilets (Mobile Draggable + Desktop Grid) -->
+            <div id="washroom-bottom-sheet" class="toigo-bottom-sheet pointer-events-auto" data-state="half">
+                <!-- Mobile Drag Grabber Bar -->
+                <div id="bottom-sheet-handle" class="toigo-sheet-drag-handle" role="button" aria-label="Drag washroom list" tabindex="0">
+                    <div class="toigo-sheet-pill"></div>
+                </div>
 
+                <!-- Sheet Header Bar -->
+                <div id="bottom-sheet-header" class="toigo-sheet-header">
+                    <div class="flex items-center justify-between w-full">
+                        <div class="flex items-center gap-2">
+                            <span class="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-ping"></span>
+                            <h3 class="text-xs font-extrabold text-slate-800 uppercase tracking-wider font-heading">
+                                Nearby Approved Public Toilets
+                            </h3>
+                            <span id="nearby-toilets-count-badge" class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-200">
+                                Nearby
+                            </span>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <span class="text-[11px] text-slate-500 hidden sm:inline font-medium">Sorted by nearest GPS</span>
+                            <!-- Mobile Toggle Button (Tap to Expand / Collapse) -->
+                            <button id="sheet-expand-toggle-btn" class="toigo-sheet-toggle-btn" type="button" title="Toggle Washrooms Panel" aria-label="Toggle Washrooms Panel">
+                                <span id="sheet-toggle-icon" class="text-xs">▲</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Sheet Scrollable Content Container -->
+                <div id="bottom-sheet-content" class="toigo-sheet-content">
                     <div id="toilet-cards-container"
-                        class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2.5 max-h-52 overflow-y-auto pr-1">
+                        class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2.5">
                     </div>
                 </div>
             </div>
@@ -2377,6 +2396,7 @@
     <script src="js/data.js"></script>
     <script src="js/auth.js"></script>
     <script src="js/map.js"></script>
+    <script src="js/bottom-sheet.js"></script>
     <script src="js/user-flow.js"></script>
     <script src="js/provider-flow.js"></script>
     <script src="js/admin-flow.js"></script>

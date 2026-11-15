@@ -209,6 +209,10 @@ class ToigoMasterApp {
             }, 150);
         }
 
+        if (window.bottomSheet) {
+            window.bottomSheet.init();
+        }
+
         if (window.userFlow) {
             window.userFlow.loadAndRenderApprovedToilets();
         }
@@ -234,6 +238,9 @@ class ToigoMasterApp {
                 setTimeout(() => {
                     if (window.toigoMap.map) window.toigoMap.map.invalidateSize();
                 }, 150);
+            }
+            if (window.bottomSheet) {
+                window.bottomSheet.init();
             }
             if (window.userFlow) {
                 window.userFlow.loadAndRenderApprovedToilets();
